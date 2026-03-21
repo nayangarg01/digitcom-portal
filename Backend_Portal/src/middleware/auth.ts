@@ -12,10 +12,17 @@ export interface AuthRequest extends Request {
 
 export const authenticateJWT = (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
+  const queryToken = req.query.token;
+
+  let token: string | undefined;
 
   if (authHeader) {
-    const token = authHeader.split(' ')[1];
+    token = authHeader.split(' ')[1];
+  } else if (queryToken) {
+    token = queryToken as string;
+  }
 
+  if (token) {
     jwt.verify(token, JWT_SECRET, (err, user) => {
       if (err) {
         return res.status(403).json({ error: 'Token is invalid or expired.' });
@@ -25,7 +32,7 @@ export const authenticateJWT = (req: AuthRequest, res: Response, next: NextFunct
       next();
     });
   } else {
-    res.status(401).json({ error: 'Authorization header is missing.' });
+    res.status(401).json({ error: 'Authorization header or token is missing.' });
   }
 };
 

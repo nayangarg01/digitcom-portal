@@ -30,10 +30,10 @@
         .login-card h2 {
             font-size: 1.5rem;
             margin-bottom: 10px;
-            color: var(--text-dark);
+            color: var(--text-main);
         }
         .login-card p {
-            color: var(--text-light);
+            color: var(--text-muted);
             font-size: 0.95rem;
             margin-bottom: 30px;
         }
@@ -45,7 +45,7 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-            color: var(--text-dark);
+            color: var(--text-main);
         }
         .form-group input {
             width: 100%;
@@ -57,23 +57,25 @@
         }
         .form-group input:focus {
             outline: none;
-            border-color: var(--primary-color);
+            border-color: var(--accent);
         }
         .btn-login {
             width: 100%;
             padding: 14px;
-            background: var(--primary-color);
+            background: var(--accent);
             color: #fff;
             border: none;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            margin-top: 10px;
         }
         .btn-login:hover {
-            background: var(--primary-dark);
+            background: var(--primary);
             transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         .error-msg {
             color: #ef4444;
@@ -88,7 +90,7 @@
         <a href="../index.html" class="logo">
             <img src="../images/logo.jpg" alt="Digitcom Logo">
         </a>
-        <h2>Internal Portal</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700;">Internal Portal</h2>
         <p>Please sign in to access logistics and operations.</p>
         
         <form id="login-form">
@@ -100,7 +102,7 @@
                 <label>Password</label>
                 <input type="password" id="password" placeholder="Enter password" required>
             </div>
-            <button type="submit" class="btn-login">Sign In</button>
+            <button type="submit" class="btn-login" id="login-btn">Sign In</button>
             <div id="error-msg" class="error-msg">Invalid credentials. Please try again.</div>
         </form>
     </div>

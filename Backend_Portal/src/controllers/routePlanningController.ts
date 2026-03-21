@@ -183,7 +183,12 @@ export const generateRoutes = async (req: Request, res: Response) => {
                 });
 
                 const nextSite = clusterRemaining[bestIdx];
-                const distanceKm = minLegDist / 1000;
+                let distanceKm = minLegDist / 1000;
+
+                // SPECIAL RULE: Subtract 50km for each A1, B1, C1 entry
+                if (stopSequence === 1) {
+                    distanceKm = Math.max(0, distanceKm - 50);
+                }
 
                 legs.push({
                     routeLabel: String.fromCharCode(65 + i), // A, B, C...
@@ -210,7 +215,7 @@ export const generateRoutes = async (req: Request, res: Response) => {
     }
 
     // 4. Update Original Data for Export
-    const exportData = originalRows.map((row, index) => {
+    let exportData = originalRows.map((row, index) => {
         // Find if this row is part of any route
         let legInfo = null;
         for (const r of routes) {
@@ -229,6 +234,14 @@ export const generateRoutes = async (req: Request, res: Response) => {
             };
         }
         return row;
+    });
+
+    // Sort by CLUBBING (A1, A2, A3... B1, B2... Z3)
+    exportData.sort((a, b) => {
+        if (!a.CLUBBING) return 1;
+        if (!b.CLUBBING) return -1;
+        // Natural sort (supports A1, A2, A10)
+        return a.CLUBBING.localeCompare(b.CLUBBING, undefined, { numeric: true, sensitivity: 'base' });
     });
 
     // 5. Generate Excel File

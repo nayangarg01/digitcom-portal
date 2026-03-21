@@ -201,11 +201,12 @@
                     exportBtn.style.display = 'block';
                     exportBtn.textContent = 'Download Dispatch Plan (Excel)';
                 } else {
-                    alert(result.error || 'Failed to generate routes');
+                    console.error('Server error:', result);
+                    alert(`Error: ${result.error || 'Failed to generate routes'}`);
                 }
             } catch (error) {
-                console.error(error);
-                alert('An error occurred during route generation.');
+                console.error('Fetch error:', error);
+                alert('Connection error: Could not connect to the route planning server.');
             } finally {
                 loader.style.display = 'none';
             }

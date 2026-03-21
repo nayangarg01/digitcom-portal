@@ -50,11 +50,19 @@ export const generateRoutes = async (req: Request, res: Response) => {
     const { originName } = req.body;
     const file = req.file;
 
+    // Ensure uploads directory exists
+    const uploadsDir = path.join(__dirname, '../../uploads');
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
     if (!file) {
+      console.error('Route Generation: No file uploaded');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
     if (!originName || !WAREHOUSES[originName]) {
+      console.error('Route Generation: Invalid origin warehouse:', originName);
       return res.status(400).json({ error: 'Invalid origin warehouse selected' });
     }
 
@@ -66,15 +74,34 @@ export const generateRoutes = async (req: Request, res: Response) => {
     const sheet = workbook.Sheets[sheetName];
     const originalRows: any[] = xlsx.utils.sheet_to_json(sheet);
 
-    const sites: Site[] = originalRows.map((row: any, index: number) => ({
-      id: String(row['Site ID'] || row['site_id'] || row['SiteID'] || row['eNBsiteID'] || index),
-      lat: parseFloat(row['Latitude'] || row['lat'] || row['latitude'] || row['LAT ']),
-      lng: parseFloat(row['Longitude'] || row['lon'] || row['lng'] || row['longitude'] || row['LONG']),
-      originalIndex: index // To map back to original data
-    })).filter(s => !isNaN(s.lat) && !isNaN(s.lng));
+    console.log(`Route Generation: Parsing ${originalRows.length} rows from ${file.originalname}`);
+
+    const sites: Site[] = originalRows.map((row: any, index: number) => {
+      // Find keys ignoring case and spaces
+      const findValue = (possibleKeys: string[]) => {
+          const key = Object.keys(row).find(k => 
+            possibleKeys.some(pk => k.trim().toLowerCase() === pk.toLowerCase())
+          );
+          return key ? row[key] : null;
+      };
+
+      const latVal = findValue(['latitude', 'lat', 'lat ']);
+      const lngVal = findValue(['longitude', 'lng', 'lon', 'long']);
+      const idVal = findValue(['site id', 'site_id', 'siteid', 'enbsiteid']);
+
+      return {
+        id: String(idVal || index),
+        lat: parseFloat(String(latVal || '')),
+        lng: parseFloat(String(lngVal || '')),
+        originalIndex: index
+      };
+    }).filter(s => !isNaN(s.lat) && !isNaN(s.lng));
+
+    console.log(`Route Generation: Found ${sites.length} valid sites with coordinates`);
 
     if (sites.length === 0) {
-      return res.status(400).json({ error: 'No valid coordinates found in the file' });
+      console.error('Route Generation: No valid coordinates found in file');
+      return res.status(400).json({ error: 'No valid coordinates found in the file. Check if Latitude/Longitude columns exist.' });
     }
 
     // 2. Greedy Grouping (Max Size 3)

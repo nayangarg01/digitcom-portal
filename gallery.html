@@ -21,13 +21,13 @@
 
         .page-header h1 {
             font-size: 3.5rem;
-            color: var(--text-dark);
+            color: var(--text-main);
             margin-bottom: 20px;
         }
 
         .page-header p {
             font-size: 1.25rem;
-            color: var(--text-light);
+            color: var(--text-muted);
             max-width: 800px;
             margin: 0 auto;
         }
@@ -47,7 +47,7 @@
             border-radius: 30px;
             border: 1px solid #e2e8f0;
             background: #fff;
-            color: var(--text-light);
+            color: var(--text-muted);
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
@@ -61,10 +61,10 @@
         }
 
         .filter-btn.active {
-            background: var(--primary-color) !important;
+            background: var(--accent) !important;
             color: #ffffff !important;
-            border-color: var(--primary-color) !important;
-            box-shadow: 0 10px 20px rgba(0,86,179,0.2);
+            border-color: var(--accent) !important;
+            box-shadow: 0 10px 20px rgba(15, 43, 72, 0.2);
         }
 
         .gallery-content {
@@ -117,7 +117,7 @@
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--accent);
             z-index: 2;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -215,10 +215,9 @@
     <section class="gallery-content container">
         <!-- Filter Controls -->
         <div class="gallery-filters">
-            <button class="filter-btn active" data-filter="all">All Projects</button>
-            <button class="filter-btn" data-filter="mobile">Mobile Networks</button>
-            <button class="filter-btn" data-filter="fm">FM Radio</button>
+            <button class="filter-btn active" data-filter="mobile">Mobile Network</button>
             <button class="filter-btn" data-filter="solar">Solar</button>
+            <button class="filter-btn" data-filter="fm">FM Radio</button>
         </div>
 
         <div class="gallery-grid" id="gallery-grid">
@@ -372,7 +371,7 @@
         });
 
         // Initial Render
-        renderGallery();
+        renderGallery('mobile');
 
         // Sticky Navbar
         const navbar = document.querySelector('.navbar');

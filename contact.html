@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us | Digitcom India Technologies</title>
+    <meta name="description"
+        content="Get in touch with Digitcom India Technologies. Address, Phone, Email, and Google Map directions.">
+    <!-- Modern Sans-serif Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="new-style.css">
+    <style>
+        /* Additional page-specific styles */
+        .page-header {
+            padding: 160px 2rem 60px;
+            background-color: var(--bg-alt);
+            text-align: center;
+            margin-top: 120px;
+        }
+
+        .page-header h1 {
+            font-size: 3.5rem;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+        }
+
+        .page-header p {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .contact-content {
+            padding: 80px 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 60px;
+        }
+
+        @media (min-width: 900px) {
+            .contact-content {
+                grid-template-columns: 1.2fr 1fr;
+            }
+        }
+
+        .contact-form {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .contact-form h3 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            color: var(--text-dark);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .form-group input, 
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .contact-form button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .contact-form button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(22, 163, 74, 0.4);
+        }
+
+        .contact-details h3 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            color: var(--text-dark);
+        }
+
+        .contact-info-block {
+            margin-bottom: 30px;
+        }
+
+        .contact-info-block h4 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .contact-info-block p {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+        
+        .contact-info-block a {
+            color: var(--text-light);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .contact-info-block a:hover {
+            color: var(--primary-color);
+        }
+
+        .map-container {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-top: 40px;
+        }
+
+        .map-container iframe {
+            width: 100%;
+            height: 300px;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container container">
+            <a href="index.html" class="logo">
+                <img src="images/logo.jpg" alt="Digitcom India Technologies Logo">
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="company-profile.html">About Us</a>
+                <div class="dropdown">
+                    <a href="index.html#services" class="dropbtn">Services</a>
+                    <div class="dropdown-content">
+                        <a href="mobile-networks.html">Mobile Networks</a>
+                        <a href="vsat.html">VSAT</a>
+                        <a href="fm.html">FM Broadcasting</a>
+                    </div>
+                </div>
+                <a href="gallery.html">Gallery</a>
+                <a href="clients.html">Clients</a>
+                <a href="contact.html" class="active">Contact</a>
+                <a href="portal/index.html" class="portal-link">Portal</a>
+            </div>
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <h1>Get in Touch</h1>
+            <p>We are always ready to assist you. Reach out to us for any inquiries or support.</p>
+        </div>
+    </header>
+
+    <!-- Content Section -->
+    <section class="contact-content container">
+        <!-- Contact Form -->
+        <div class="contact-form">
+            <h3>Send us a message</h3>
+            <form action="#" method="post">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" name="name" id="name" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" name="email" id="email" placeholder="john@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="company">Company Name</label>
+                    <input type="text" name="company" id="company" placeholder="Your Company Ltd.">
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea name="message" id="message" rows="5" placeholder="How can we help you?" required></textarea>
+                </div>
+                <button name="send" type="submit" value="1">Send Message</button>
+            </form>
+        </div>
+
+        <!-- Contact Details & Map -->
+        <div class="contact-details">
+            <h3>Contact Details</h3>
+            
+            <div class="contact-info-block">
+                <h4>Corporate Office</h4>
+                <p>
+                    A-308 BHUTANI ALPHATHUM, <br>
+                    SECTOR 90, NOIDA, <br>
+                    201315
+                </p>
+            </div>
+
+            <div class="contact-info-block">
+                <h4>Phone</h4>
+                <p>+91 9311322320</p>
+                <p>+91 9811322320</p>
+            </div>
+
+            <div class="contact-info-block">
+                <h4>Email</h4>
+                <p><a href="mailto:info@digitcomindia.com">info@digitcomindia.com</a></p>
+            </div>
+
+            <!-- Google Maps Embed -->
+            <div class="map-container">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d224368.39371590235!2d77.25804244618055!3d28.516983403738145!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390ce5a43173357b%3A0x37ffce30c87cc03f!2sNoida%2C+Uttar+Pradesh!5e0!3m2!1sen!2sin!4v1536842270100" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="index.html" class="logo">
+                    <img src="images/logo.jpg" alt="Digitcom India Technologies Logo">
+                </a>
+                <p>Connecting the nation through premier telecom infrastructure and specialized technical support.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <a href="index.html">Home</a>
+                <a href="company-profile.html">About Us</a>
+                <a href="career.html">Careers</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div class="footer-links">
+                <h4>Services</h4>
+                <a href="mobile-networks.html">Mobile Networks</a>
+                <a href="vsat.html">VSAT Services</a>
+                <a href="fm.html">FM Broadcasting</a>
+            </div>
+            <div class="footer-contact">
+                <h4>Get in Touch</h4>
+                <p>A-308 BHUTANI ALPHATHUM SECTOR 90 NOIDA 201315</p>
+                <p>📞 +91 9311322320</p>
+                <p>📞 +91 9811322320</p>
+                <p>✉️ <a href="mailto:info@digitcomindia.com">info@digitcomindia.com</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">
+                <p>&copy; 2026 Digitcom India Technologies. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Simple script for mobile menu toggling and sticky navbar transparency effect
+        const navbar = document.querySelector('.navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Management | Digitcom India Technologies</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../new-style.css">
+    <link rel="stylesheet" href="portal.css">
+</head>
+<body>
+    <div class="portal-container">
+        <aside class="sidebar">
+            <div class="logo"><img src="../images/logo.jpg" alt="Digitcom Logo"></div>
+            <nav class="sidebar-menu">
+                <a href="dashboard.html">DPR Dashboard</a>
+                <a href="site-management.html" class="active">Site Management</a>
+                <a href="kitting.html">Site Kitting</a>
+                <a href="teams.html">Team Management</a>
+                <a href="route-planning.html">Route Planning</a>
+                <a href="audit.html">Site Audit & ATP</a>
+                <a href="expenses.html">Field Expenses</a>
+                <a href="reconciliation.html">Logistics Reconciliation</a>
+                <a href="#" onclick="logout()" style="margin-top: 50px;">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h1>Site Management</h1>
+            
+            <section class="form-card" style="border-top: 4px solid var(--accent); margin-top: 0;">
+                <h2 style="margin-bottom: 20px;">Register New Sites</h2>
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px; line-height: 1.5;">
+                    Digitcom automates site registration using official work orders. Please upload the Excel file provided by Jio to initialize or update the site records.
+                    <br><small style="color: var(--accent);">Note: The system will automatically detect the work type and map all DPR columns.</small>
+                </p>
+                
+                <form id="bulk-import-form">
+                    <div class="form-grid" style="grid-template-columns: 1fr;">
+                        <div class="form-group">
+                            <label style="font-weight: 600;">Upload Work Order (Excel/CSV)</label>
+                            <div style="position: relative;">
+                                <input type="file" id="bulk-file" accept=".xlsx, .xls, .csv" required style="width:100%; padding:15px; border:2px dashed #cbd5e0; border-radius:8px; background: #edf2f7; cursor: pointer; height: auto;">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 20px; margin-top: 25px;">
+                        <button type="submit" class="btn-submit" style="background: var(--accent); padding: 12px 30px; font-weight: 600;">Import & Register Sites</button>
+                        <div id="bulk-msg" style="font-size: 0.95rem; font-weight: 500;"></div>
+                    </div>
+                </form>
+            </section>
+
+            <section class="data-table-container" style="background:#fff; padding:25px; border-radius:12px; margin-top: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">Active Work Inventory</h3>
+                    <div style="background: #f0f4f8; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; color: #4a5568; font-weight: 600;">Total Sites Tracking: <span id="site-count">...</span></div>
+                </div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="border-bottom:2px solid #edf2f7;">
+                            <th style="padding:15px; text-align:left; color: #718096; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Site ID</th>
+                            <th style="padding:15px; text-align:left; color: #718096; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Work Type</th>
+                            <th style="padding:15px; text-align:left; color: #718096; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sites-table"></tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        checkAuth();
+
+        async function initSites() {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/logistics/sites`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const sites = await res.json();
+            
+            document.getElementById('site-count').textContent = sites.length;
+            document.getElementById('sites-table').innerHTML = sites.slice(0, 100).map(s => `
+                <tr style="border-bottom:1px solid #edf2f7; transition: background 0.2s;" onmouseover="this.style.background='#fcfcfc'" onmouseout="this.style.background='transparent'">
+                    <td style="padding:15px; font-weight: 500; font-family: monospace;">${s.site_id}</td>
+                    <td style="padding:15px;"><span style="background: #ebf8ff; color: #2b6cb0; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">${s.work_type.replace('_', ' ')}</span></td>
+                    <td style="padding:15px;"><span style="color: ${s.status === 'LIVE' ? '#38a169' : '#e53e3e'}; font-weight: 600; font-size: 0.85rem;">${s.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('bulk-import-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const msgDiv = document.getElementById('bulk-msg');
+            msgDiv.innerHTML = '<span style="color: var(--accent);"><i class="spin"></i> Processing work order...</span>';
+            
+            const formData = new FormData();
+            formData.append('file', document.getElementById('bulk-file').files[0]);
+
+            try {
+                const res = await fetch(`${API_URL}/logistics/bulk-import`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    msgDiv.innerHTML = `
+                        <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 10px 15px; color: #2c7a7b; border-radius: 4px; display: inline-block;">
+                            <strong>Successfully processed ${data.success} work items.</strong>
+                        </div>
+                    `;
+                    initSites();
+                    document.getElementById('bulk-import-form').reset();
+                } else {
+                    msgDiv.innerHTML = `<span style="color:red; background: #fff5f5; padding: 10px; border-radius: 4px;">Error: ${data.error || 'Check file format'}</span>`;
+                }
+            } catch (err) {
+                msgDiv.innerHTML = `<span style="color:red; background: #fff5f5; padding: 10px; border-radius: 4px;">Network Error: Backend may be restarting.</span>`;
+            }
+        });
+
+        initSites();
+    </script>
+</body>
+</html>

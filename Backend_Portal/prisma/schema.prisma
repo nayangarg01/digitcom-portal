@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String     @id @default(uuid())
+  username      String     @unique
+  password_hash String
+  role          String     @default("WAREHOUSE_MANAGER")
+  materials     Material[]
+  createdAt     DateTime   @default(now())
+}
+
+model Team {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  members   String?    // List of names or details
+  sites     Site[]
+  materials Material[]
+  advances  Advance[]
+  createdAt DateTime   @default(now())
+}
+
+model Site {
+  id              String     @id @default(uuid())
+  site_id         String     @unique
+  work_type       String
+  status          String     @default("ALLOTTED") // ALLOTTED, KITTED, INSTALLED, INTEGRATED, LIVE
+  teamId          String?
+  latitude        Float?
+  longitude       Float?
+  mac_address     String?    // Primary site MAC or coordinate MAC
+  dpr_data        String?    // JSON storage for dynamic project columns
+  work_permit_url String?
+  atp_11a_url     String?
+  atp_11c_url     String?
+  materials       Material[]
+  expenses        Expense[]
+  documents       Document[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  team Team? @relation(fields: [teamId], references: [id])
+}
+
+model Material {
+  id             String         @id @default(uuid())
+  site_id        String
+  team_id        String?
+  equipment_name String
+  serial_number  String         @unique
+  mac_address    String?
+  jio_min        String?
+  jio_mrn        String?
+  status         String         @default("RECEIVED") // RECEIVED, KITTED, INSTALLED, RETURNED, RECONCILED
+  logged_by      String
+  kitted_at      DateTime?
+  reconciled_at  DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  site Site  @relation(fields: [site_id], references: [id])
+  team Team? @relation(fields: [team_id], references: [id])
+  user User  @relation(fields: [logged_by], references: [id])
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  site_id     String
+  category    String   // Diesel, Toll, KM, Material, Other
+  amount      Float
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  site Site @relation(fields: [site_id], references: [id])
+}
+
+model Advance {
+  id          String   @id @default(uuid())
+  team_id     String
+  amount      Float
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  team Team @relation(fields: [team_id], references: [id])
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  site_id     String
+  type        String   // PERMIT, ATP_11A, ATP_11C, PHOTO, BILL
+  url         String
+  uploaded_at DateTime @default(now())
+
+  site Site @relation(fields: [site_id], references: [id])
+}

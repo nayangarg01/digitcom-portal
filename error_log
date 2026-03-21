@@ -1,0 +1,5 @@
+[25-Aug-2020 14:35:23 UTC] PHP Notice:  Use of undefined constant SITE_KEY - assumed 'SITE_KEY' in /home/digitcomindia/public_html/contact.php on line 160
+[25-Aug-2020 14:36:34 UTC] PHP Parse error:  syntax error, unexpected end of file, expecting variable (T_VARIABLE) or ${ (T_DOLLAR_OPEN_CURLY_BRACES) or {$ (T_CURLY_OPEN) in /home/digitcomindia/public_html/captcha/constant.php on line 5
+[25-Aug-2020 14:36:40 UTC] PHP Parse error:  syntax error, unexpected end of file, expecting variable (T_VARIABLE) or ${ (T_DOLLAR_OPEN_CURLY_BRACES) or {$ (T_CURLY_OPEN) in /home/digitcomindia/public_html/captcha/constant.php on line 5
+[25-Aug-2020 14:37:59 UTC] PHP Parse error:  syntax error, unexpected end of file, expecting variable (T_VARIABLE) or ${ (T_DOLLAR_OPEN_CURLY_BRACES) or {$ (T_CURLY_OPEN) in /home/digitcomindia/public_html/captcha/constant.php on line 5
+[25-Aug-2020 19:10:25 UTC] PHP Notice:  Undefined index: phone in /home/digitcomindia/public_html/contact_submit.php on line 8

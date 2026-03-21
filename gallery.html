@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery | Digitcom India Technologies</title>
+    <meta name="description"
+        content="View our vast portfolio of telecom site installations, VSAT communications, and FM station projects.">
+    <!-- Modern Sans-serif Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="new-style.css">
+    <style>
+        /* Additional page-specific styles */
+        .page-header {
+            padding: 160px 2rem 60px;
+            background-color: var(--bg-alt);
+            text-align: center;
+            margin-top: 120px;
+        }
+
+        .page-header h1 {
+            font-size: 3.5rem;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+        }
+
+        .page-header p {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Filter Styles */
+        .gallery-filters {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 50px;
+            padding: 0 1rem;
+        }
+
+        .filter-btn {
+            padding: 12px 25px;
+            border-radius: 30px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: var(--text-light);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .filter-btn.active {
+            background: var(--primary-color) !important;
+            color: #ffffff !important;
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 10px 20px rgba(0,86,179,0.2);
+        }
+
+        .gallery-content {
+            padding: 40px 2rem 100px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            transition: opacity 0.4s ease;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            aspect-ratio: 1 / 1;
+            cursor: pointer;
+            background-color: #f8fafc;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+            display: block;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .gallery-item .category-tag {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            z-index: 2;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Lightbox CSS */
+        .lightbox {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .lightbox.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 85vh;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95);
+            transition: transform 0.4s ease;
+        }
+
+        .lightbox.active img {
+            transform: scale(1);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            color: white;
+            font-size: 48px;
+            cursor: pointer;
+            transition: all 0.3s;
+            line-height: 1;
+        }
+
+        .lightbox-close:hover {
+            color: var(--accent);
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container container">
+            <a href="index.html" class="logo">
+                <img src="images/logo.jpg" alt="Digitcom India Technologies Logo">
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="company-profile.html">About Us</a>
+                <div class="dropdown">
+                    <a href="index.html#services" class="dropbtn">Services</a>
+                    <div class="dropdown-content">
+                        <a href="mobile-networks.html">Mobile Networks</a>
+                        <a href="vsat.html">VSAT</a>
+                        <a href="fm.html">FM Broadcasting</a>
+                    </div>
+                </div>
+                <a href="gallery.html" class="active">Gallery</a>
+                <a href="clients.html">Clients</a>
+                <a href="contact.html">Contact</a>
+                <a href="portal/index.html" class="portal-link">Portal</a>
+            </div>
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <h1>Our Projects Gallery</h1>
+            <p>Take a look at our robust telecom site installations, VSAT developments, and operations across the nation.</p>
+        </div>
+    </header>
+
+    <!-- Content Section -->
+    <section class="gallery-content container">
+        <!-- Filter Controls -->
+        <div class="gallery-filters">
+            <button class="filter-btn active" data-filter="all">All Projects</button>
+            <button class="filter-btn" data-filter="mobile">Mobile Networks</button>
+            <button class="filter-btn" data-filter="fm">FM Radio</button>
+            <button class="filter-btn" data-filter="solar">Solar</button>
+        </div>
+
+        <div class="gallery-grid" id="gallery-grid">
+            <!-- Images will be injected here via JS -->
+        </div>
+    </section>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        <span class="lightbox-close" id="lightbox-close">&times;</span>
+        <img src="" alt="Gallery Preview" id="lightbox-img">
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="index.html" class="logo">
+                    <img src="images/logo.jpg" alt="Digitcom India Technologies Logo">
+                </a>
+                <p>Connecting the nation through premier telecom infrastructure and specialized technical support.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <a href="index.html">Home</a>
+                <a href="company-profile.html">About Us</a>
+                <a href="career.html">Careers</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div class="footer-links">
+                <h4>Services</h4>
+                <a href="mobile-networks.html">Mobile Networks</a>
+                <a href="vsat.html">VSAT Services</a>
+                <a href="fm.html">FM Broadcasting</a>
+            </div>
+            <div class="footer-contact">
+                <h4>Get in Touch</h4>
+                <p>A-308 BHUTANI ALPHATHUM SECTOR 90 NOIDA 201315</p>
+                <p>📞 +91 9311322320</p>
+                <p>📞 +91 9811322320</p>
+                <p>✉️ <a href="mailto:info@digitcomindia.com">info@digitcomindia.com</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">
+                <p>&copy; 2026 Digitcom India Technologies. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const galleryGrid = document.getElementById('gallery-grid');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        // Asset Catalog with verified paths from updated gallery folder
+        const projects = [
+            // FM Radio - prioritized 31.png
+            { category: 'fm', src: 'gallery/FM/31.png', label: 'FM Site' },
+            ...[
+                '10_cleaned.png', '14.png', '16.png', '18.png', '1_cleaned.png',
+                '29.png', '3.png', '32.png', '5.png', '7.png', '8.png'
+            ].map(file => ({ category: 'fm', src: `gallery/FM/${file}`, label: 'FM Site' })),
+
+            // Mobile Networks (Consolidated: Airfiber + mobileNetworkPhotos + pantabandPhotos)
+            // Airfiber
+            ...[
+                'PHOTO-2026-03-17-17-12-09 2.jpg', 'PHOTO-2026-03-17-17-12-09 3.jpg',
+                'PHOTO-2026-03-17-17-12-09.jpg', 'PHOTO-2026-03-17-17-12-11.jpg',
+                'PHOTO-2026-03-17-17-12-14 2.jpg', 'PHOTO-2026-03-17-17-12-15 2.jpg',
+                'PHOTO-2026-03-17-17-12-15.jpg', 'PHOTO-2026-03-17-17-13-29 2.jpg',
+                'PHOTO-2026-03-17-17-13-29.jpg', 'PHOTO-2026-03-17-17-13-30 2.jpg',
+                'PHOTO-2026-03-17-17-13-30.jpg'
+            ].map(file => ({ category: 'mobile', src: `gallery/Airfiber/${file}`, label: 'AirFiber Install' })),
+            // mobileNetworkPhotos
+            ...[
+                'PHOTO-2026-03-17-16-05-56.jpg', 'PHOTO-2026-03-17-16-06-01 3.jpg',
+                'PHOTO-2026-03-17-16-06-01.jpg', 'PHOTO-2026-03-17-16-06-03.jpg',
+                'PHOTO-2026-03-17-16-06-05 2.jpg', 'PHOTO-2026-03-17-16-06-06.jpg',
+                'PHOTO-2026-03-17-16-06-12 3.jpg', 'PHOTO-2026-03-17-16-06-17.jpg',
+                'PHOTO-2026-03-17-16-06-21 2.jpg', 'PHOTO-2026-03-17-16-06-21.jpg',
+                'PHOTO-2026-03-17-16-06-23.jpg', 'PHOTO-2026-03-17-16-06-27.jpg'
+            ].map(file => ({ category: 'mobile', src: `gallery/mobileNetworkPhotos/${file}`, label: 'Network Setup' })),
+            // pantabandPhotos
+            ...[
+                'PHOTO-2026-03-17-17-16-15.jpg', 'PHOTO-2026-03-17-17-16-17.jpg',
+                'PHOTO-2026-03-17-17-16-18.jpg', 'PHOTO-2026-03-17-17-16-19 2.jpg',
+                'PHOTO-2026-03-17-17-16-19 3.jpg', 'PHOTO-2026-03-17-17-16-19.jpg',
+                'PHOTO-2026-03-17-17-16-20 2.jpg', 'PHOTO-2026-03-17-17-16-20.jpg',
+                'PHOTO-2026-03-17-17-16-21 2.jpg', 'PHOTO-2026-03-17-17-16-21 3.jpg',
+                'PHOTO-2026-03-17-17-16-21.jpg'
+            ].map(file => ({ category: 'mobile', src: `gallery/pantabandPhotos/${file}`, label: 'Pentaband Site' })),
+
+            // Solar (Mapped to solarPhotos folder)
+            ...[
+                'PHOTO-2026-03-17-16-06-27 2.jpg', 'PHOTO-2026-03-17-16-06-27.jpg',
+                'PHOTO-2026-03-17-16-06-28.jpg', 'PHOTO-2026-03-17-16-06-30.jpg',
+                'PHOTO-2026-03-17-16-06-31.jpg', 'PHOTO-2026-03-17-16-06-32 2.jpg',
+                'PHOTO-2026-03-17-16-06-32.jpg', 'PHOTO-2026-03-17-16-06-33 2.jpg',
+                'PHOTO-2026-03-17-16-06-33.jpg', 'PHOTO-2026-03-17-16-06-34 2.jpg',
+                'PHOTO-2026-03-17-16-06-34 3.jpg', 'PHOTO-2026-03-17-16-06-34.jpg',
+                'PHOTO-2026-03-17-16-06-35 2.jpg', 'PHOTO-2026-03-17-16-06-35 3.jpg',
+                'PHOTO-2026-03-17-16-06-35.jpg'
+            ].map(file => ({ category: 'solar', src: `gallery/solarPhotos/${file}`, label: 'Solar Project' }))
+        ];
+
+        function renderGallery(filter = 'all') {
+            galleryGrid.style.opacity = '0';
+            setTimeout(() => {
+                galleryGrid.innerHTML = '';
+                const filtered = filter === 'all' ? projects : projects.filter(p => p.category === filter);
+                
+                filtered.forEach(proj => {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    item.innerHTML = `
+                        <div class="category-tag">${proj.category}</div>
+                        <img src="${proj.src}" alt="${proj.label}" loading="lazy" onerror="this.parentElement.style.display='none';">
+                    `;
+                    item.addEventListener('click', () => openLightbox(proj.src));
+                    galleryGrid.appendChild(item);
+                });
+                galleryGrid.style.opacity = '1';
+            }, 300);
+        }
+
+        // Filter Logic
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderGallery(btn.dataset.filter);
+            });
+        });
+
+        // Lightbox Logic
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxClose = document.getElementById('lightbox-close');
+
+        function openLightbox(src) {
+            lightboxImg.src = src;
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        lightboxClose.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', (e) => {
+            if (e.target !== lightboxImg) closeLightbox();
+        });
+
+        // Initial Render
+        renderGallery();
+
+        // Sticky Navbar
+        const navbar = document.querySelector('.navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://digitcom-backend.onrender.com/api';
 window.API_URL = API_URL; // Exposure for other scripts
 
 const loginForm = document.getElementById('login-form');

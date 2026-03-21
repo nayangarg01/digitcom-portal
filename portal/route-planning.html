@@ -188,19 +188,18 @@
 
             loader.style.display = 'flex';
             const token = localStorage.getItem('token');
-
             try {
                 const response = await fetch(`${API_URL}/route-planning/generate`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
-
                 const result = await response.json();
                 if (result.success) {
                     generatedRoutes = result.routes;
                     displayRoutes(result);
                     exportBtn.style.display = 'block';
+                    exportBtn.textContent = 'Download Dispatch Plan (Excel)';
                 } else {
                     alert(result.error || 'Failed to generate routes');
                 }
@@ -212,37 +211,11 @@
             }
         });
 
-        exportBtn.addEventListener('click', async () => {
+        exportBtn.addEventListener('click', () => {
             if (!generatedRoutes) return;
-            
             const token = localStorage.getItem('token');
-            try {
-                const response = await fetch(`${API_URL}/route-planning/export`, {
-                    method: 'POST',
-                    headers: { 
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        routes: generatedRoutes,
-                        originName: document.getElementById('origin-warehouse').value
-                    })
-                });
-
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'Dispatch_Plan.csv';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Failed to export CSV');
-            }
+            // Simply redirect to the download endpoint which handles the authentication/headers via a temporary link or use fetch with blob
+            window.open(`${API_URL}/route-planning/download-optimized?token=${token}`, '_blank');
         });
 
         function displayRoutes(data) {
@@ -253,50 +226,51 @@
             routeLayers.forEach(layer => map.removeLayer(layer));
             routeLayers = [];
 
-            const colors = ['#ff4d4d', '#4d79ff', '#2eb82e'];
-            const warehouse = data.warehouse;
+            // Expanded color palette for more than 3 routes
+            const colors = [
+                '#ff4d4d', '#4d79ff', '#2eb82e', '#ffa500', 
+                '#9932cc', '#00ced1', '#ff1493', '#7cfc00',
+                '#4b0082', '#ff4500', '#2f4f4f', '#8b4513'
+            ];
+            const warehouse = data.warehouse || { lat: 26.8139, lng: 75.5450 }; // Fallback
 
             // Add warehouse marker
-            const warehouseIcon = L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            });
-            const whMarker = L.marker([warehouse.lat, warehouse.lng], {icon: warehouseIcon})
-                .addTo(map)
-                .bindPopup(`<strong>Warehouse:</strong> ${data.origin}`)
-                .openPopup();
+            const whMarker = L.circleMarker([warehouse.lat, warehouse.lng], {
+                radius: 10,
+                fillColor: "#000",
+                color: "#fff",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 1
+            }).addTo(map).bindPopup(`<strong>Warehouse:</strong> Origin`);
             routeLayers.push(whMarker);
 
             data.routes.forEach((route, idx) => {
-                const color = colors[idx];
+                const color = colors[idx % colors.length];
                 
                 // Add to list
                 const card = document.createElement('div');
-                card.className = `route-card route-${idx + 1}`;
+                card.className = `route-card`;
+                card.style.borderLeft = `4px solid ${color}`;
                 card.innerHTML = `
-                    <strong>Route ${route.routeNumber}</strong><br>
-                    Distance: ${route.totalDistanceKm} km<br>
-                    Stops: ${route.sites.length}<br>
-                    <small>Sequence: ${route.sites.map(s => s.id).join(' → ')}</small>
+                    <strong>Route ${route.label}</strong><br>
+                    Legs: ${route.legs.length}<br>
+                    <small>Sequence: ${route.legs.map(l => l.site.id).join(' → ')}</small>
                 `;
                 resultsDiv.appendChild(card);
 
                 // Draw on map
                 const pathPoints = [[warehouse.lat, warehouse.lng]];
-                route.sites.forEach(site => {
-                    pathPoints.push([site.lat, site.lng]);
-                    const marker = L.circleMarker([site.lat, site.lng], {
+                route.legs.forEach(leg => {
+                    pathPoints.push([leg.site.lat, leg.site.lng]);
+                    const marker = L.circleMarker([leg.site.lat, leg.site.lng], {
                         radius: 6,
                         fillColor: color,
                         color: "#000",
                         weight: 1,
                         opacity: 1,
                         fillOpacity: 0.8
-                    }).addTo(map).bindPopup(`Site ID: ${site.id}<br>Route: ${route.routeNumber}`);
+                    }).addTo(map).bindPopup(`Site ID: ${leg.site.id}<br>Route: ${route.label}<br>Leg Dist: ${leg.distanceKm}km`);
                     routeLayers.push(marker);
                 });
 
@@ -305,8 +279,10 @@
             });
 
             // Auto-zoom to fit all routes
-            const group = new L.featureGroup(routeLayers);
-            map.fitBounds(group.getBounds());
+            if (routeLayers.length > 0) {
+                const group = new L.featureGroup(routeLayers);
+                map.fitBounds(group.getBounds());
+            }
         }
     </script>
 </body>

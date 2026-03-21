@@ -80,7 +80,7 @@
 
         async function loadSites() {
             try {
-                const response = await fetch('http://localhost:3000/api/logistics/sites', {
+                const response = await fetch(`${API_URL}/logistics/sites`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const sites = await response.json();
@@ -98,19 +98,19 @@
                         <div class="upload-section">
                             <div class="upload-box">
                                 <h4>Work Permit</h4>
-                                ${site.work_permit_url ? `<a href="http://localhost:3000${site.work_permit_url}" target="_blank">View Permit</a>` : '<span style="color:#999">Not Uploaded</span>'}
+                                ${site.work_permit_url ? `<a href="${API_URL.replace('/api', '')}${site.work_permit_url}" target="_blank">View Permit</a>` : '<span style="color:#999">Not Uploaded</span>'}
                                 <input type="file" id="permit-${site.id}" style="display:none" onchange="handleUpload('${site.id}', 'PERMIT')">
                                 <br><label for="permit-${site.id}" class="btn-upload">Upload File</label>
                             </div>
                             <div class="upload-box">
                                 <h4>ATP 11A</h4>
-                                ${site.atp_11a_url ? `<a href="http://localhost:3000${site.atp_11a_url}" target="_blank">View 11A</a>` : '<span style="color:#999">Not Uploaded</span>'}
+                                ${site.atp_11a_url ? `<a href="${API_URL.replace('/api', '')}${site.atp_11a_url}" target="_blank">View 11A</a>` : '<span style="color:#999">Not Uploaded</span>'}
                                 <input type="file" id="atp11a-${site.id}" style="display:none" onchange="handleUpload('${site.id}', 'ATP_11A')">
                                 <br><label for="atp11a-${site.id}" class="btn-upload">Upload Photo</label>
                             </div>
                             <div class="upload-box">
                                 <h4>ATP 11C</h4>
-                                ${site.atp_11c_url ? `<a href="http://localhost:3000${site.atp_11c_url}" target="_blank">View 11C</a>` : '<span style="color:#999">Not Uploaded</span>'}
+                                ${site.atp_11c_url ? `<a href="${API_URL.replace('/api', '')}${site.atp_11c_url}" target="_blank">View 11C</a>` : '<span style="color:#999">Not Uploaded</span>'}
                                 <input type="file" id="atp11c-${site.id}" style="display:none" onchange="handleUpload('${site.id}', 'ATP_11C')">
                                 <br><label for="atp11c-${site.id}" class="btn-upload">Upload Photo</label>
                             </div>
@@ -134,7 +134,7 @@
             formData.append('file', fileInput.files[0]);
 
             try {
-                const response = await fetch('http://localhost:3000/api/documents/upload', {
+                const response = await fetch(`${API_URL}/documents/upload`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                     body: formData

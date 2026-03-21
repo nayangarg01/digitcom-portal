@@ -65,6 +65,8 @@
                 <a href="#" onclick="logout()" style="margin-top: 50px;">Logout</a>
             </nav>
         </aside>
+        
+        <script src="js/auth.js"></script>
 
     <div class="kitting-container">
         <h1>Site Kitting & Assignment</h1>
@@ -99,7 +101,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000/api';
+        checkAuth();
         const token = localStorage.getItem('token');
 
         if (!token) window.location.href = 'index.html';

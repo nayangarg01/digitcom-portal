@@ -190,7 +190,7 @@
             const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch('http://localhost:3000/api/route-planning/generate', {
+                const response = await fetch(`${API_URL}/route-planning/generate`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
@@ -217,7 +217,7 @@
             
             const token = localStorage.getItem('token');
             try {
-                const response = await fetch('http://localhost:3000/api/route-planning/export', {
+                const response = await fetch(`${API_URL}/route-planning/export`, {
                     method: 'POST',
                     headers: { 
                         'Authorization': `Bearer ${token}`,

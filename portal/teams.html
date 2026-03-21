@@ -32,6 +32,7 @@
                 <a href="#" onclick="logout()" style="margin-top: 50px;">Logout</a>
             </nav>
         </aside>
+        <script src="js/auth.js"></script>
         <main class="main-content">
             <h1>Team Management</h1>
 
@@ -49,7 +50,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000/api';
+        checkAuth();
         const token = localStorage.getItem('token');
 
         async function loadTeams() {

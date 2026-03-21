@@ -85,7 +85,7 @@
             const token = localStorage.getItem('token');
             try {
                 // Fetch Sites
-                const response = await fetch('http://localhost:3000/api/logistics/sites', {
+                const response = await fetch(`${API_URL}/logistics/sites`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const sites = await response.json();
@@ -96,7 +96,7 @@
                 document.getElementById('kitted-materials').textContent = sites.filter(s => s.status === 'KITTED').length;
 
                 // Fetch Finance Data
-                const finRes = await fetch('http://localhost:3000/api/finance/summary', {
+                const finRes = await fetch(`${API_URL}/finance/summary`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const finData = await finRes.json();

@@ -136,7 +136,7 @@
             const mac = (status === 'INTEGRATED') ? prompt('Enter Site/Antenna MAC Address:') : null;
 
             try {
-                const response = await fetch(`http://localhost:3000/api/logistics/sites/${id}/stage`, {
+                const response = await fetch(`${API_URL}/logistics/sites/${id}/stage`, {
                     method: 'PATCH',
                     headers: { 
                         'Content-Type': 'application/json',

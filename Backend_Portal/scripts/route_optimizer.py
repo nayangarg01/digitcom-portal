@@ -17,8 +17,8 @@ def get_distance_matrix(locations, api_key):
     num_locations = len(locations)
     matrix = np.zeros((num_locations, num_locations))
     
-    # Process in batches of 10 to stay within the 100-elements-per-request limit
-    batch_size = 10
+    # Process in batches of 5 to be extremely safe (5x5 = 25 elements)
+    batch_size = 5
     import time
     
     for i in range(0, num_locations, batch_size):
@@ -26,14 +26,17 @@ def get_distance_matrix(locations, api_key):
             origins_batch = locations[i : min(i + batch_size, num_locations)]
             dest_batch = locations[j : min(j + batch_size, num_locations)]
             
-            origin_str = "|".join([f"{lat},{lng}" for lat, lng in origins_batch])
-            dest_str = "|".join([f"{lat},{lng}" for lat, lng in dest_batch])
+            origin_str = "|".join([f"{round(lat, 6)},{round(lng, 6)}" for lat, lng in origins_batch])
+            dest_str = "|".join([f"{round(lat, 6)},{round(lng, 6)}" for lat, lng in dest_batch])
+            
+            # Debug log to stderr
+            sys.stderr.write(f"DEBUG: Fetching matrix batch {i}x{j} (Size: {len(origins_batch)}x{len(dest_batch)})\n")
             
             url = f"https://maps.googleapis.com/maps/api/distancematrix/json?origins={origin_str}&destinations={dest_str}&key={api_key}"
             response = requests.get(url).json()
             
             # Anti-throttling
-            time.sleep(0.1)
+            time.sleep(0.2)
             
             if response['status'] != 'OK':
                 raise Exception(f"Google Maps API Error: {response.get('error_message', response['status'])}")

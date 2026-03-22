@@ -17,8 +17,10 @@ def get_distance_matrix(locations, api_key):
     num_locations = len(locations)
     matrix = np.zeros((num_locations, num_locations))
     
-    # Process in batches of 25
-    batch_size = 25
+    # Process in batches of 10 to stay within the 100-elements-per-request limit
+    batch_size = 10
+    import time
+    
     for i in range(0, num_locations, batch_size):
         for j in range(0, num_locations, batch_size):
             origins_batch = locations[i : min(i + batch_size, num_locations)]
@@ -29,6 +31,9 @@ def get_distance_matrix(locations, api_key):
             
             url = f"https://maps.googleapis.com/maps/api/distancematrix/json?origins={origin_str}&destinations={dest_str}&key={api_key}"
             response = requests.get(url).json()
+            
+            # Anti-throttling
+            time.sleep(0.1)
             
             if response['status'] != 'OK':
                 raise Exception(f"Google Maps API Error: {response.get('error_message', response['status'])}")

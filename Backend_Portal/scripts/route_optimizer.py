@@ -62,11 +62,20 @@ def solve_cvrp(distance_matrix, num_sites, capacity=3):
     """
     Solve Capacitated Vehicle Routing Problem using OR-Tools.
     """
+    # Apply the 50km (50,000m) discount to the first leg of each potential route 
+    # to ensure the solver knows about the cost reduction.
+    matrix_discounted = distance_matrix.copy()
+    for i in range(1, num_sites + 1):
+        # Subtract 50km from warehouse-to-site trips
+        current_dist = matrix_discounted[0][i]
+        matrix_discounted[0][i] = max(0, current_dist - 50000)
+
     # Depot is index 0 (Warehouse)
     data = {}
-    data['distance_matrix'] = distance_matrix.astype(int).tolist()
+    data['distance_matrix'] = matrix_discounted.astype(int).tolist()
+    data['raw_matrix'] = distance_matrix.astype(int).tolist() # Keep for final reporting
     data['demands'] = [0] + [1] * num_sites
-    data['num_vehicles'] = ceil(num_sites / capacity) + 2 # Add buffer vehicles
+    data['num_vehicles'] = ceil(num_sites / capacity)
     data['vehicle_capacities'] = [capacity] * data['num_vehicles']
     data['depot'] = 0
 
@@ -89,6 +98,9 @@ def solve_cvrp(distance_matrix, num_sites, capacity=3):
     # Define cost of each arc.
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
+    # IMPORTANT: Fixed cost per vehicle to force maximum occupancy (Strict 3)
+    routing.SetFixedCostOfAllVehicles(100000)
+
     # Add Capacity constraint.
     def demand_callback(from_index):
         """Returns the demand of the node."""
@@ -106,16 +118,16 @@ def solve_cvrp(distance_matrix, num_sites, capacity=3):
     # Setting first solution heuristic.
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
     search_parameters.first_solution_strategy = (
-        routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+        routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION)
     search_parameters.local_search_metaheuristic = (
         routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
-    search_parameters.time_limit.seconds = 10
+    search_parameters.time_limit.seconds = 60
 
     # Solve the problem.
     solution = routing.SolveWithParameters(search_parameters)
 
     if not solution:
-        return None
+        return None, None
 
     # Extract routes
     routes = []
@@ -129,7 +141,7 @@ def solve_cvrp(distance_matrix, num_sites, capacity=3):
             index = solution.Value(routing.NextVar(index))
         if route:
             routes.append(route)
-    return routes
+    return routes, data['raw_matrix']
 
 def main():
     if len(sys.argv) < 5:
@@ -186,7 +198,7 @@ def main():
         dist_matrix = get_distance_matrix(locations, api_key)
 
         # 4. Solve CVRP
-        routes_plan = solve_cvrp(dist_matrix, num_sites)
+        routes_plan, raw_matrix = solve_cvrp(dist_matrix, num_sites)
         if not routes_plan:
             print(json.dumps({"error": "Could not find an optimal solution"}))
             return
@@ -211,7 +223,8 @@ def main():
             
             for seq_idx, node_idx in enumerate(site_ids):
                 row_idx = site_indices[node_idx - 1]
-                dist_meters = dist_matrix[prev_node_idx][node_idx]
+                # Use raw_matrix (actual distances) for reporting
+                dist_meters = raw_matrix[prev_node_idx][node_idx]
                 dist_km = dist_meters / 1000.0
                 
                 # Special 50km rule for first leg

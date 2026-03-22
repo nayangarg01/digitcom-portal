@@ -1,0 +1,623 @@
+[
+    {
+        "group_id": "DC011",
+        "filename": "DC011.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 1722.0,
+        "num_sites": 19
+    },
+    {
+        "group_id": "DC012",
+        "filename": "DC012.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 446.0,
+        "num_sites": 18
+    },
+    {
+        "group_id": "DC013",
+        "filename": "DC013.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 785.0,
+        "num_sites": 23
+    },
+    {
+        "group_id": "DC014",
+        "filename": "DC014.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 547.0,
+        "num_sites": 11
+    },
+    {
+        "group_id": "DC015",
+        "filename": "DC015.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 602.0,
+        "num_sites": 14
+    },
+    {
+        "group_id": "DC017",
+        "filename": "DC017.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 960.0,
+        "num_sites": 22
+    },
+    {
+        "group_id": "DC018",
+        "filename": "DC018.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 708.0,
+        "num_sites": 12
+    },
+    {
+        "group_id": "DC019",
+        "filename": "DC019.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1147.0,
+        "num_sites": 17
+    },
+    {
+        "group_id": "DC020",
+        "filename": "DC020.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 366.0,
+        "num_sites": 9
+    },
+    {
+        "group_id": "DC021",
+        "filename": "DC021.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 863.0,
+        "num_sites": 21
+    },
+    {
+        "group_id": "DC022",
+        "filename": "DC022.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 1486.0,
+        "num_sites": 12
+    },
+    {
+        "group_id": "DC023",
+        "filename": "DC023.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1562.0,
+        "num_sites": 20
+    },
+    {
+        "group_id": "DC024",
+        "filename": "DC024.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 195.0,
+        "num_sites": 3
+    },
+    {
+        "group_id": "DC025",
+        "filename": "DC025.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 161.0,
+        "num_sites": 2
+    },
+    {
+        "group_id": "DC026",
+        "filename": "DC026.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 151.0,
+        "num_sites": 4
+    },
+    {
+        "group_id": "DC027",
+        "filename": "DC027.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 560.0,
+        "num_sites": 5
+    },
+    {
+        "group_id": "DC028",
+        "filename": "DC028.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 187.0,
+        "num_sites": 4
+    },
+    {
+        "group_id": "DC029",
+        "filename": "DC029.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1313.0,
+        "num_sites": 18
+    },
+    {
+        "group_id": "DC030",
+        "filename": "DC030.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 1323.0,
+        "num_sites": 23
+    },
+    {
+        "group_id": "DC031",
+        "filename": "DC031.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 111.0,
+        "num_sites": 3
+    },
+    {
+        "group_id": "DC032",
+        "filename": "DC032.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1072.0,
+        "num_sites": 16
+    },
+    {
+        "group_id": "DC033",
+        "filename": "DC033.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 938.0,
+        "num_sites": 11
+    },
+    {
+        "group_id": "DC034",
+        "filename": "DC034.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 468.0,
+        "num_sites": 13
+    },
+    {
+        "group_id": "DC035",
+        "filename": "DC035.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 406.0,
+        "num_sites": 7
+    },
+    {
+        "group_id": "DC036",
+        "filename": "DC036.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1094.0,
+        "num_sites": 13
+    },
+    {
+        "group_id": "DC037",
+        "filename": "DC037.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1403.0,
+        "num_sites": 21
+    },
+    {
+        "group_id": "DC038",
+        "filename": "DC038.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1401.0,
+        "num_sites": 20
+    },
+    {
+        "group_id": "DC039",
+        "filename": "DC039.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 293.0,
+        "num_sites": 8
+    },
+    {
+        "group_id": "DC040",
+        "filename": "DC040.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 668.0,
+        "num_sites": 10
+    },
+    {
+        "group_id": "DC041",
+        "filename": "DC041.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 392.0,
+        "num_sites": 7
+    },
+    {
+        "group_id": "DC042",
+        "filename": "DC042.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 131.0,
+        "num_sites": 3
+    },
+    {
+        "group_id": "DC043",
+        "filename": "DC043.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 512.0,
+        "num_sites": 6
+    },
+    {
+        "group_id": "DC044",
+        "filename": "DC044.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 236.0,
+        "num_sites": 6
+    },
+    {
+        "group_id": "DC045",
+        "filename": "DC045.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 156.0,
+        "num_sites": 6
+    },
+    {
+        "group_id": "DC046",
+        "filename": "DC046.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 108.0,
+        "num_sites": 2
+    },
+    {
+        "group_id": "DC047",
+        "filename": "DC047.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 1279.0,
+        "num_sites": 21
+    },
+    {
+        "group_id": "DC048",
+        "filename": "DC048.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 207.0,
+        "num_sites": 3
+    },
+    {
+        "group_id": "DC049",
+        "filename": "DC049.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1282.0,
+        "num_sites": 13
+    },
+    {
+        "group_id": "DC050",
+        "filename": "DC050.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 458.0,
+        "num_sites": 5
+    },
+    {
+        "group_id": "DC051",
+        "filename": "DC051.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1024.0,
+        "num_sites": 9
+    },
+    {
+        "group_id": "DC052",
+        "filename": "DC052.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 2073.0,
+        "num_sites": 7
+    },
+    {
+        "group_id": "DC053",
+        "filename": "DC053.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 1445.0,
+        "num_sites": 5
+    },
+    {
+        "group_id": "DC054",
+        "filename": "DC054.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 216.0,
+        "num_sites": 5
+    },
+    {
+        "group_id": "DC055",
+        "filename": "DC055.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 129.0,
+        "num_sites": 2
+    },
+    {
+        "group_id": "DC056",
+        "filename": "DC056.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 233.0,
+        "num_sites": 2
+    },
+    {
+        "group_id": "DC057",
+        "filename": "DC057.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 235.0,
+        "num_sites": 3
+    },
+    {
+        "group_id": "DC066",
+        "filename": "DC066.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 0.0,
+        "num_sites": 1
+    },
+    {
+        "group_id": "DC067",
+        "filename": "DC067.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 66.0,
+        "num_sites": 1
+    },
+    {
+        "group_id": "DC068",
+        "filename": "DC068.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 88.0,
+        "num_sites": 1
+    },
+    {
+        "group_id": "DC069",
+        "filename": "DC069.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 47.0,
+        "num_sites": 1
+    },
+    {
+        "group_id": "DC070",
+        "filename": "DC070.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 769.0,
+        "num_sites": 2
+    },
+    {
+        "group_id": "DC078",
+        "filename": "DC078.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 119.0,
+        "num_sites": 2
+    },
+    {
+        "group_id": "DC079",
+        "filename": "DC079.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 4020.0,
+        "num_sites": 32
+    },
+    {
+        "group_id": "DC080",
+        "filename": "DC080.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 720.0,
+        "num_sites": 19
+    },
+    {
+        "group_id": "DC081",
+        "filename": "DC081.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1070.0,
+        "num_sites": 17
+    },
+    {
+        "group_id": "DC082",
+        "filename": "DC082.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1157.0,
+        "num_sites": 18
+    },
+    {
+        "group_id": "DC083",
+        "filename": "DC083.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1463.0,
+        "num_sites": 20
+    },
+    {
+        "group_id": "DC084",
+        "filename": "DC084.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 380.0,
+        "num_sites": 2
+    },
+    {
+        "group_id": "DC085",
+        "filename": "DC085.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 37.0,
+        "num_sites": 2
+    },
+    {
+        "group_id": "DC086",
+        "filename": "DC086.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 1177.0,
+        "num_sites": 6
+    },
+    {
+        "group_id": "DC087",
+        "filename": "DC087.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 1412.0,
+        "num_sites": 9
+    },
+    {
+        "group_id": "DC088",
+        "filename": "DC088.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 748.0,
+        "num_sites": 12
+    },
+    {
+        "group_id": "DC089",
+        "filename": "DC089.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 831.0,
+        "num_sites": 12
+    },
+    {
+        "group_id": "DC090",
+        "filename": "DC090.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 872.0,
+        "num_sites": 6
+    },
+    {
+        "group_id": "DC091",
+        "filename": "DC091.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 1117.0,
+        "num_sites": 15
+    },
+    {
+        "group_id": "DC092",
+        "filename": "DC092.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 983.0,
+        "num_sites": 12
+    },
+    {
+        "group_id": "DC093",
+        "filename": "DC093.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 50.0,
+        "num_sites": 1
+    },
+    {
+        "group_id": "DC097",
+        "filename": "DC097.xlsx",
+        "warehouse": "Jodhpur - Mogra Khurd",
+        "lat": 26.1245,
+        "lng": 73.0543,
+        "manual_aktbc_sum": 996.0,
+        "num_sites": 12
+    },
+    {
+        "group_id": "DC098",
+        "filename": "DC098.xlsx",
+        "warehouse": "Jaipur - Bagru",
+        "lat": 26.8139,
+        "lng": 75.545,
+        "manual_aktbc_sum": 27.0,
+        "num_sites": 1
+    }
+]

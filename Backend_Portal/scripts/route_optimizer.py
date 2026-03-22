@@ -115,12 +115,19 @@ def solve_cvrp(distance_matrix, num_sites, capacity=3):
         return data['demands'][from_node]
 
     demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
+    dimension_name = 'Capacity'
     routing.AddDimensionWithVehicleCapacity(
         demand_callback_index,
         0,  # null capacity slack
         data['vehicle_capacities'],  # vehicle maximum capacities
         True,  # start cumul to zero
-        'Capacity')
+        dimension_name)
+    
+    # NEW: Penalize the "Span" (max distance) of each individual route.
+    # This forces the solver to keep routes compact and balanced, 
+    # preventing "spaghetti" routes that steal distant sites from other zones.
+    capacity_dimension = routing.GetDimensionOrDie(dimension_name)
+    capacity_dimension.SetGlobalSpanCostCoefficient(100)
 
     # Setting first solution heuristic.
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
@@ -137,7 +144,7 @@ def solve_cvrp(distance_matrix, num_sites, capacity=3):
     if not solution:
         return None, None
 
-    # Extract routes
+    # Extract and Optimize Sequence (Home-Sweep)
     routes = []
     for vehicle_id in range(data['num_vehicles']):
         index = routing.Start(vehicle_id)
@@ -147,7 +154,17 @@ def solve_cvrp(distance_matrix, num_sites, capacity=3):
             if node_index != 0: # Skip depot in the middle
                 route.append(node_index)
             index = solution.Value(routing.NextVar(index))
+        
         if route:
+            # NEW: "Home-Sweep" Visual Optimization
+            # We compare the distance of the first site vs the last site from the warehouse.
+            # If the last site is further away than the first site, we reverse the route 
+            # so the vehicle "sweeps" back towards home. Total round-trip distance stays same.
+            first_dist = data['raw_matrix'][0][route[0]]
+            last_dist = data['raw_matrix'][0][route[-1]]
+            if last_dist > first_dist:
+                route.reverse()
+            
             routes.append(route)
     return routes, data['raw_matrix']
 

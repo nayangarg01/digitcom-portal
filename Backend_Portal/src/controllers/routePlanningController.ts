@@ -74,188 +74,69 @@ export const generateRoutes = async (req: Request, res: Response) => {
     const sheet = workbook.Sheets[sheetName];
     const originalRows: any[] = xlsx.utils.sheet_to_json(sheet);
 
-    console.log(`Route Generation: Parsing ${originalRows.length} rows from ${file.originalname}`);
+    const sites_count = originalRows.length;
+    console.log(`Route Generation: Parsing ${sites_count} rows from ${file.originalname}`);
 
-    const sites: Site[] = originalRows.map((row: any, index: number) => {
-      // Find keys ignoring case and spaces
-      const findValue = (possibleKeys: string[]) => {
-          const key = Object.keys(row).find(k => 
-            possibleKeys.some(pk => k.trim().toLowerCase() === pk.toLowerCase())
-          );
-          return key ? row[key] : null;
-      };
-
-      const latVal = findValue(['latitude', 'lat', 'lat ']);
-      const lngVal = findValue(['longitude', 'lng', 'lon', 'long']);
-      const idVal = findValue(['site id', 'site_id', 'siteid', 'enbsiteid']);
-
-      return {
-        id: String(idVal || index),
-        lat: parseFloat(String(latVal || '')),
-        lng: parseFloat(String(lngVal || '')),
-        originalIndex: index
-      };
-    }).filter(s => !isNaN(s.lat) && !isNaN(s.lng));
-
-    console.log(`Route Generation: Found ${sites.length} valid sites with coordinates`);
-
-    if (sites.length === 0) {
-      console.error('Route Generation: No valid coordinates found in file');
-      return res.status(400).json({ error: 'No valid coordinates found in the file. Check if Latitude/Longitude columns exist.' });
-    }
-
-    // 2. Greedy Grouping (Max Size 3)
-    // Heuristic: Start from the site furthest from warehouse, and pick 2 nearest neighbors
-    const clusters: Site[][] = [];
-    let remainingSites = [...sites];
-
-    while (remainingSites.length > 0) {
-        // Find site furthest from warehouse
-        let furthestIdx = 0;
-        let maxDist = -1;
-        remainingSites.forEach((s, idx) => {
-            const d = Math.sqrt(Math.pow(s.lat - warehouse.lat, 2) + Math.pow(s.lng - warehouse.lng, 2));
-            if (d > maxDist) {
-                maxDist = d;
-                furthestIdx = idx;
-            }
+    // Safety Valve: Check for > 40 sites
+    if (sites_count > 40) {
+        console.error(`Route Generation: Upload Limit Exceeded (${sites_count} sites)`);
+        return res.status(400).json({ 
+            error: `Upload Limit Exceeded: Please upload a maximum of 40 sites per batch to prevent API rate limits. (Found ${sites_count} sites)` 
         });
-
-        const seedSite = remainingSites[furthestIdx];
-        remainingSites.splice(furthestIdx, 1);
-        const currentCluster = [seedSite];
-
-        // Find up to 2 nearest neighbors to the seed site
-        for (let i = 0; i < 2; i++) {
-            if (remainingSites.length === 0) break;
-            let nearestIdx = 0;
-            let minDist = Infinity;
-            remainingSites.forEach((s, idx) => {
-                const d = Math.sqrt(Math.pow(s.lat - seedSite.lat, 2) + Math.pow(s.lng - seedSite.lng, 2));
-                if (d < minDist) {
-                    minDist = d;
-                    nearestIdx = idx;
-                }
-            });
-            currentCluster.push(remainingSites[nearestIdx]);
-            remainingSites.splice(nearestIdx, 1);
-        }
-        clusters.push(currentCluster);
     }
 
-    const routes: Route[] = [];
     const apiKey = process.env.Maps_API_KEY;
-
     if (!apiKey) {
       return res.status(500).json({ error: 'Maps API key not configured' });
     }
 
-    // 3. Routing for each cluster
-    for (let i = 0; i < clusters.length; i++) {
-        const clusterSites = clusters[i];
-        let currentLocation = { lat: warehouse.lat, lng: warehouse.lng };
-        let clusterRemaining = [...clusterSites];
-
-        const legs = [];
-        const orderedSitesInRoute = [];
-        let stopSequence = 1;
-
-        while (clusterRemaining.length > 0) {
-            const originStr = `${currentLocation.lat},${currentLocation.lng}`;
-            const destinations = clusterRemaining.map(s => `${s.lat},${s.lng}`).join('|');
-            
-            try {
-                const response = await axios.get(`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originStr}&destinations=${destinations}&key=${apiKey}`);
-                
-                if (response.data.status !== 'OK') {
-                    throw new Error(`Google Maps API error: ${response.data.status}`);
-                }
-
-                const results = response.data.rows[0].elements;
-                let bestIdx = 0;
-                let minLegDist = Infinity;
-
-                results.forEach((el: any, idx: number) => {
-                    if (el.status === 'OK' && el.distance.value < minLegDist) {
-                        minLegDist = el.distance.value;
-                        bestIdx = idx;
-                    }
-                });
-
-                const nextSite = clusterRemaining[bestIdx];
-                let distanceKm = minLegDist / 1000;
-
-                // SPECIAL RULE: Subtract 50km for each A1, B1, C1 entry
-                if (stopSequence === 1) {
-                    distanceKm = Math.max(0, distanceKm - 50);
-                }
-
-                legs.push({
-                    routeLabel: String.fromCharCode(65 + i), // A, B, C...
-                    stopSequence: stopSequence++,
-                    distanceKm: parseFloat(distanceKm.toFixed(2)),
-                    site: nextSite
-                });
-
-                orderedSitesInRoute.push(nextSite);
-                currentLocation = { lat: nextSite.lat, lng: nextSite.lng };
-                clusterRemaining.splice(bestIdx, 1);
-
-            } catch (err: any) {
-                console.error('Routing error:', err.message);
-                return res.status(500).json({ error: 'Failed to optimize route legs' });
-            }
-        }
-
-        routes.push({
-            routeNumber: i + 1,
-            label: String.fromCharCode(65 + i),
-            legs
-        });
-    }
-
-    // 4. Update Original Data for Export
-    let exportData = originalRows.map((row, index) => {
-        // Find if this row is part of any route
-        let legInfo = null;
-        for (const r of routes) {
-            const leg = r.legs.find((l: any) => l.site.originalIndex === index);
-            if (leg) {
-                legInfo = leg;
-                break;
-            }
-        }
-
-        if (legInfo) {
-            return {
-                ...row,
-                CLUBBING: `${legInfo.routeLabel}${legInfo.stopSequence}`,
-                AKTBC: legInfo.distanceKm
-            };
-        }
-        return row;
-    });
-
-    // Sort by CLUBBING (A1, A2, A3... B1, B2... Z3)
-    exportData.sort((a, b) => {
-        if (!a.CLUBBING) return 1;
-        if (!b.CLUBBING) return -1;
-        // Natural sort (supports A1, A2, A10)
-        return a.CLUBBING.localeCompare(b.CLUBBING, undefined, { numeric: true, sensitivity: 'base' });
-    });
-
-    // 5. Generate Excel File
-    const newWB = xlsx.utils.book_new();
-    const newWS = xlsx.utils.json_to_sheet(exportData);
-    xlsx.utils.book_append_sheet(newWB, newWS, 'Route Plan');
+    // Prepare paths for Python script
+    const scriptPath = path.join(__dirname, '../../scripts/route_optimizer.py');
+    const outputPath = path.join(__dirname, '../../uploads/optimized_route_plan.xlsx');
     
-    const exportPath = path.join(__dirname, '../../uploads/optimized_route_plan.xlsx');
-    xlsx.writeFile(newWB, exportPath);
+    // Spawn Python process
+    const { spawn } = require('child_process');
+    const pythonProcess = spawn('python3', [
+        scriptPath,
+        file.path,
+        warehouse.lat.toString(),
+        warehouse.lng.toString(),
+        apiKey,
+        outputPath
+    ]);
 
-    res.json({
-        success: true,
-        routes,
-        downloadUrl: '/api/route-planning/download-optimized'
+    let pythonOutput = '';
+    let pythonError = '';
+
+    pythonProcess.stdout.on('data', (data: any) => {
+        pythonOutput += data.toString();
+    });
+
+    pythonProcess.stderr.on('data', (data: any) => {
+        pythonError += data.toString();
+    });
+
+    pythonProcess.on('close', (code: number) => {
+        if (code !== 0) {
+            console.error('Python Script Error:', pythonError);
+            return res.status(500).json({ error: 'Routing engine failed. Ensure OR-Tools and Pandas are installed.' });
+        }
+
+        try {
+            const result = JSON.parse(pythonOutput);
+            if (result.error) {
+                return res.status(400).json({ error: result.error });
+            }
+
+            res.json({
+                success: true,
+                num_routes: result.num_routes,
+                downloadUrl: '/api/route-planning/download-optimized'
+            });
+        } catch (e) {
+            console.error('JSON Parse Error:', pythonOutput);
+            res.status(500).json({ error: 'Failed to parse routing results' });
+        }
     });
 
   } catch (error: any) {

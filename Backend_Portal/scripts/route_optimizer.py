@@ -191,13 +191,23 @@ def main():
             print(json.dumps({"error": "Could not find an optimal solution"}))
             return
 
-        # 5. Map back to DataFrame and calculate AKTBC
+        # 5. Map back to DataFrame and build JSON for frontend
         df['CLUBBING'] = ""
         df['AKTBC'] = 0.0
+        
+        id_col = get_col(['site id', 'site_id', 'siteid', 'enbsiteid'])
+        
+        routes_output = []
 
         for route_idx, site_ids in enumerate(routes_plan):
             route_label = chr(65 + route_idx) # A, B, C...
             prev_node_idx = 0 # Warehouse
+            
+            route_obj = {
+                "routeNumber": route_idx + 1,
+                "label": route_label,
+                "legs": []
+            }
             
             for seq_idx, node_idx in enumerate(site_ids):
                 row_idx = site_indices[node_idx - 1]
@@ -210,7 +220,25 @@ def main():
                 
                 df.at[row_idx, 'CLUBBING'] = f"{route_label}{seq_idx + 1}"
                 df.at[row_idx, 'AKTBC'] = round(dist_km, 2)
+                
+                # Build Leg object for frontend map
+                lat, lng = locations[node_idx]
+                site_id = str(df.at[row_idx, id_col]) if id_col else str(row_idx)
+                
+                route_obj["legs"].append({
+                    "routeLabel": route_label,
+                    "stopSequence": seq_idx + 1,
+                    "distanceKm": round(dist_km, 2),
+                    "site": {
+                        "id": site_id,
+                        "lat": lat,
+                        "lng": lng
+                    }
+                })
+                
                 prev_node_idx = node_idx
+            
+            routes_output.append(route_obj)
 
         # Sort by CLUBBING
         df['sort_key'] = df['CLUBBING'].apply(lambda x: x if x else "ZZZ")
@@ -218,7 +246,13 @@ def main():
 
         # 6. Save Excel
         df.to_excel(output_path, index=False)
-        print(json.dumps({"success": True, "num_routes": len(routes_plan)}))
+        
+        # 7. Final Output
+        print(json.dumps({
+            "success": True, 
+            "num_routes": len(routes_plan),
+            "routes": routes_output
+        }))
 
     except Exception as e:
         print(json.dumps({"error": str(e)}))

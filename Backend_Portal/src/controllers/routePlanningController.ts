@@ -131,6 +131,7 @@ export const generateRoutes = async (req: Request, res: Response) => {
             res.json({
                 success: true,
                 num_routes: result.num_routes,
+                routes: result.routes,
                 downloadUrl: '/api/route-planning/download-optimized'
             });
         } catch (e) {

@@ -1,6 +1,8 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import logisticsRoutes from './routes/logisticsRoutes';
 import teamRoutes from './routes/teamRoutes';
@@ -9,10 +11,8 @@ import financeRoutes from './routes/financeRoutes';
 import documentRoutes from './routes/documentRoutes';
 import path from 'path';
 
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000; // Use 10000 as default for Render if PORT is missing
 
 app.use(cors());
 app.use(express.json());

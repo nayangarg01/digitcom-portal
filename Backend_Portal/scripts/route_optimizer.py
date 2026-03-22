@@ -8,7 +8,6 @@ from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 import openpyxl
 from math import ceil, atan2
-from sklearn.cluster import KMeans
 
 def get_distance_matrix(locations, api_key):
     """
@@ -88,7 +87,6 @@ def solve_tsp_for_cluster(warehouse_coords, cluster_sites, api_key):
     solution = routing.SolveWithParameters(search_parameters)
     
     if not solution:
-        # Fallback to simple radial sort if OR-Tools fails for tiny group
         return sorted(cluster_sites, key=lambda x: x['dist_to_wh'])
 
     # 4. Extract Route
@@ -101,23 +99,17 @@ def solve_tsp_for_cluster(warehouse_coords, cluster_sites, api_key):
         index = solution.Value(routing.NextVar(index))
         
     # 5. USER PREFERENCE: Monotonic Sequence (Closest to Furthest)
-    # The user specifically said "do the sites which fall in our way as we proceed towards farther sites"
-    # Even if OR-Tools suggests a different order, we ensure it's "Progressive".
-    # We sort the nodes in the final route by their distance to the warehouse.
     node_sequence = sorted(node_sequence, key=lambda x: x['dist_to_wh'])
     
     # 6. Calculate legs for the final response
     legs = []
     prev_node_idx = 0
     for i, site in enumerate(node_sequence):
-        # We need the original matrix index to get distance
-        # But since we only have 4 nodes, we can just calculate it from dist_matrix
-        # Node index in dist_matrix for this site is node_sequence.index(site) + 1
+        # Index in dist_matrix is the original order of chunk + 1
         curr_node_idx = cluster_sites.index(site) + 1
         dist_m = dist_matrix[prev_node_idx][curr_node_idx]
         dist_km = dist_m / 1000.0
         
-        # Apply 50km discount to the first leg
         if i == 0:
             dist_km = max(0, dist_km - 50)
             
@@ -151,13 +143,15 @@ def main():
             try:
                 lat, lng = float(row[lat_col]), float(row[lng_col])
                 if not np.isnan(lat) and not np.isnan(lng):
-                    # Calculate distance to warehouse for pre-sort/sequence
+                    # Calculate distance and angle from warehouse
                     dist_to_wh = ((lat - warehouse_coords[0])**2 + (lng - warehouse_coords[1])**2)**0.5
+                    angle = atan2(lat - warehouse_coords[0], lng - warehouse_coords[1])
                     site_data.append({
                         "id": str(row[id_col]) if id_col else str(idx),
                         "coords": (lat, lng),
                         "orig_idx": idx,
-                        "dist_to_wh": dist_to_wh
+                        "dist_to_wh": dist_to_wh,
+                        "angle": angle
                     })
             except: continue
 
@@ -165,34 +159,19 @@ def main():
             print(json.dumps({"error": "No valid sites found"}))
             return
 
-        # 3. Phase 1: Zonal Clustering (K-Means)
-        # Groups sites that are spatially close into "pie slices" or sectors.
-        num_clusters = ceil(len(site_data) / 3)
-        coords_array = np.array([s['coords'] for s in site_data])
+        # 3. Phase 1: Angular Chunking (Strict 3 Groups)
+        # We sort by angle to Warehouse to create "pie-slice" sectors.
+        # This ensures zonal integrity while guaranteeing exactly 3 sites per route 
+        # (until the final remainder group).
+        site_data.sort(key=lambda x: x['angle'])
         
-        # We increase the weight of the "Direction" by using polar coordinates? 
-        # For simplicity, standard K-Means on Lat/Lng works well for regional hubs.
-        kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10).fit(coords_array)
-        
-        clusters = [[] for _ in range(num_clusters)]
-        for i, label in enumerate(kmeans.labels_):
-            clusters[label].append(site_data[i])
-
-        # 4. Phase 2: Solve Sequence for each Cluster
         final_routes = []
-        for cluster in clusters:
-            if not cluster: continue
-            
-            # If cluster > 3 sites (rare with KMeans but possible due to density), 
-            # we split it further or let TSP handle it. 
-            # Given the strict 3-site rule, we split any cluster > 3.
-            chunked_cluster = [cluster[i:i + 3] for i in range(0, len(cluster), 3)]
-            
-            for chunk in chunked_cluster:
-                route_legs = solve_tsp_for_cluster(warehouse_coords, chunk, api_key)
-                final_routes.append(route_legs)
+        for i in range(0, len(site_data), 3):
+            chunk = site_data[i : i + 3]
+            route_legs = solve_tsp_for_cluster(warehouse_coords, chunk, api_key)
+            final_routes.append(route_legs)
 
-        # 5. Finalize Results
+        # 4. Finalize Results
         df['CLUBBING'] = ""
         df['AKTBC'] = 0.0
         routes_json = []
@@ -214,7 +193,6 @@ def main():
                 })
             routes_json.append(route_obj)
 
-        # Sort and Save
         df['sort_key'] = df['CLUBBING'].apply(lambda x: x if x else "ZZZ")
         df = df.sort_values(by='sort_key').drop(columns=['sort_key'])
         df.to_excel(output_path, index=False)

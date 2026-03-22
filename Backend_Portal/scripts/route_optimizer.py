@@ -7,13 +7,12 @@ import json
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 import openpyxl
-from math import ceil
+from math import ceil, atan2
+from sklearn.cluster import KMeans
 
 def get_distance_matrix(locations, api_key):
     """
     Fetch full distance matrix from Google Maps API in parallel batches.
-    Uses 5x5 batches (25 elements) to stay under strict API limits.
-    Adds avoid=highways to encourage shorter, non-highway routes.
     """
     num_locations = len(locations)
     matrix = np.zeros((num_locations, num_locations))
@@ -34,8 +33,6 @@ def get_distance_matrix(locations, api_key):
         origin_str = "|".join([f"{round(lat, 6)},{round(lng, 6)}" for lat, lng in origins_batch])
         dest_str = "|".join([f"{round(lat, 6)},{round(lng, 6)}" for lat, lng in dest_batch])
         
-        # Batching prevents rate-limiting and timeouts
-        # avoid=highways encourages the 237km (shorter) route over 272km (faster)
         url = f"https://maps.googleapis.com/maps/api/distancematrix/json?origins={origin_str}&destinations={dest_str}&avoid=highways&key={api_key}"
         
         try:
@@ -43,254 +40,186 @@ def get_distance_matrix(locations, api_key):
             if response['status'] == 'OK':
                 return (start_i, start_j, response['rows'])
             else:
-                sys.stderr.write(f"API ERROR: {response.get('status')}\n")
                 return (start_i, start_j, None)
-        except Exception as e:
-            sys.stderr.write(f"FETCH ERROR: {str(e)}\n")
+        except:
             return (start_i, start_j, None)
 
-    # Use 10 workers for speed
     with ThreadPoolExecutor(max_workers=10) as executor:
         results = list(executor.map(fetch_batch, batches))
 
     for start_i, start_j, rows in results:
-        if rows is None:
-            continue
+        if rows is None: continue
         for row_idx, row in enumerate(rows):
             for col_idx, element in enumerate(row['elements']):
                 if element['status'] == 'OK':
                     matrix[start_i + row_idx][start_j + col_idx] = element['distance']['value']
                 else:
                     matrix[start_i + row_idx][start_j + col_idx] = 999999
-    
     return matrix
 
-def solve_cvrp(distance_matrix, num_sites, capacity=3):
+def solve_tsp_for_cluster(warehouse_coords, cluster_sites, api_key):
     """
-    Solve Capacitated Vehicle Routing Problem using OR-Tools.
+    Solve TSP for a small cluster (max 3 sites) + Warehouse.
+    Always follows the "Closest to Furthest" sequence requested by the user.
     """
-    # Apply the 50km (50,000m) discount to the first leg of each potential route 
-    # to ensure the solver knows about the cost reduction.
-    matrix_discounted = distance_matrix.copy()
-    for i in range(1, num_sites + 1):
-        # Subtract 50km from warehouse-to-site trips
-        current_dist = matrix_discounted[0][i]
-        matrix_discounted[0][i] = max(0, current_dist - 50000)
-
-    # Depot is index 0 (Warehouse)
-    data = {}
-    data['distance_matrix'] = matrix_discounted.astype(int).tolist()
-    data['raw_matrix'] = distance_matrix.astype(int).tolist() # Keep for final reporting
-    data['demands'] = [0] + [1] * num_sites
-    data['num_vehicles'] = ceil(num_sites / capacity)
-    data['vehicle_capacities'] = [capacity] * data['num_vehicles']
-    data['depot'] = 0
-
-    # Create the routing index manager.
-    manager = pywrapcp.RoutingIndexManager(len(data['distance_matrix']),
-                                           data['num_vehicles'], data['depot'])
-
-    # Create Routing Model.
+    # 1. Prepare locations: [Warehouse, Site1, Site2, Site3]
+    locations = [warehouse_coords] + [s['coords'] for s in cluster_sites]
+    num_nodes = len(locations)
+    
+    # 2. Get Distance Matrix for this small group
+    dist_matrix = get_distance_matrix(locations, api_key)
+    
+    # 3. Solve for shortest sequence starting at Warehouse (Depot)
+    manager = pywrapcp.RoutingIndexManager(num_nodes, 1, 0)
     routing = pywrapcp.RoutingModel(manager)
 
-    # Create and register a transit callback.
     def distance_callback(from_index, to_index):
-        """Returns the distance between the two nodes."""
         from_node = manager.IndexToNode(from_index)
         to_node = manager.IndexToNode(to_index)
-        return data['distance_matrix'][from_node][to_node]
+        return int(dist_matrix[from_node][to_node])
 
     transit_callback_index = routing.RegisterTransitCallback(distance_callback)
-
-    # Define cost of each arc.
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
-    # IMPORTANT: Fixed cost per vehicle to force maximum occupancy (Strict 3)
-    routing.SetFixedCostOfAllVehicles(100000)
-
-    # Add Capacity constraint.
-    def demand_callback(from_index):
-        """Returns the demand of the node."""
-        from_node = manager.IndexToNode(from_index)
-        return data['demands'][from_node]
-
-    demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
-    dimension_name = 'Capacity'
-    routing.AddDimensionWithVehicleCapacity(
-        demand_callback_index,
-        0,  # null capacity slack
-        data['vehicle_capacities'],  # vehicle maximum capacities
-        True,  # start cumul to zero
-        dimension_name)
-    
-    # NEW: Penalize the "Span" (max distance) of each individual route.
-    # This forces the solver to keep routes compact and balanced, 
-    # preventing "spaghetti" routes that steal distant sites from other zones.
-    capacity_dimension = routing.GetDimensionOrDie(dimension_name)
-    capacity_dimension.SetGlobalSpanCostCoefficient(100)
-
-    # Setting first solution heuristic.
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
-    # SAVINGS is much better for preventing "spaghetti" routes and creating clean clusters
     search_parameters.first_solution_strategy = (
-        routing_enums_pb2.FirstSolutionStrategy.SAVINGS)
-    search_parameters.local_search_metaheuristic = (
-        routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
-    search_parameters.time_limit.seconds = 30
-
-    # Solve the problem.
+        routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+    
     solution = routing.SolveWithParameters(search_parameters)
-
+    
     if not solution:
-        return None, None
+        # Fallback to simple radial sort if OR-Tools fails for tiny group
+        return sorted(cluster_sites, key=lambda x: x['dist_to_wh'])
 
-    # Extract and Optimize Sequence (Home-Sweep)
-    routes = []
-    for vehicle_id in range(data['num_vehicles']):
-        index = routing.Start(vehicle_id)
-        route = []
-        while not routing.IsEnd(index):
-            node_index = manager.IndexToNode(index)
-            if node_index != 0: # Skip depot in the middle
-                route.append(node_index)
-            index = solution.Value(routing.NextVar(index))
+    # 4. Extract Route
+    index = routing.Start(0)
+    node_sequence = []
+    while not routing.IsEnd(index):
+        node_index = manager.IndexToNode(index)
+        if node_index != 0:
+            node_sequence.append(cluster_sites[node_index - 1])
+        index = solution.Value(routing.NextVar(index))
         
-        if route:
-            # NEW: "Home-Sweep" Visual Optimization
-            # We compare the distance of the first site vs the last site from the warehouse.
-            # If the last site is further away than the first site, we reverse the route 
-            # so the vehicle "sweeps" back towards home. Total round-trip distance stays same.
-            first_dist = data['raw_matrix'][0][route[0]]
-            last_dist = data['raw_matrix'][0][route[-1]]
-            if last_dist > first_dist:
-                route.reverse()
+    # 5. USER PREFERENCE: Monotonic Sequence (Closest to Furthest)
+    # The user specifically said "do the sites which fall in our way as we proceed towards farther sites"
+    # Even if OR-Tools suggests a different order, we ensure it's "Progressive".
+    # We sort the nodes in the final route by their distance to the warehouse.
+    node_sequence = sorted(node_sequence, key=lambda x: x['dist_to_wh'])
+    
+    # 6. Calculate legs for the final response
+    legs = []
+    prev_node_idx = 0
+    for i, site in enumerate(node_sequence):
+        # We need the original matrix index to get distance
+        # But since we only have 4 nodes, we can just calculate it from dist_matrix
+        # Node index in dist_matrix for this site is node_sequence.index(site) + 1
+        curr_node_idx = cluster_sites.index(site) + 1
+        dist_m = dist_matrix[prev_node_idx][curr_node_idx]
+        dist_km = dist_m / 1000.0
+        
+        # Apply 50km discount to the first leg
+        if i == 0:
+            dist_km = max(0, dist_km - 50)
             
-            routes.append(route)
-    return routes, data['raw_matrix']
+        legs.append({
+            "site": site,
+            "dist_km": round(dist_km, 2)
+        })
+        prev_node_idx = curr_node_idx
+        
+    return legs
 
 def main():
     if len(sys.argv) < 5:
         print(json.dumps({"error": "Missing arguments"}))
         return
 
-    file_path = sys.argv[1]
-    origin_lat = float(sys.argv[2])
-    origin_lng = float(sys.argv[3])
-    api_key = sys.argv[4]
-    output_path = sys.argv[5]
+    file_path, origin_lat, origin_lng, api_key, output_path = sys.argv[1:6]
+    warehouse_coords = (float(origin_lat), float(origin_lng))
 
     try:
         # 1. Load Data
-        if file_path.endswith('.xlsx') or file_path.endswith('.xls'):
-            df = pd.read_excel(file_path)
-        else:
-            df = pd.read_csv(file_path)
-
-        # 2. Extract Sites with flexible header matching
-        def get_col(candidates):
-            for c in candidates:
-                for col in df.columns:
-                    if col.strip().lower() == c.lower():
-                        return col
-            return None
-
-        lat_col = get_col(['latitude', 'lat', 'lat '])
-        lng_col = get_col(['longitude', 'lng', 'lon', 'long'])
+        df = pd.read_excel(file_path) if file_path.endswith(('.xlsx', '.xls')) else pd.read_csv(file_path)
         
-        if not lat_col or not lng_col:
-            print(json.dumps({"error": "Latitude or Longitude columns missing"}))
-            return
+        # 2. Extract Sites
+        lat_col = next((c for c in df.columns if c.strip().lower() in ['latitude', 'lat', 'lat ']), None)
+        lng_col = next((c for c in df.columns if c.strip().lower() in ['longitude', 'lng', 'lon', 'long']), None)
+        id_col = next((c for c in df.columns if c.strip().lower() in ['site id', 'site_id', 'siteid', 'enbsiteid']), None)
 
-        # Prepare locations list: Warehouse at index 0, then sites
-        locations = [(origin_lat, origin_lng)]
-        site_indices = []
+        site_data = []
         for idx, row in df.iterrows():
             try:
-                lat = float(row[lat_col])
-                lng = float(row[lng_col])
+                lat, lng = float(row[lat_col]), float(row[lng_col])
                 if not np.isnan(lat) and not np.isnan(lng):
-                    locations.append((lat, lng))
-                    site_indices.append(idx)
-            except:
-                continue
+                    # Calculate distance to warehouse for pre-sort/sequence
+                    dist_to_wh = ((lat - warehouse_coords[0])**2 + (lng - warehouse_coords[1])**2)**0.5
+                    site_data.append({
+                        "id": str(row[id_col]) if id_col else str(idx),
+                        "coords": (lat, lng),
+                        "orig_idx": idx,
+                        "dist_to_wh": dist_to_wh
+                    })
+            except: continue
 
-        num_sites = len(locations) - 1
-        if num_sites == 0:
+        if not site_data:
             print(json.dumps({"error": "No valid sites found"}))
             return
 
-        # 3. Get Distances
-        dist_matrix = get_distance_matrix(locations, api_key)
+        # 3. Phase 1: Zonal Clustering (K-Means)
+        # Groups sites that are spatially close into "pie slices" or sectors.
+        num_clusters = ceil(len(site_data) / 3)
+        coords_array = np.array([s['coords'] for s in site_data])
+        
+        # We increase the weight of the "Direction" by using polar coordinates? 
+        # For simplicity, standard K-Means on Lat/Lng works well for regional hubs.
+        kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10).fit(coords_array)
+        
+        clusters = [[] for _ in range(num_clusters)]
+        for i, label in enumerate(kmeans.labels_):
+            clusters[label].append(site_data[i])
 
-        # 4. Solve CVRP
-        routes_plan, raw_matrix = solve_cvrp(dist_matrix, num_sites)
-        if not routes_plan:
-            print(json.dumps({"error": "Could not find an optimal solution"}))
-            return
+        # 4. Phase 2: Solve Sequence for each Cluster
+        final_routes = []
+        for cluster in clusters:
+            if not cluster: continue
+            
+            # If cluster > 3 sites (rare with KMeans but possible due to density), 
+            # we split it further or let TSP handle it. 
+            # Given the strict 3-site rule, we split any cluster > 3.
+            chunked_cluster = [cluster[i:i + 3] for i in range(0, len(cluster), 3)]
+            
+            for chunk in chunked_cluster:
+                route_legs = solve_tsp_for_cluster(warehouse_coords, chunk, api_key)
+                final_routes.append(route_legs)
 
-        # 5. Map back to DataFrame and build JSON for frontend
+        # 5. Finalize Results
         df['CLUBBING'] = ""
         df['AKTBC'] = 0.0
-        
-        id_col = get_col(['site id', 'site_id', 'siteid', 'enbsiteid'])
-        
-        routes_output = []
+        routes_json = []
 
-        for route_idx, site_ids in enumerate(routes_plan):
-            route_label = chr(65 + route_idx) # A, B, C...
-            prev_node_idx = 0 # Warehouse
+        for r_idx, route in enumerate(final_routes):
+            label = chr(65 + r_idx)
+            route_obj = {"routeNumber": r_idx + 1, "label": label, "legs": []}
             
-            route_obj = {
-                "routeNumber": route_idx + 1,
-                "label": route_label,
-                "legs": []
-            }
-            
-            for seq_idx, node_idx in enumerate(site_ids):
-                row_idx = site_indices[node_idx - 1]
-                # Use raw_matrix (actual distances) for reporting
-                dist_meters = raw_matrix[prev_node_idx][node_idx]
-                dist_km = dist_meters / 1000.0
-                
-                # Special 50km rule for first leg
-                if seq_idx == 0:
-                    dist_km = max(0, dist_km - 50)
-                
-                df.at[row_idx, 'CLUBBING'] = f"{route_label}{seq_idx + 1}"
-                df.at[row_idx, 'AKTBC'] = round(dist_km, 2)
-                
-                # Build Leg object for frontend map
-                lat, lng = locations[node_idx]
-                site_id = str(df.at[row_idx, id_col]) if id_col else str(row_idx)
+            for s_idx, leg in enumerate(route):
+                site = leg['site']
+                df.at[site['orig_idx'], 'CLUBBING'] = f"{label}{s_idx + 1}"
+                df.at[site['orig_idx'], 'AKTBC'] = leg['dist_km']
                 
                 route_obj["legs"].append({
-                    "routeLabel": route_label,
-                    "stopSequence": seq_idx + 1,
-                    "distanceKm": round(dist_km, 2),
-                    "site": {
-                        "id": site_id,
-                        "lat": lat,
-                        "lng": lng
-                    }
+                    "routeLabel": label,
+                    "stopSequence": s_idx + 1,
+                    "distanceKm": leg['dist_km'],
+                    "site": {"id": site['id'], "lat": site['coords'][0], "lng": site['coords'][1]}
                 })
-                
-                prev_node_idx = node_idx
-            
-            routes_output.append(route_obj)
+            routes_json.append(route_obj)
 
-        # Sort by CLUBBING
+        # Sort and Save
         df['sort_key'] = df['CLUBBING'].apply(lambda x: x if x else "ZZZ")
         df = df.sort_values(by='sort_key').drop(columns=['sort_key'])
-
-        # 6. Save Excel
         df.to_excel(output_path, index=False)
         
-        # 7. Final Output
-        print(json.dumps({
-            "success": True, 
-            "num_routes": len(routes_plan),
-            "routes": routes_output
-        }))
+        print(json.dumps({"success": True, "num_routes": len(final_routes), "routes": routes_json}))
 
     except Exception as e:
         print(json.dumps({"error": str(e)}))

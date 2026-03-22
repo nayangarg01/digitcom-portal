@@ -11,46 +11,57 @@ from math import ceil
 
 def get_distance_matrix(locations, api_key):
     """
-    Fetch distance matrix by discovering the absolute shortest path for each pair.
-    Uses Directions API with alternatives=true to override "Fastest" bias.
+    Fetch full distance matrix from Google Maps API in parallel batches.
+    Uses 5x5 batches (25 elements) to stay under strict API limits.
+    Adds avoid=highways to encourage shorter, non-highway routes.
     """
     num_locations = len(locations)
     matrix = np.zeros((num_locations, num_locations))
+    batch_size = 5
     
     from concurrent.futures import ThreadPoolExecutor
-    
-    pairs = []
-    for i in range(num_locations):
-        for j in range(num_locations):
-            if i != j:
-                pairs.append((i, j))
 
-    def fetch_shortest_distance(pair):
-        i, j = pair
-        origin = f"{round(locations[i][0], 6)},{round(locations[i][1], 6)}"
-        dest = f"{round(locations[j][0], 6)},{round(locations[j][1], 6)}"
+    batches = []
+    for i in range(0, num_locations, batch_size):
+        for j in range(0, num_locations, batch_size):
+            batches.append((i, j))
+
+    def fetch_batch(coords):
+        start_i, start_j = coords
+        origins_batch = locations[start_i : min(start_i + batch_size, num_locations)]
+        dest_batch = locations[start_j : min(start_j + batch_size, num_locations)]
         
-        # Use alternatives=true to see Shortest vs Fastest
-        url = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={dest}&alternatives=true&key={api_key}"
+        origin_str = "|".join([f"{round(lat, 6)},{round(lng, 6)}" for lat, lng in origins_batch])
+        dest_str = "|".join([f"{round(lat, 6)},{round(lng, 6)}" for lat, lng in dest_batch])
+        
+        # Batching prevents rate-limiting and timeouts
+        # avoid=highways encourages the 237km (shorter) route over 272km (faster)
+        url = f"https://maps.googleapis.com/maps/api/distancematrix/json?origins={origin_str}&destinations={dest_str}&avoid=highways&key={api_key}"
         
         try:
             response = requests.get(url).json()
             if response['status'] == 'OK':
-                # Pick the absolute minimum distance from all alternatives
-                distances = [r['legs'][0]['distance']['value'] for r in response['routes']]
-                return (i, j, min(distances))
+                return (start_i, start_j, response['rows'])
             else:
-                return (i, j, 999999)
-        except:
-            return (i, j, 999999)
+                sys.stderr.write(f"API ERROR: {response.get('status')}\n")
+                return (start_i, start_j, None)
+        except Exception as e:
+            sys.stderr.write(f"FETCH ERROR: {str(e)}\n")
+            return (start_i, start_j, None)
 
-    # Use 25 workers for high-speed parallel discovery
-    sys.stderr.write(f"DEBUG: Starting Shortest-Path Discovery for {len(pairs)} pairs...\n")
-    with ThreadPoolExecutor(max_workers=25) as executor:
-        results = list(executor.map(fetch_shortest_distance, pairs))
+    # Use 10 workers for speed
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = list(executor.map(fetch_batch, batches))
 
-    for i, j, dist in results:
-        matrix[i][j] = dist
+    for start_i, start_j, rows in results:
+        if rows is None:
+            continue
+        for row_idx, row in enumerate(rows):
+            for col_idx, element in enumerate(row['elements']):
+                if element['status'] == 'OK':
+                    matrix[start_i + row_idx][start_j + col_idx] = element['distance']['value']
+                else:
+                    matrix[start_i + row_idx][start_j + col_idx] = 999999
     
     return matrix
 

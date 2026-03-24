@@ -673,6 +673,16 @@ ul {
 }
 
 @media (max-width: 768px) {
+    .container { padding: 0 20px; }
+    
+    .nav-container {
+        height: 70px;
+    }
+
+    .logo img {
+        height: 45px;
+    }
+
     /* Navbar Styles for Mobile */
     .nav-links {
         display: flex;
@@ -709,6 +719,13 @@ ul {
     .nav-links.active a {
         opacity: 1;
         transform: translateY(0);
+    }
+
+    .nav-links .portal-link {
+        color: white !important;
+        margin-top: 1rem;
+        width: auto;
+        padding: 12px 30px !important;
     }
 
     /* Mobile Dropdown Logic */

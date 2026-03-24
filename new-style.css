@@ -676,11 +676,41 @@ ul {
     .container { padding: 0 20px; }
     
     .nav-container {
-        height: 70px;
+        height: 110px;
+        justify-content: center;
+        position: relative;
+    }
+
+    .logo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     .logo img {
-        height: 45px;
+        height: 70px;
+        max-width: 280px;
+    }
+
+    .mobile-menu-btn {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%) !important;
+        display: block;
+        z-index: 1000;
+        color: var(--text-main);
+        background: none;
+        border: none;
+        font-size: 2.2rem;
+        cursor: pointer;
+        padding: 5px;
+        transition: transform 0.3s ease;
+    }
+
+    .mobile-menu-btn.active {
+        transform: rotate(90deg);
+        color: var(--text-main);
     }
 
     /* Navbar Styles for Mobile */
@@ -752,23 +782,6 @@ ul {
         font-size: 1.1rem;
         padding: 1rem;
         color: var(--text-muted) !important;
-    }
-
-    .mobile-menu-btn {
-        display: block;
-        z-index: 1000;
-        color: var(--text-main);
-        background: none;
-        border: none;
-        font-size: 2rem;
-        cursor: pointer;
-        padding: 10px;
-        transition: transform 0.3s ease;
-    }
-
-    .mobile-menu-btn.active {
-        transform: rotate(90deg);
-        color: var(--text-main);
     }
 
     /* Body scroll lock */

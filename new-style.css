@@ -684,20 +684,22 @@ ul {
         right: -100%;
         width: 100%;
         height: 100vh;
-        background: var(--secondary);
+        background: var(--bg-main);
         transition: right 0.5s cubic-bezier(0.7, 0, 0.3, 1);
         z-index: 999;
         gap: 2rem;
         padding-top: 80px;
+        visibility: hidden;
     }
 
     .nav-links.active {
         right: 0;
+        visibility: visible;
     }
 
     .nav-links a {
         font-size: 1.25rem;
-        color: white !important;
+        color: var(--text-main) !important;
         font-weight: 500;
         opacity: 0;
         transform: translateY(20px);
@@ -732,7 +734,7 @@ ul {
     .dropdown-content a {
         font-size: 1.1rem;
         padding: 1rem;
-        color: rgba(255,255,255,0.7) !important;
+        color: var(--text-muted) !important;
     }
 
     .mobile-menu-btn {
@@ -741,7 +743,7 @@ ul {
         color: var(--text-main);
         background: none;
         border: none;
-        font-size: 1.5rem;
+        font-size: 2rem;
         cursor: pointer;
         padding: 10px;
         transition: transform 0.3s ease;
@@ -749,7 +751,7 @@ ul {
 
     .mobile-menu-btn.active {
         transform: rotate(90deg);
-        color: white;
+        color: var(--text-main);
     }
 
     /* Body scroll lock */

@@ -1,174 +1,184 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-<meta charset="UTF-8">
-<title>:: Home | Digitcom India Technologies ::</title>
-<meta name="description" content="">
-<meta name="keywords" content="">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<link href='http://fonts.googleapis.com/css?family=Signika:600,400,300' rel='stylesheet' type='text/css'>
-<link href="style.css" rel="stylesheet" type="text/css" media="screen">
-<link href="style-headers.css" rel="stylesheet" type="text/css" media="screen">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outdoor Media | Digitcom India Technologies</title>
+    <meta name="description"
+        content="Comprehensive out-of-home advertising solutions reaching consumers in public places and transit.">
+    <!-- Modern Sans-serif Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="new-style.css">
+    <script src="scripts/main.js" defer></script>
+    <style>
+        .page-header {
+            padding: 160px 2rem 60px;
+            background-color: var(--bg-alt);
+            text-align: center;
+            margin-top: 120px;
+        }
+
+        .page-header h1 {
+            font-size: 3.5rem;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+        }
+
+        .page-header p {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .service-content {
+            padding: 80px 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        @media (min-width: 992px) {
+            .service-content {
+                grid-template-columns: 1.2fr 0.8fr;
+            }
+        }
+
+        .service-text h3 {
+            font-size: 2rem;
+            margin-bottom: 25px;
+            color: var(--text-dark);
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .service-text h3::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 60px;
+            height: 3px;
+            background: var(--accent);
+        }
+
+        .service-text p {
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: var(--text-light);
+            margin-bottom: 25px;
+        }
+
+        .service-image img {
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 { font-size: 2.5rem; }
+            .service-content { padding: 40px 1.5rem; gap: 40px; }
+        }
+    </style>
 </head>
 
-<body class="home">
-<div class="root">
-  <header class="h3 sticky-enabled no-topbar">
-    <section class="top">
-      <div>
-        <p>Call us: +91-9311322320 &nbsp;&nbsp;|&nbsp;&nbsp; E-mail: <a href="mailto:info@digitcomindia.com" style="color:#3f3f3f">info@digitcomindia.com</a></p>
-      </div>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container container">
+            <a href="index.html" class="logo">
+                <img src="images/logo.jpg" alt="Digitcom India Technologies Logo">
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="company-profile.html">About Us</a>
+                <div class="dropdown">
+                    <a href="index.html#services" class="dropbtn active">Services</a>
+                    <div class="dropdown-content">
+                        <a href="mobile-networks.html">Mobile Networks</a>
+                        <a href="vsat.html">VSAT</a>
+                        <a href="fm.html">FM Broadcasting</a>
+                        <a href="outdoor-media.html">Outdoor Media</a>
+                    </div>
+                </div>
+                <a href="gallery.html">Gallery</a>
+                <a href="clients.html">Clients</a>
+                <a href="contact.html">Contact</a>
+                <a href="portal/index.html" class="portal-link">Portal</a>
+            </div>
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <h1>Outdoor Media Solutions</h1>
+            <p>Elevating brand presence through strategic out-of-home advertising across high-impact public spaces.</p>
+        </div>
+    </header>
+
+    <!-- Content Section -->
+    <section class="service-content container">
+        <div class="service-text">
+            <h3>Strategic Visibility</h3>
+            <p>
+                Out-of-home (OOH) advertising or outdoor advertising, also known as out-of-home media or outdoor media, is advertising that reaches the consumers while they are outside their homes.
+            </p>
+            <p>
+                Our out-of-home media advertising is focused on marketing to consumers when they are "on the go" in public places, in transit, waiting (such as in a medical office), and/or in specific commercial locations (such as in a retail venue). 
+            </p>
+            <p>
+                OOH advertising formats fall into six main categories: billboards, street furniture, roads, highways, transit, and alternative media. We provide the technical support and structural expertise to deploy these solutions across diverse terrains.
+            </p>
+        </div>
+        <div class="service-image">
+            <img src="images/temp/82.jpg" alt="Outdoor Media Solutions">
+        </div>
     </section>
-    <section class="main-header">
-    <div class="title one-logo"><a href="index.html"><img src="images/logo.png" alt="logo"></a> </div>
-      <nav class="mainmenu">
-        <ul>
-          <li><a href="index.html">Home</a></li>
-          <li><a href="company-profile.html">About US</a>
-            <ul>
-              <li><a href="company-profile.html">Company Profile</a></li>
-             
-            </ul>
-          </li>
-          <li class="current-menu-item"><a href="#">Products & Services</a>
-            <ul>
-              <li><a href="vsat.html">VSAT</a></li>
-              <li><a href="mobile-networks.html">Mobile Networks</a></li>
-              <li><a href="fm.html">FM broadcasting</a></li>
-              <li><a href="outdoor-media.html">Outdoor Media</a></li>
-            </ul>
-          </li>
-          <li ><a href="gallery.html">Gallery</a></li>
-          <li><a href="clients.html">Clients</a></li>
-          <li><a href="career.html">Carrier</a></li>
-          <li><a href="contact.html">Contact</a></li>
-        </ul>
-         <select id="sec-nav" name="sec-nav">
-          <option>Main Menu</option>
-          <option value="index.html">Home</option>
-          <option value="landing-page.html">- About Us</option>
-          <option value="company-profile.html">- Company Profile</option>
-        
-          <option>- Products & Services</option>
-          <option value="vsat.html">- VSAT</option>
-          <option value="mobile-networks.html" selected="selected">- Telecom</option>
-          <option value="fm.html">- FM broadcasting</option>
-          <option value="outdoor-media.html">- Outdoor Media</option>
-		   <option value="gallery.html">Gallery</option>
-          
-          <option value="career.html">- Career</option>
-          <option value="contact.html">- Contact</option>
-        </select>
-      </nav>
-      <div class="clear"></div>
-    </section>
-  </header>
-  
-  <div class="ttm-page-title-row bann1">
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="index.html" class="logo">
+                    <img src="images/logo.jpg" alt="Digitcom India Technologies Logo">
+                </a>
+                <p>Connecting the nation through premier telecom infrastructure and specialized technical support.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <a href="index.html">Home</a>
+                <a href="company-profile.html">About Us</a>
+                <a href="career.html">Careers</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div class="footer-links">
+                <h4>Services</h4>
+                <a href="mobile-networks.html">Mobile Networks</a>
+                <a href="vsat.html">VSAT Services</a>
+                <a href="fm.html">FM Broadcasting</a>
+                <a href="outdoor-media.html">Outdoor Media</a>
+            </div>
+            <div class="footer-contact">
+                <h4>Get in Touch</h4>
+                <p>A-308 BHUTANI ALPHATHUM SECTOR 90 NOIDA 201315</p>
+                <p>📞 +91 9311322320</p>
+                <p>📞 +91 9811322320</p>
+                <p>✉️ <a href="mailto:info@digitcomindia.com">info@digitcomindia.com</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
             <div class="container">
-                <div class="row">
-                    <div class="col-md-12"> 
-                        <div class="title-box ttm-textcolor-white">
-                            <!-- <div class="page-title-heading">
-                                <h1 class="title">About Us</h1>
-                               
-                            </div> --><!-- /.page-title-captions -->
-                           <!--  <div class="breadcrumb-wrapper">
-                                <div class="container">
-                                    <div class="breadcrumb-wrapper-inner">
-                                        <span>
-                                            <a title="Go to Delmont." href="index.html" class="home">
-											&nbsp;&nbsp;Home</a>
-                                        </span>
-                                        <span class="ttm-bread-sep">&nbsp; | &nbsp;</span>
-                                        <span>About Us</span>
-                                    </div>
-                                </div>
-                            </div> -->
-                        </div>
-                    </div><!-- /.col-md-12 -->  
-                </div><!-- /.row -->  
-            </div><!-- /.container -->                      
-        <div></div></div>
-  
-  <section class="breadcrumb p07">
-    <p><a href="#">Home</a> Outdoor Media</p>
-  </section>
-  <section class="content contact">
-    <article class="main">
-    <h3 style="border-bottom: 1px solid #dfdfdf;    font-size: 1.5em;    margin-top: 15px;"><span>Outdoor Media</span></h3>
-      <p>Out-of-home (OOH) advertising or outdoor advertising, also known as out-of-home media or outdoor media, is advertising that reaches the consumers while they are outside their homes.</p>
-<p>
-Out-of-home media advertising is focused on marketing to consumers when they are "on the go" in public places, in transit, waiting (such as in a medical office), and/or in specific commercial locations (such as in a retail venue). OOH advertising formats fall into six main categories: billboards, street, roads, highways, transit, and alternative.</p>
-      
-    </article>
-    <aside>
-      <section style="padding-top:42px">
-        <img src="images/temp/82.jpg">
-          
-      </section>
-      
-      
-    </aside>
-  </section>
-   <footer>
-    <section class="widgets">
-      <article>
-        <h3><span>Digitcom India Technologies</span></h3>
-        <p>01082, ATS Paradiso<br>
-Sector Chi IV Greater Noida<br>
-Distt. Gautam Budh Nagar (U.P.), INDIA
-      </article>
-      <article class="widget_links">
-        <h3><span>Quick Links</span></h3>
-        <ul>
-         
-          <li><a href="company-profile.html">About Us</a></li>
-         
-          <li><a href="clients.html">Clients</a></li>
-          <li><a href="career.html">Career</a></li>
-          <li><a href="contact.html">Contact</a></li>
-        </ul>
-      </article>
-      <article class="widget_links">
-        <h3><span>Products &amp; Services</span></h3>
-        <ul>
-          <li><a href="vsat.html">VSAT Network Services</a></li>
-          <li><a href="mobile-networks.html">Mobile Networks</a></li>
-          <li><a href="fm.htmls">FM broadcasting</a></li>
-          <li><a href="outdoor-media.html">Outdoor Media</a></li>
-        </ul>
-      </article>
-      <article class="widget_links">
-        <h3><span>Connect with us</span></h3>
-      <!--   <nav class="social">
-          <ul>
-            <li><a href="#" class="facebook">Facebook</a></li>
-            <li><a href="#" class="twitter">Twitter</a></li>
-            <li><a href="#" class="googleplus">Google+</a></li>
-            <li><a href="#" class="pinterest">Pinterest</a></li>
-            <li><a href="#" class="rss">RSS</a></li>
-          </ul>
-        </nav> -->
-		<span class="phn">
-          Phone<br>
-          +91 9311322320<br>
-          +91 9811322320 <br>
-          
-          E-mail: <a href="mailto:Info@digitcomindia.com">Info@digitcomindia.com</a></p></span>
-      </article>
-    </section>
-    <section class="bottom">
-      <p class="col2">Copyright 2020 Digitcom India | All rights reserved </p>
-	  <p class="col2" style="text-align:right;"> Powered by <a target="_blank" href="https://digitalsparx.com">Digital Sparx Technologies </a></p>
-    </section>
-	
-	
-  </footer>
-</div>
-<script data-cfasync="false" src="cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="text/javascript" src="js/jquery.js"></script> 
-<script type="text/javascript" src="js/scripts.js"></script>
+                <p>&copy; 2026 Digitcom India Technologies. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 </body>
 
 </html>

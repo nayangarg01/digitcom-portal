@@ -1,156 +1,199 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-<meta charset="UTF-8">
-<title>:: Home | Digitcom India Technologies ::</title>
-<meta name="description" content="">
-<meta name="keywords" content="">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<link href='http://fonts.googleapis.com/css?family=Signika:600,400,300' rel='stylesheet' type='text/css'>
-<link href="style.css" rel="stylesheet" type="text/css" media="screen">
-<link href="style-headers.css" rel="stylesheet" type="text/css" media="screen">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products & Services | Digitcom India Technologies</title>
+    <meta name="description"
+        content="Explore our wide range of telecom solutions, from VSAT networks and Mobile Networks to FM Broadcasting and Outdoor Media.">
+    <!-- Modern Sans-serif Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="new-style.css">
+    <script src="scripts/main.js" defer></script>
+    <style>
+        .page-header {
+            padding: 160px 2rem 60px;
+            background-color: var(--bg-alt);
+            text-align: center;
+            margin-top: 120px;
+        }
+
+        .page-header h1 {
+            font-size: 3.5rem;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+        }
+
+        .services-grid {
+            padding: 80px 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .service-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-color: var(--accent);
+        }
+
+        .service-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .service-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+        }
+
+        .service-card p {
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .service-card .btn-small {
+            display: inline-block;
+            padding: 10px 25px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .service-card .btn-small:hover {
+            background: var(--secondary);
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 { font-size: 2.5rem; }
+            .services-grid { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
+
 <body>
-<div class="root">
-  <header class="h3 sticky-enabled no-topbar">
-    <section class="top">
-      <div>
-        <p>Call us: +91-9311322320 &nbsp;&nbsp;|&nbsp;&nbsp; E-mail: <a href="mailto:info@digitcomindia.com" style="color:#3f3f3f">info@digitcomindia.com</a></p>
-      </div>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container container">
+            <a href="index.html" class="logo">
+                <img src="images/logo.jpg" alt="Digitcom India Technologies Logo">
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="company-profile.html">About Us</a>
+                <div class="dropdown">
+                    <a href="index.html#services" class="dropbtn active">Services</a>
+                    <div class="dropdown-content">
+                        <a href="mobile-networks.html">Mobile Networks</a>
+                        <a href="vsat.html">VSAT</a>
+                        <a href="fm.html">FM Broadcasting</a>
+                        <a href="outdoor-media.html">Outdoor Media</a>
+                    </div>
+                </div>
+                <a href="gallery.html">Gallery</a>
+                <a href="clients.html">Clients</a>
+                <a href="contact.html">Contact</a>
+                <a href="portal/index.html" class="portal-link">Portal</a>
+            </div>
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <h1>Expert Solutions</h1>
+            <p>Providing high-end technical support and infrastructure for India's leading connectivity providers.</p>
+        </div>
+    </header>
+
+    <!-- Services Grid -->
+    <section class="services-grid">
+        <div class="service-card">
+            <img src="images/temp/79.jpg" alt="VSAT">
+            <h3>VSAT Networks</h3>
+            <p>High speed, broadband satellite communications for Internet or private network communications in remote locations.</p>
+            <a href="vsat.html" class="btn-small">Learn More</a>
+        </div>
+        <div class="service-card">
+            <img src="images/temp/80.jpg" alt="Mobile Networks">
+            <h3>Telecom Infrastructure</h3>
+            <p>Complete rollout solutions for cellular networks, including site acquisition, construction, and technical support.</p>
+            <a href="mobile-networks.html" class="btn-small">Learn More</a>
+        </div>
+        <div class="service-card">
+            <img src="images/temp/81.jpg" alt="FM broadcasting">
+            <h3>FM Broadcasting</h3>
+            <p>State-of-the-art technical support and setup for FM radio stations across the nation, ensuring maximum reach.</p>
+            <a href="fm.html" class="btn-small">Learn More</a>
+        </div>
+        <div class="service-card">
+            <img src="images/temp/82.jpg" alt="Outdoor Media">
+            <h3>Outdoor Media</h3>
+            <p>Strategic out-of-home advertising solutions reaching consumers in public places, transit, and commercial locations.</p>
+            <a href="outdoor-media.html" class="btn-small">Learn More</a>
+        </div>
     </section>
-    <section class="main-header">
-     <div class="title one-logo"><a href="index.html"><img src="images/logo.png" alt="logo"></a> </div>
-      <nav class="mainmenu">
-        <ul>
-          <li><a href="index.html">Home</a></li>
-          <li><a href="company-profile.html">About US</a>
-            <ul>
-              <li><a href="company-profile.html">Company Profile</a></li>
-            
-            </ul>
-          </li>
-          <li class="current-menu-item"><a href="#">Products & Services</a>
-            <ul>
-              <li><a href="vsat.html">VSAT</a></li>
-              <li><a href="mobile-networks.html">Mobile Networks</a></li>
-              <li><a href="fm.html">FM broadcasting</a></li>
-              <li><a href="outdoor-media.html">Outdoor Media</a></li>
-            </ul>
-          </li>
-         <li ><a href="gallery.html">Gallery</a></li>
-          <li><a href="clients.html">Clients</a></li>
-          <li><a href="career.html">Carrier</a></li>
-          <li><a href="contact.html">Contact</a></li>
-        </ul>
-         <select id="sec-nav" name="sec-nav">
-          <option>Main Menu</option>
-          <option value="index.html">Home</option>
-          <option value="landing-page.html">- About Us</option>
-          <option value="company-profile.html">- Company Profile</option>
-        
-          <option>- Products & Services</option>
-          <option value="vsat.html">- VSAT</option>
-          <option value="mobile-networks.html" selected="selected">- Telecom</option>
-          <option value="fm.html">- FM broadcasting</option>
-          <option value="outdoor-media.html">- Outdoor Media</option>
-          <option value="gallery.html">Gallery</option>
-          <option value="career.html">- Career</option>
-          <option value="contact.html">- Contact</option>
-        </select>
-      </nav>
-      <div class="clear"></div>
-    </section>
-  </header>
-  <section class="breadcrumb p07">
-    <p><a href="#">Home</a>  Products & Services</p>
-  </section>
-  
-  <div class="home">
-  <section class="content">
-    <section class="columns">
-      <article class="col4">
-        <p class="img"><a href="vsat.html.html"><img src="images/temp/79.jpg" alt="" width="220" height="160"></a></p>
-        <h3><a href="vsat.html.html">VSAT</a></h3>
-        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s</p>
-      </article>
-      <article class="col4">
-        <p class="img"><a href="mobile-networks.html"><img src="images/temp/80.jpg" alt="" width="220" height="160"></a></p>
-        <h3><a href="mobile-networks.html">Telecom</a></h3>
-        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s</p>
-      </article>
-      <article class="col4">
-        <p class="img"><a href="fm.html"><img src="images/temp/81.jpg" alt="" width="220" height="160"></a></p>
-        <h3><a href="fm.html">FM</a></h3>
-        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s</p>
-      </article>
-      <article class="col4">
-        <p class="img"><a href="outdoor-media.html"><img src="images/temp/82.jpg" alt="" width="220" height="160"></a></p>
-        <h3><a href="outdoor-media.html">Outdoor Media</a></h3>
-        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s</p>
-      </article>
-    </section>
-    
-    
-    <a href="#top" class="go-top">Go to top of page</a> </section>
-    </div>
-     <footer>
-    <section class="widgets">
-      <article>
-        <h3><span>Digitcom India Technologies</span></h3>
-        <p>01082, ATS Paradiso<br>
-Sector Chi IV Greater Noida<br>
-Distt. Gautam Budh Nagar (U.P.), INDIA
-      </article>
-      <article class="widget_links">
-        <h3><span>Quick Links</span></h3>
-        <ul>
-         
-          <li><a href="company-profile.html">About Us</a></li>
-         
-          <li><a href="clients.html">Clients</a></li>
-          <li><a href="career.html">Career</a></li>
-          <li><a href="contact.html">Contact</a></li>
-        </ul>
-      </article>
-      <article class="widget_links">
-        <h3><span>Products &amp; Services</span></h3>
-        <ul>
-          <li><a href="vsat.html">VSAT Network Services</a></li>
-          <li><a href="mobile-networks.html">Mobile Networks</a></li>
-          <li><a href="fm.htmls">FM broadcasting</a></li>
-          <li><a href="outdoor-media.html">Outdoor Media</a></li>
-        </ul>
-      </article>
-      <article class="widget_links">
-        <h3><span>Connect with us</span></h3>
-      <!--   <nav class="social">
-          <ul>
-            <li><a href="#" class="facebook">Facebook</a></li>
-            <li><a href="#" class="twitter">Twitter</a></li>
-            <li><a href="#" class="googleplus">Google+</a></li>
-            <li><a href="#" class="pinterest">Pinterest</a></li>
-            <li><a href="#" class="rss">RSS</a></li>
-          </ul>
-        </nav> -->
-		<span class="phn">
-          Phone<br>
-          +91 9311322320<br>
-          +91 9811322320 <br>
-          
-          E-mail: <a href="mailto:Info@digitcomindia.com">Info@digitcomindia.com</a></p></span>
-      </article>
-    </section>
-    <section class="bottom">
-      <p class="col2">Copyright 2020 Digitcom India | All rights reserved </p>
-	  <p class="col2" style="text-align:right;"> Powered by <a target="_blank" href="https://digitalsparx.com">Digital Sparx Technologies </a></p>
-    </section>
-	
-	
-  </footer>
-</div>
-<script data-cfasync="false" src="cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="text/javascript" src="js/jquery.js"></script> 
-<script type="text/javascript" src="js/scripts.js"></script>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="index.html" class="logo">
+                    <img src="images/logo.jpg" alt="Digitcom India Technologies Logo">
+                </a>
+                <p>Connecting the nation through premier telecom infrastructure and specialized technical support.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <a href="index.html">Home</a>
+                <a href="company-profile.html">About Us</a>
+                <a href="career.html">Careers</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div class="footer-links">
+                <h4>Services</h4>
+                <a href="mobile-networks.html">Mobile Networks</a>
+                <a href="vsat.html">VSAT Services</a>
+                <a href="fm.html">FM Broadcasting</a>
+                <a href="outdoor-media.html">Outdoor Media</a>
+            </div>
+            <div class="footer-contact">
+                <h4>Get in Touch</h4>
+                <p>A-308 BHUTANI ALPHATHUM SECTOR 90 NOIDA 201315</p>
+                <p>📞 +91 9311322320</p>
+                <p>📞 +91 9811322320</p>
+                <p>✉️ <a href="mailto:info@digitcomindia.com">info@digitcomindia.com</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">
+                <p>&copy; 2026 Digitcom India Technologies. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 </body>
 
 </html>

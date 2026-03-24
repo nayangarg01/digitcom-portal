@@ -10,6 +10,7 @@
     <!-- Modern Sans-serif Font -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="new-style.css">
+    <script src="scripts/main.js" defer></script>
 </head>
 
 <body>
@@ -28,6 +29,7 @@
                         <a href="mobile-networks.html">Mobile Networks</a>
                         <a href="vsat.html">VSAT</a>
                         <a href="fm.html">FM Broadcasting</a>
+                        <a href="outdoor-media.html">Outdoor Media</a>
                     </div>
                 </div>
                 <a href="gallery.html">Gallery</a>
@@ -144,6 +146,13 @@
                         manpower outsourcing for high-fidelity FM Radio Stations across the country.</p>
                     <a href="fm.html" class="service-link">View Details</a>
                 </div>
+
+                <div class="service-card">
+                    <h3 class="service-title">Outdoor Media</h3>
+                    <p class="service-desc">Strategic out-of-home advertising solutions reaching consumers in public 
+                        places, transit, and commercial locations with high-impact visibility.</p>
+                    <a href="outdoor-media.html" class="service-link">View Details</a>
+                </div>
             </div>
         </div>
     </section>
@@ -191,6 +200,7 @@
                 <a href="mobile-networks.html">Mobile Networks</a>
                 <a href="vsat.html">VSAT Services</a>
                 <a href="fm.html">FM Broadcasting</a>
+                <a href="outdoor-media.html">Outdoor Media</a>
             </div>
             <div class="footer-contact">
                 <h4>Get in Touch</h4>
@@ -221,16 +231,6 @@
         if (slides.length > 0) {
             setInterval(nextSlide, 5000);
         }
-
-        // Simple script for mobile menu toggling and sticky navbar transparency effect
-        const navbar = document.querySelector('.navbar');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
     </script>
 </body>
 

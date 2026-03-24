@@ -1,1 +1,13 @@
 Archive.zip
+*.xlsx
+*.xlsx#
+*.numbers
+*.numbers#
+RoutingSampleFiles/*.xlsx
+RoutingSampleFiles/*.numbers
+RoutingSampleFiles/route_maps/
+Work/
+scripts/
+missing_min_ids.txt
+.DS_Store
+**/ .DS_Store

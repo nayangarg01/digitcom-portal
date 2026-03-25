@@ -166,12 +166,15 @@ def main():
             try:
                 lat, lng = float(row[lat_col]), float(row[lng_col])
                 if not np.isnan(lat) and not np.isnan(lng):
+                    # Calculate distance and angle from warehouse
                     dist_to_wh = ((lat - warehouse_coords[0])**2 + (lng - warehouse_coords[1])**2)**0.5
+                    angle = atan2(lat - warehouse_coords[0], lng - warehouse_coords[1])
                     site_data.append({
                         "id": str(row[id_col]) if id_col else str(idx),
                         "coords": (lat, lng),
                         "orig_idx": idx,
                         "dist_to_wh": dist_to_wh,
+                        "angle": angle,
                         "cmp": str(row[cmp_col]).strip() if cmp_col else "Default"
                     })
             except: continue
@@ -189,15 +192,21 @@ def main():
 
         final_all_routes = []
         for cmp_name, group in cmp_groups.items():
-            # Sort by proximity to Warehouse
-            group.sort(key=lambda x: x['dist_to_wh'])
+            # 3.1 Global Angular Sort (Sector-based)
+            # This ensures sites in the same direction are grouped together.
+            group.sort(key=lambda x: x['angle'])
             
-            # Partition into n%3 chunks
+            # 3.2 Partition into n%3 chunks
             sizes = partition_sites(len(group))
             curr = 0
             for size in sizes:
                 chunk = group[curr : curr + size]
-                # Apply recursive splitting with real distances
+                
+                # 3.3 Local Sort by Distance (Inner to Outer)
+                # Helps ensure a logical progression within a sector.
+                chunk.sort(key=lambda x: x['dist_to_wh'])
+                
+                # 3.4 Apply recursive splitting with real distances
                 routes = solve_recursive_splitting(warehouse_coords, chunk, api_key)
                 final_all_routes.extend(routes)
                 curr += size

@@ -59,14 +59,24 @@ def process_batch_file(file_path):
     all_final_routes = []
     for cmp_name, group_sites in cmp_groups.items():
         wh_coords = group_sites[0]['wh_coords']
-        # Sort by proximity to WH
-        group_sites.sort(key=lambda x: get_distance(wh_coords, x['coords']))
+        
+        # 1. Calculate Angle (Bearing) for each site
+        for s in group_sites:
+            s['angle'] = math.atan2(s['coords'][0] - wh_coords[0], s['coords'][1] - wh_coords[1])
+            s['dist_to_wh'] = get_distance(wh_coords, s['coords'])
+            
+        # 2. Global Angular Sort (Sector-based)
+        group_sites.sort(key=lambda x: x['angle'])
         
         sizes = partition_sizes(len(group_sites))
         curr = 0
         for size in sizes:
             chunk = group_sites[curr : curr + size]
-            # Recursive distance-based splitting inside chunk
+            
+            # 3. Local Sort by Distance (Inner to Outer) within sector
+            chunk.sort(key=lambda x: x['dist_to_wh'])
+            
+            # 4. Recursive distance-based splitting inside chunk
             # WH -> A -> B -> C
             p_sites = chunk.copy()
             while p_sites:
@@ -93,7 +103,7 @@ def process_batch_file(file_path):
     return headers, all_final_routes
 
 def main():
-    test_dir = 'test_data_dates'
+    test_dir = 'RoutingSampleFiles/test_data_dates'
     output_path = 'RoutingSampleFiles/Optimized_Dispatch_Final_Master.xlsx'
     
     new_wb = Workbook()

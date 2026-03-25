@@ -56,70 +56,76 @@ def get_distance_matrix(locations, api_key):
                     matrix[start_i + row_idx][start_j + col_idx] = 999999
     return matrix
 
-def solve_tsp_for_cluster(warehouse_coords, cluster_sites, api_key):
+def partition_sites(n):
+    if n < 2: return [n]
+    if n == 2: return [2]
+    if n == 3: return [3]
+    if n == 4: return [2, 2]
+    if n % 3 == 0: return [3] * (n // 3)
+    if n % 3 == 1: return [3] * ((n - 4) // 3) + [2, 2]
+    return [3] * ((n - 2) // 3) + [2]
+
+def solve_recursive_splitting(warehouse_coords, chunk, api_key):
     """
-    Solve TSP for a small cluster (max 3 sites) + Warehouse.
-    Always follows the "Closest to Furthest" sequence requested by the user.
+    Applies the recursive WH->B < A->B logic using real distances.
     """
-    # 1. Prepare locations: [Warehouse, Site1, Site2, Site3]
-    locations = [warehouse_coords] + [s['coords'] for s in cluster_sites]
-    num_nodes = len(locations)
-    
-    # 2. Get Distance Matrix for this small group
+    locations = [warehouse_coords] + [s['coords'] for s in chunk]
     dist_matrix = get_distance_matrix(locations, api_key)
     
-    # 3. Solve for shortest sequence starting at Warehouse (Depot)
-    manager = pywrapcp.RoutingIndexManager(num_nodes, 1, 0)
-    routing = pywrapcp.RoutingModel(manager)
-
-    def distance_callback(from_index, to_index):
-        from_node = manager.IndexToNode(from_index)
-        to_node = manager.IndexToNode(to_index)
-        return int(dist_matrix[from_node][to_node])
-
-    transit_callback_index = routing.RegisterTransitCallback(distance_callback)
-    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
-
-    search_parameters = pywrapcp.DefaultRoutingSearchParameters()
-    search_parameters.first_solution_strategy = (
-        routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+    # Indices in matrix: 0=WH, 1=A, 2=B, 3=C
+    p_sites = chunk.copy()
+    final_routes = []
     
-    solution = routing.SolveWithParameters(search_parameters)
-    
-    if not solution:
-        return sorted(cluster_sites, key=lambda x: x['dist_to_wh'])
-
-    # 4. Extract Route
-    index = routing.Start(0)
-    node_sequence = []
-    while not routing.IsEnd(index):
-        node_index = manager.IndexToNode(index)
-        if node_index != 0:
-            node_sequence.append(cluster_sites[node_index - 1])
-        index = solution.Value(routing.NextVar(index))
-        
-    # 5. USER PREFERENCE: Monotonic Sequence (Closest to Furthest)
-    node_sequence = sorted(node_sequence, key=lambda x: x['dist_to_wh'])
-    
-    # 6. Calculate legs for the final response
-    legs = []
-    prev_node_idx = 0
-    for i, site in enumerate(node_sequence):
-        # Index in dist_matrix is the original order of chunk + 1
-        curr_node_idx = cluster_sites.index(site) + 1
-        dist_m = dist_matrix[prev_node_idx][curr_node_idx]
-        dist_km = dist_m / 1000.0
-        
-        if i == 0:
-            dist_km = max(0, dist_km - 50)
+    while p_sites:
+        if len(p_sites) == 1:
+            site = p_sites.pop(0)
+            dist_km = dist_matrix[0][chunk.index(site)+1] / 1000.0
+            final_routes.append([{ "site": site, "dist_km": max(0, dist_km - 50) }])
+        elif len(p_sites) == 2:
+            A, B = p_sites[0], p_sites[1]
+            idx_a, idx_b = chunk.index(A)+1, chunk.index(B)+1
+            dist_wh_b = dist_matrix[0][idx_b]
+            dist_a_b = dist_matrix[idx_a][idx_b]
             
-        legs.append({
-            "site": site,
-            "dist_km": round(dist_km, 2)
-        })
-        prev_node_idx = curr_node_idx
-        
-    return legs
+            if dist_wh_b < dist_a_b:
+                # Split
+                dist_wh_a_km = dist_matrix[0][idx_a] / 1000.0
+                final_routes.append([{ "site": p_sites.pop(0), "dist_km": max(0, dist_wh_a_km - 50) }])
+            else:
+                # Together
+                dist_wh_a_km = dist_matrix[0][idx_a] / 1000.0
+                dist_a_b_km = dist_matrix[idx_a][idx_b] / 1000.0
+                final_routes.append([
+                    { "site": p_sites.pop(0), "dist_km": max(0, dist_wh_a_km - 50) },
+                    { "site": p_sites.pop(0), "dist_km": dist_a_b_km }
+                ])
+        else: # 3 sites
+            A, B, C = p_sites[0], p_sites[1], p_sites[2]
+            idx_a, idx_b, idx_c = chunk.index(A)+1, chunk.index(B)+1, chunk.index(C)+1
+            
+            if dist_matrix[0][idx_b] < dist_matrix[idx_a][idx_b]:
+                # A is separate
+                dist_wh_a_km = dist_matrix[0][idx_a] / 1000.0
+                final_routes.append([{ "site": p_sites.pop(0), "dist_km": max(0, dist_wh_a_km - 50) }])
+            elif dist_matrix[0][idx_c] < dist_matrix[idx_b][idx_c]:
+                # A, B together, C separate
+                dist_wh_a_km = dist_matrix[0][idx_a] / 1000.0
+                dist_a_b_km = dist_matrix[idx_a][idx_b] / 1000.0
+                final_routes.append([
+                    { "site": p_sites.pop(0), "dist_km": max(0, dist_wh_a_km - 50) },
+                    { "site": p_sites.pop(0), "dist_km": dist_a_b_km }
+                ])
+            else:
+                # All 3 together
+                dist_wh_a_km = dist_matrix[0][idx_a] / 1000.0
+                dist_a_b_km = dist_matrix[idx_a][idx_b] / 1000.0
+                dist_b_c_km = dist_matrix[idx_b][idx_c] / 1000.0
+                final_routes.append([
+                    { "site": p_sites.pop(0), "dist_km": max(0, dist_wh_a_km - 50) },
+                    { "site": p_sites.pop(0), "dist_km": dist_a_b_km },
+                    { "site": p_sites.pop(0), "dist_km": dist_b_c_km }
+                ])
+    return final_routes
 
 def main():
     if len(sys.argv) < 5:
@@ -127,31 +133,46 @@ def main():
         return
 
     file_path, origin_lat, origin_lng, api_key, output_path = sys.argv[1:6]
-    warehouse_coords = (float(origin_lat), float(origin_lng))
+    
+    # Warehouse Mapping (Jaipur - Bagru, Jodhpur - Mogra Khurd)
+    WAREHOUSE_MAP = {
+        'JAIPUR': (26.8139, 75.5450),
+        'JODHPUR': (26.1245, 73.0543),
+        'DEFAULT': (float(origin_lat), float(origin_lng))
+    }
 
     try:
         # 1. Load Data
         df = pd.read_excel(file_path) if file_path.endswith(('.xlsx', '.xls')) else pd.read_csv(file_path)
         
-        # 2. Extract Sites
+        # 2. Extract Sites and Automatically Detect Warehouse Location
         lat_col = next((c for c in df.columns if c.strip().lower() in ['latitude', 'lat', 'lat ']), None)
-        lng_col = next((c for c in df.columns if c.strip().lower() in ['longitude', 'lng', 'lon', 'long']), None)
+        lng_col = next((c for c in df.columns if c.strip().lower() in ['longitude', 'lng', 'lon', 'long', 'long ']), None)
         id_col = next((c for c in df.columns if c.strip().lower() in ['site id', 'site_id', 'siteid', 'enbsiteid']), None)
+        cmp_col = next((c for c in df.columns if c.strip().lower() in ['cmp', 'company']), None)
+        wh_col = next((c for c in df.columns if c.strip().lower() in ['wh', 'warehouse_name', 'wh ', 'warehouse']), None)
+
+        # Detect Warehouse from first row
+        warehouse_coords = WAREHOUSE_MAP['DEFAULT']
+        if wh_col and not df.empty:
+            wh_val = str(df.iloc[0][wh_col]).upper().strip()
+            if 'JAIPUR' in wh_val:
+                warehouse_coords = WAREHOUSE_MAP['JAIPUR']
+            elif 'JODHPUR' in wh_val:
+                warehouse_coords = WAREHOUSE_MAP['JODHPUR']
 
         site_data = []
         for idx, row in df.iterrows():
             try:
                 lat, lng = float(row[lat_col]), float(row[lng_col])
                 if not np.isnan(lat) and not np.isnan(lng):
-                    # Calculate distance and angle from warehouse
                     dist_to_wh = ((lat - warehouse_coords[0])**2 + (lng - warehouse_coords[1])**2)**0.5
-                    angle = atan2(lat - warehouse_coords[0], lng - warehouse_coords[1])
                     site_data.append({
                         "id": str(row[id_col]) if id_col else str(idx),
                         "coords": (lat, lng),
                         "orig_idx": idx,
                         "dist_to_wh": dist_to_wh,
-                        "angle": angle
+                        "cmp": str(row[cmp_col]).strip() if cmp_col else "Default"
                     })
             except: continue
 
@@ -159,36 +180,50 @@ def main():
             print(json.dumps({"error": "No valid sites found"}))
             return
 
-        # 3. Phase 1: Angular Chunking (Strict 3 Groups)
-        # We sort by angle to Warehouse to create "pie-slice" sectors.
-        # This ensures zonal integrity while guaranteeing exactly 3 sites per route 
-        # (until the final remainder group).
-        site_data.sort(key=lambda x: x['angle'])
-        
-        final_routes = []
-        for i in range(0, len(site_data), 3):
-            chunk = site_data[i : i + 3]
-            route_legs = solve_tsp_for_cluster(warehouse_coords, chunk, api_key)
-            final_routes.append(route_legs)
+        # 3. Phase 1: Group by CMP
+        cmp_groups = {}
+        for s in site_data:
+            c = s['cmp']
+            if c not in cmp_groups: cmp_groups[c] = []
+            cmp_groups[c].append(s)
+
+        final_all_routes = []
+        for cmp_name, group in cmp_groups.items():
+            # Sort by proximity to Warehouse
+            group.sort(key=lambda x: x['dist_to_wh'])
+            
+            # Partition into n%3 chunks
+            sizes = partition_sites(len(group))
+            curr = 0
+            for size in sizes:
+                chunk = group[curr : curr + size]
+                # Apply recursive splitting with real distances
+                routes = solve_recursive_splitting(warehouse_coords, chunk, api_key)
+                final_all_routes.extend(routes)
+                curr += size
 
         # 4. Finalize Results
         df['CLUBBING'] = ""
         df['AKTBC'] = 0.0
         routes_json = []
 
-        for r_idx, route in enumerate(final_routes):
-            label = chr(65 + r_idx)
+        # Labels will be in the format: A1, A2... or with Date prefix if we had it, 
+        # but here we follow the chr(65+i) style
+        for r_idx, route in enumerate(final_all_routes):
+            label = f"R{r_idx + 1}" # Using R1, R2... for clarity across many routes
             route_obj = {"routeNumber": r_idx + 1, "label": label, "legs": []}
             
-            for s_idx, leg in enumerate(route):
-                site = leg['site']
-                df.at[site['orig_idx'], 'CLUBBING'] = f"{label}{s_idx + 1}"
-                df.at[site['orig_idx'], 'AKTBC'] = leg['dist_km']
+            for s_idx, leg_data in enumerate(route):
+                site = leg_data['site']
+                dist_km = leg_data['dist_km']
+                
+                df.at[site['orig_idx'], 'CLUBBING'] = f"{label}-S{s_idx + 1}"
+                df.at[site['orig_idx'], 'AKTBC'] = dist_km
                 
                 route_obj["legs"].append({
                     "routeLabel": label,
                     "stopSequence": s_idx + 1,
-                    "distanceKm": leg['dist_km'],
+                    "distanceKm": dist_km,
                     "site": {"id": site['id'], "lat": site['coords'][0], "lng": site['coords'][1]}
                 })
             routes_json.append(route_obj)
@@ -197,7 +232,7 @@ def main():
         df = df.sort_values(by='sort_key').drop(columns=['sort_key'])
         df.to_excel(output_path, index=False)
         
-        print(json.dumps({"success": True, "num_routes": len(final_routes), "routes": routes_json}))
+        print(json.dumps({"success": True, "num_routes": len(final_all_routes), "routes": routes_json}))
 
     except Exception as e:
         print(json.dumps({"error": str(e)}))

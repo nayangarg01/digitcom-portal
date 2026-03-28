@@ -15,12 +15,7 @@
             <nav class="sidebar-menu">
                 <a href="dashboard.html" class="active">DPR Dashboard</a>
                 <a href="site-management.html">Site Management</a>
-                <a href="kitting.html">Site Kitting</a>
-                <a href="teams.html">Team Management</a>
                 <a href="route-planning.html">Route Planning</a>
-                <a href="audit.html">Site Audit & ATP</a>
-                <a href="expenses.html">Field Expenses</a>
-                <a href="reconciliation.html">Logistics Reconciliation</a>
                 <a href="#" onclick="logout()" style="margin-top: 50px;">Logout</a>
             </nav>
         </aside>
@@ -43,14 +38,6 @@
                 <div class="stat-card">
                     <h4>Materials Kitted</h4>
                     <div class="value" id="kitted-materials">...</div>
-                </div>
-                <div class="stat-card" style="border-top: 3px solid #ff4d4d;">
-                    <h4>Total Costs</h4>
-                    <div class="value" id="total-costs">₹0</div>
-                </div>
-                <div class="stat-card" style="border-top: 3px solid #ffa500;">
-                    <h4>Pending Advances</h4>
-                    <div class="value" id="pending-advances">₹0</div>
                 </div>
             </section>
 
@@ -95,17 +82,6 @@
                 document.getElementById('active-sites').textContent = sites.filter(s => s.status !== 'LIVE').length;
                 document.getElementById('kitted-materials').textContent = sites.filter(s => s.status === 'KITTED').length;
 
-                // Fetch Finance Data
-                const finRes = await fetch(`${API_URL}/finance/summary`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const finData = await finRes.json();
-                const totalExpenses = finData.expenses.reduce((sum, e) => sum + e.amount, 0);
-                const totalAdvances = finData.advances.reduce((sum, a) => sum + a.amount, 0);
-                
-                document.getElementById('total-costs').textContent = `₹${totalExpenses.toLocaleString()}`;
-                document.getElementById('pending-advances').textContent = `₹${totalAdvances.toLocaleString()}`;
-                
                 // Update Table
                 const tbody = document.getElementById('sites-table-body');
                 tbody.innerHTML = sites.map(site => `

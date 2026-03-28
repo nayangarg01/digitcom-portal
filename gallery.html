@@ -318,45 +318,43 @@
             ...[
                 '10_cleaned.png', '14.png', '16.png', '1_cleaned.png',
                 '29.png', '3.png', '32.png', '5.png', '7.png', '8.png'
-            ].map(file => ({ category: 'fm', src: `gallery/fm/${file}`, label: 'FM Site' })),
+            ].map(file => ({ category: 'fm', src: `gallery/FM/${file}`, label: 'FM Site' })),
 
-            // Mobile Networks (Consolidated: Airfiber + mobileNetworkPhotos + pantabandPhotos)
-            // Airfiber
+            // Mobile Networks (Airfiber + pantabandPhotos)
             ...[
-                'photo-2026-03-17-17-12-09 2.jpg', 'photo-2026-03-17-17-12-09 3.jpg',
-                'photo-2026-03-17-17-12-09.jpg', 'photo-2026-03-17-17-12-11.jpg',
-                'photo-2026-03-17-17-12-14 2.jpg', 'photo-2026-03-17-17-12-15 2.jpg',
-                'photo-2026-03-17-17-12-15.jpg', 'photo-2026-03-17-17-13-29 2.jpg',
-                'photo-2026-03-17-17-13-29.jpg', 'photo-2026-03-17-17-13-30 2.jpg',
-                'photo-2026-03-17-17-13-30.jpg'
-            ].map(file => ({ category: 'mobile', src: `gallery/airfiber/${file}`, label: 'AirFiber Install' })),
-            // pantabandPhotos
+                'PHOTO-2026-03-17-17-12-09 2.jpg', 'PHOTO-2026-03-17-17-12-09 3.jpg',
+                'PHOTO-2026-03-17-17-12-09.jpg', 'PHOTO-2026-03-17-17-12-11.jpg',
+                'PHOTO-2026-03-17-17-12-14 2.jpg', 'PHOTO-2026-03-17-17-12-15 2.jpg',
+                'PHOTO-2026-03-17-17-12-15.jpg', 'PHOTO-2026-03-17-17-13-29 2.jpg',
+                'PHOTO-2026-03-17-17-13-29.jpg', 'PHOTO-2026-03-17-17-13-30 2.jpg',
+                'PHOTO-2026-03-17-17-13-30.jpg'
+            ].map(file => ({ category: 'mobile', src: `gallery/Airfiber/${file}`, label: 'AirFiber Install' })),
             ...[
-                'photo-2026-03-17-17-16-15.jpg', 'photo-2026-03-17-17-16-17.jpg',
-                'photo-2026-03-17-17-16-18.jpg', 'photo-2026-03-17-17-16-19 2.jpg',
-                'photo-2026-03-17-17-16-19 3.jpg', 'photo-2026-03-17-17-16-19.jpg',
-                'photo-2026-03-17-17-16-20 2.jpg', 'photo-2026-03-17-17-16-20.jpg',
-                'photo-2026-03-17-17-16-21 2.jpg', 'photo-2026-03-17-17-16-21 3.jpg',
-                'photo-2026-03-17-17-16-21.jpg'
-            ].map(file => ({ category: 'mobile', src: `gallery/pantabandphotos/${file}`, label: 'Pentaband Site' })),
+                'PHOTO-2026-03-17-17-16-15.jpg', 'PHOTO-2026-03-17-17-16-17.jpg',
+                'PHOTO-2026-03-17-17-16-18.jpg', 'PHOTO-2026-03-17-17-16-19 2.jpg',
+                'PHOTO-2026-03-17-17-16-19 3.jpg', 'PHOTO-2026-03-17-17-16-19.jpg',
+                'PHOTO-2026-03-17-17-16-20 2.jpg', 'PHOTO-2026-03-17-17-16-20.jpg',
+                'PHOTO-2026-03-17-17-16-21 2.jpg', 'PHOTO-2026-03-17-17-16-21 3.jpg',
+                'PHOTO-2026-03-17-17-16-21.jpg'
+            ].map(file => ({ category: 'mobile', src: `gallery/pantabandPhotos/${file}`, label: 'Pentaband Site' })),
 
-            // Solar (Mapped to solarPhotos folder)
+            // Solar
             ...[
-                'photo-2026-03-17-16-05-56.jpg', 'photo-2026-03-17-16-06-01 3.jpg',
-                'photo-2026-03-17-16-06-01.jpg', 'photo-2026-03-17-16-06-03.jpg',
-                'photo-2026-03-17-16-06-06.jpg', 'photo-2026-03-17-16-06-12 3.jpg',
-                'photo-2026-03-17-16-06-17.jpg', 'photo-2026-03-17-16-06-21.jpg',
-                'photo-2026-03-17-16-06-23.jpg', 'photo-2026-03-17-16-06-27.jpg'
-            ].map(file => ({ category: 'solar', src: `gallery/mobilenetworkphotos/${file}`, label: 'Solar Install' })),
+                'PHOTO-2026-03-17-16-05-56.jpg', 'PHOTO-2026-03-17-16-06-01 3.jpg',
+                'PHOTO-2026-03-17-16-06-01.jpg', 'PHOTO-2026-03-17-16-06-03.jpg',
+                'PHOTO-2026-03-17-16-06-06.jpg', 'PHOTO-2026-03-17-16-06-12 3.jpg',
+                'PHOTO-2026-03-17-16-06-17.jpg', 'PHOTO-2026-03-17-16-06-21.jpg',
+                'PHOTO-2026-03-17-16-06-23.jpg', 'PHOTO-2026-03-17-16-06-27.jpg'
+            ].map(file => ({ category: 'solar', src: `gallery/mobileNetworkPhotos/${file}`, label: 'Solar Install' })),
             ...[
-                'photo-2026-03-17-16-06-27.jpg', 'photo-2026-03-17-16-06-28.jpg',
-                'photo-2026-03-17-16-06-30.jpg', 'photo-2026-03-17-16-06-31.jpg',
-                'photo-2026-03-17-16-06-32 2.jpg', 'photo-2026-03-17-16-06-32.jpg',
-                'photo-2026-03-17-16-06-33 2.jpg', 'photo-2026-03-17-16-06-33.jpg',
-                'photo-2026-03-17-16-06-34 2.jpg', 'photo-2026-03-17-16-06-34 3.jpg',
-                'photo-2026-03-17-16-06-34.jpg', 'photo-2026-03-17-16-06-35 2.jpg',
-                'photo-2026-03-17-16-06-35 3.jpg', 'photo-2026-03-17-16-06-35.jpg'
-            ].map(file => ({ category: 'solar', src: `gallery/solarphotos/${file}`, label: 'Solar Project' }))
+                'PHOTO-2026-03-17-16-06-27.jpg', 'PHOTO-2026-03-17-16-06-28.jpg',
+                'PHOTO-2026-03-17-16-06-30.jpg', 'PHOTO-2026-03-17-16-06-31.jpg',
+                'PHOTO-2026-03-17-16-06-32 2.jpg', 'PHOTO-2026-03-17-16-06-32.jpg',
+                'PHOTO-2026-03-17-16-06-33 2.jpg', 'PHOTO-2026-03-17-16-06-33.jpg',
+                'PHOTO-2026-03-17-16-06-34 2.jpg', 'PHOTO-2026-03-17-16-06-34 3.jpg',
+                'PHOTO-2026-03-17-16-06-35 2.jpg', 'PHOTO-2026-03-17-16-06-35 3.jpg',
+                'PHOTO-2026-03-17-16-06-35.jpg'
+            ].map(file => ({ category: 'solar', src: `gallery/solarPhotos/${file}`, label: 'Solar Project' }))
         ];
 
         function renderGallery(filter = 'all') {

@@ -13,3 +13,7 @@ scripts/*
 missing_min_ids.txt
 .DS_Store
 **/ .DS_Store
+node_modules/
+.env
+Backend_Portal/node_modules/
+Backend_Portal/.env

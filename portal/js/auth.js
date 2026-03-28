@@ -15,7 +15,7 @@ if (loginForm) {
         
         if (loginBtn) {
             loginBtn.disabled = true;
-            loginBtn.textContent = 'Signing in... (Render may take 30-50s to wake up)';
+            loginBtn.textContent = 'Signing in...';
         }
         errorMsg.style.display = 'none';
         

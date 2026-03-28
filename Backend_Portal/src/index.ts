@@ -9,6 +9,7 @@ import teamRoutes from './routes/teamRoutes';
 import routePlanningRoutes from './routes/routePlanningRoutes';
 import financeRoutes from './routes/financeRoutes';
 import documentRoutes from './routes/documentRoutes';
+import contactRoutes from './routes/contactRoutes';
 import path from 'path';
 
 const app = express();
@@ -25,11 +26,16 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/route-planning', routePlanningRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Basic health check route
-app.get('/api/health', (req: Request, res: Response) => {
+app.get('/api/health', (req: any, res: any) => {
   res.json({ status: 'success', message: 'Backend portal is running smoothly.' });
 });
+
+// Serve frontend static files from the root directory
+app.use(express.static(path.join(__dirname, '../../')));
+
 
 // Error Handling Middleware
 app.use((err: any, req: Request, res: Response, next: any) => {

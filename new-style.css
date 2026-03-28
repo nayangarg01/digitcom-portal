@@ -254,7 +254,7 @@ ul {
     padding: 0.5rem 0;
     color: #cccccc;
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     text-transform: uppercase;
     letter-spacing: 2px;
     margin-bottom: 1.5rem;
@@ -596,8 +596,7 @@ ul {
 
 .footer-brand p {
     color: #888;
-    margin-top: 1.5rem;
-    max-width: 300px;
+    margin-top: 1.5rem;    max-width: 300px;
     font-size: 1rem;
     font-weight: 300;
     line-height: 1.7;

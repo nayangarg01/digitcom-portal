@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_02859b91b586381e0e2f390bb3609087 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_02859b91b586381e0e2f390bb3609087" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_02859b91b586381e0e2f390bb3609087 = L.map(
+                "map_02859b91b586381e0e2f390bb3609087",
+                {
+                    center: [26.2389, 73.0243],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 9,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_e56af1246c76576fcfda88599c050351 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_e56af1246c76576fcfda88599c050351.addTo(map_02859b91b586381e0e2f390bb3609087);
+        
+    
+            var marker_d3f8f85bcd15da4facdedc2a34c38848 = L.marker(
+                [26.2389, 73.0243],
+                {
+}
+            ).addTo(map_02859b91b586381e0e2f390bb3609087);
+        
+    
+            var icon_a8cda16f71042297b435f91f1994ca74 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "black",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_35ed7aa126c649e56440f33f4b81172f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_62ca299d2d7b018420edd4306e52bb8f = $(`<div id="html_62ca299d2d7b018420edd4306e52bb8f" style="width: 100.0%; height: 100.0%;">WAREHOUSE: JODHPUR</div>`)[0];
+                popup_35ed7aa126c649e56440f33f4b81172f.setContent(html_62ca299d2d7b018420edd4306e52bb8f);
+            
+        
+
+        marker_d3f8f85bcd15da4facdedc2a34c38848.bindPopup(popup_35ed7aa126c649e56440f33f4b81172f)
+        ;
+
+        
+    
+    
+                marker_d3f8f85bcd15da4facdedc2a34c38848.setIcon(icon_a8cda16f71042297b435f91f1994ca74);
+            
+    
+            var marker_fc3cf4156ca79315ae4ce5a4db2d58c5 = L.marker(
+                [26.60344, 73.72192],
+                {
+}
+            ).addTo(map_02859b91b586381e0e2f390bb3609087);
+        
+    
+            var icon_91c51fd9f1103d94510637951263ebf4 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5a5f1212f1378a1d61089727f604ea25 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_87b987df0870f6d065227010c43caa42 = $(`<div id="html_87b987df0870f6d065227010c43caa42" style="width: 100.0%; height: 100.0%;">Site: I-RJ-MRTA-ENB-I019<br>Route: NAGAUR-R1-S1</div>`)[0];
+                popup_5a5f1212f1378a1d61089727f604ea25.setContent(html_87b987df0870f6d065227010c43caa42);
+            
+        
+
+        marker_fc3cf4156ca79315ae4ce5a4db2d58c5.bindPopup(popup_5a5f1212f1378a1d61089727f604ea25)
+        ;
+
+        
+    
+    
+                marker_fc3cf4156ca79315ae4ce5a4db2d58c5.setIcon(icon_91c51fd9f1103d94510637951263ebf4);
+            
+    
+            var poly_line_3f3f04891eec652859b1064d6db644e4 = L.polyline(
+                [[26.2389, 73.0243], [26.60344, 73.72192]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_02859b91b586381e0e2f390bb3609087);
+        
+</script>
+</html>

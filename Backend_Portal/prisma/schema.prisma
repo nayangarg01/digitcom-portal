@@ -101,3 +101,12 @@ model Document {
 
   site Site @relation(fields: [site_id], references: [id])
 }
+
+model Lead {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  company   String?
+  message   String
+  createdAt DateTime @default(now())
+}

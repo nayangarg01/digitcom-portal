@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_48a48f716ff6126d58326421b0b0bf0d {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_48a48f716ff6126d58326421b0b0bf0d" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_48a48f716ff6126d58326421b0b0bf0d = L.map(
+                "map_48a48f716ff6126d58326421b0b0bf0d",
+                {
+                    center: [26.9124, 75.7873],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 9,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_188cb37c2332ebccebc8b7013e224a32 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_188cb37c2332ebccebc8b7013e224a32.addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var marker_8db75511632d08e59494739a3fc60634 = L.marker(
+                [26.9124, 75.7873],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_fc09bf3bae7c90fb9776aa1e4072ebc1 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "black",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6bd9b1e159ce050d7f69d94fec31d1cd = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_6b64c4e3c4ac5f9267e5717bf7c2a0f1 = $(`<div id="html_6b64c4e3c4ac5f9267e5717bf7c2a0f1" style="width: 100.0%; height: 100.0%;">WAREHOUSE: JAIPUR</div>`)[0];
+                popup_6bd9b1e159ce050d7f69d94fec31d1cd.setContent(html_6b64c4e3c4ac5f9267e5717bf7c2a0f1);
+            
+        
+
+        marker_8db75511632d08e59494739a3fc60634.bindPopup(popup_6bd9b1e159ce050d7f69d94fec31d1cd)
+        ;
+
+        
+    
+    
+                marker_8db75511632d08e59494739a3fc60634.setIcon(icon_fc09bf3bae7c90fb9776aa1e4072ebc1);
+            
+    
+            var marker_176ab16cee9d7a4170f78a3a70f3f82b = L.marker(
+                [26.4627122222222, 74.6771194444444],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_ca2cfc8637c9c9b4470b6cd139ba3f41 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_ed2141150c5d29dfc1a721f34bc5037e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_29d6ddcc9aaee6f79807baf7142fdc53 = $(`<div id="html_29d6ddcc9aaee6f79807baf7142fdc53" style="width: 100.0%; height: 100.0%;">Site: I-RJ-AJMR-ENB-0322<br>Route: AJMER-R1-S1</div>`)[0];
+                popup_ed2141150c5d29dfc1a721f34bc5037e.setContent(html_29d6ddcc9aaee6f79807baf7142fdc53);
+            
+        
+
+        marker_176ab16cee9d7a4170f78a3a70f3f82b.bindPopup(popup_ed2141150c5d29dfc1a721f34bc5037e)
+        ;
+
+        
+    
+    
+                marker_176ab16cee9d7a4170f78a3a70f3f82b.setIcon(icon_ca2cfc8637c9c9b4470b6cd139ba3f41);
+            
+    
+            var marker_bdcfb2c2eddc3039dc8018415160aa28 = L.marker(
+                [26.4376916666667, 74.6688466666667],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_eb179b6f0bae4207c5945ac11b6b051c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_ad3490da4164c76fb636ef2cf79d1c2d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_1d952e9b50eeb97a4a3c4c14597825ee = $(`<div id="html_1d952e9b50eeb97a4a3c4c14597825ee" style="width: 100.0%; height: 100.0%;">Site: I-RJ-AJMR-ENB-0132<br>Route: AJMER-R1-S2</div>`)[0];
+                popup_ad3490da4164c76fb636ef2cf79d1c2d.setContent(html_1d952e9b50eeb97a4a3c4c14597825ee);
+            
+        
+
+        marker_bdcfb2c2eddc3039dc8018415160aa28.bindPopup(popup_ad3490da4164c76fb636ef2cf79d1c2d)
+        ;
+
+        
+    
+    
+                marker_bdcfb2c2eddc3039dc8018415160aa28.setIcon(icon_eb179b6f0bae4207c5945ac11b6b051c);
+            
+    
+            var marker_2781d4b44e46cdecc351518498ca6a19 = L.marker(
+                [26.46411, 74.6152705555556],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_581de868d28260376b7b79f833bb9fa2 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9ce6d35c1d13c1137b5098a02debcca4 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3ee34bc0a88fd0a5e2a7df089056b29c = $(`<div id="html_3ee34bc0a88fd0a5e2a7df089056b29c" style="width: 100.0%; height: 100.0%;">Site: I-RJ-AJMR-ENB-0387<br>Route: AJMER-R1-S3</div>`)[0];
+                popup_9ce6d35c1d13c1137b5098a02debcca4.setContent(html_3ee34bc0a88fd0a5e2a7df089056b29c);
+            
+        
+
+        marker_2781d4b44e46cdecc351518498ca6a19.bindPopup(popup_9ce6d35c1d13c1137b5098a02debcca4)
+        ;
+
+        
+    
+    
+                marker_2781d4b44e46cdecc351518498ca6a19.setIcon(icon_581de868d28260376b7b79f833bb9fa2);
+            
+    
+            var poly_line_a1fdcda175dad4ef5f17043dae0f2398 = L.polyline(
+                [[26.9124, 75.7873], [26.4627122222222, 74.6771194444444], [26.4376916666667, 74.6688466666667], [26.46411, 74.6152705555556]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var marker_5d4a9c3d7d1e5b8c53e5ea72b4576f55 = L.marker(
+                [26.51589, 74.5435],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_b14649449cd8396e4c3a5625e266c951 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_dd11452576a6ab40b7b664d22fe50f8c = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_085442e5b55832a4e60e9743d4028b96 = $(`<div id="html_085442e5b55832a4e60e9743d4028b96" style="width: 100.0%; height: 100.0%;">Site: I-RJ-AJMR-ENB-9063<br>Route: AJMER-R2-S1</div>`)[0];
+                popup_dd11452576a6ab40b7b664d22fe50f8c.setContent(html_085442e5b55832a4e60e9743d4028b96);
+            
+        
+
+        marker_5d4a9c3d7d1e5b8c53e5ea72b4576f55.bindPopup(popup_dd11452576a6ab40b7b664d22fe50f8c)
+        ;
+
+        
+    
+    
+                marker_5d4a9c3d7d1e5b8c53e5ea72b4576f55.setIcon(icon_b14649449cd8396e4c3a5625e266c951);
+            
+    
+            var marker_ef51d4b059be733653573bdc4f997cf7 = L.marker(
+                [26.49439, 74.54223],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_d727d159734ac357908bf13590f0fd60 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_13bdb011737c793cc6ad23fdb3d8f938 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e9f00287e92d406956c47571ed78fbf4 = $(`<div id="html_e9f00287e92d406956c47571ed78fbf4" style="width: 100.0%; height: 100.0%;">Site: I-RJ-PSKR-ENB-I001<br>Route: AJMER-R2-S2</div>`)[0];
+                popup_13bdb011737c793cc6ad23fdb3d8f938.setContent(html_e9f00287e92d406956c47571ed78fbf4);
+            
+        
+
+        marker_ef51d4b059be733653573bdc4f997cf7.bindPopup(popup_13bdb011737c793cc6ad23fdb3d8f938)
+        ;
+
+        
+    
+    
+                marker_ef51d4b059be733653573bdc4f997cf7.setIcon(icon_d727d159734ac357908bf13590f0fd60);
+            
+    
+            var marker_c63db60d6702537695a556d3b6fd06d3 = L.marker(
+                [26.49412, 74.54906],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_834bf8488ccad092ba0d9b07170adb5b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_44105cb604744c9c86264b7712fda435 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_c04bd03a62a78f3d1196d1c5c368780f = $(`<div id="html_c04bd03a62a78f3d1196d1c5c368780f" style="width: 100.0%; height: 100.0%;">Site: I-RJ-PSKR-ENB-9001<br>Route: AJMER-R2-S3</div>`)[0];
+                popup_44105cb604744c9c86264b7712fda435.setContent(html_c04bd03a62a78f3d1196d1c5c368780f);
+            
+        
+
+        marker_c63db60d6702537695a556d3b6fd06d3.bindPopup(popup_44105cb604744c9c86264b7712fda435)
+        ;
+
+        
+    
+    
+                marker_c63db60d6702537695a556d3b6fd06d3.setIcon(icon_834bf8488ccad092ba0d9b07170adb5b);
+            
+    
+            var poly_line_fb97f602df8d1e096abd3c782ce92e3d = L.polyline(
+                [[26.9124, 75.7873], [26.51589, 74.5435], [26.49439, 74.54223], [26.49412, 74.54906]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var marker_2da4190deb5820e8fefb73efddb34309 = L.marker(
+                [26.3963338888889, 74.9014694444444],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_88f2e5fb7e6a246319a6100209c3e7d4 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_79db9b0149e8988a9eaacf8e99f53dc5 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_c660194c76400b512d13dc9acdc173c4 = $(`<div id="html_c660194c76400b512d13dc9acdc173c4" style="width: 100.0%; height: 100.0%;">Site: I-RJ-NSRB-ENB-9025<br>Route: AJMER-R3-S1</div>`)[0];
+                popup_79db9b0149e8988a9eaacf8e99f53dc5.setContent(html_c660194c76400b512d13dc9acdc173c4);
+            
+        
+
+        marker_2da4190deb5820e8fefb73efddb34309.bindPopup(popup_79db9b0149e8988a9eaacf8e99f53dc5)
+        ;
+
+        
+    
+    
+                marker_2da4190deb5820e8fefb73efddb34309.setIcon(icon_88f2e5fb7e6a246319a6100209c3e7d4);
+            
+    
+            var marker_e44414fea9f7fcc944c4c9ab992d7cbc = L.marker(
+                [26.4052408333333, 74.8254258333333],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_dc7e846117575ea31f081c8ee717f530 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_4b82bd180f6aafd5c094f3352e8d4f8f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_eac24e3474e943e6264eb3c069b7dfea = $(`<div id="html_eac24e3474e943e6264eb3c069b7dfea" style="width: 100.0%; height: 100.0%;">Site: I-RJ-NSRB-ENB-9045<br>Route: AJMER-R3-S2</div>`)[0];
+                popup_4b82bd180f6aafd5c094f3352e8d4f8f.setContent(html_eac24e3474e943e6264eb3c069b7dfea);
+            
+        
+
+        marker_e44414fea9f7fcc944c4c9ab992d7cbc.bindPopup(popup_4b82bd180f6aafd5c094f3352e8d4f8f)
+        ;
+
+        
+    
+    
+                marker_e44414fea9f7fcc944c4c9ab992d7cbc.setIcon(icon_dc7e846117575ea31f081c8ee717f530);
+            
+    
+            var marker_a376a2d3932ce8b9990292c3737fd7a0 = L.marker(
+                [26.3199327777778, 74.7429102777778],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_fa6f7721516c367d3c3104277c0e7fdc = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_007af7c794d1607754033f7f4bff31ee = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_05e356bc5ad7d6cb2d6acf6913ab5124 = $(`<div id="html_05e356bc5ad7d6cb2d6acf6913ab5124" style="width: 100.0%; height: 100.0%;">Site: I-RJ-NSRB-ENB-I001<br>Route: AJMER-R3-S3</div>`)[0];
+                popup_007af7c794d1607754033f7f4bff31ee.setContent(html_05e356bc5ad7d6cb2d6acf6913ab5124);
+            
+        
+
+        marker_a376a2d3932ce8b9990292c3737fd7a0.bindPopup(popup_007af7c794d1607754033f7f4bff31ee)
+        ;
+
+        
+    
+    
+                marker_a376a2d3932ce8b9990292c3737fd7a0.setIcon(icon_fa6f7721516c367d3c3104277c0e7fdc);
+            
+    
+            var poly_line_136b8e7fddcbf5e96326144d7071cde9 = L.polyline(
+                [[26.9124, 75.7873], [26.3963338888889, 74.9014694444444], [26.4052408333333, 74.8254258333333], [26.3199327777778, 74.7429102777778]],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "green", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var marker_c71a5937cc4251c25dcbc6f227419212 = L.marker(
+                [26.0903497222222, 74.3082322222222],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_74bbe39492a2d0adc1dee799e3c78280 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8f5acfe3746c7a1b6278e622cb4d897f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_328b5cafb4e3afad2aac282cddb0c084 = $(`<div id="html_328b5cafb4e3afad2aac282cddb0c084" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BEWR-ENB-0088<br>Route: AJMER-R4-S1</div>`)[0];
+                popup_8f5acfe3746c7a1b6278e622cb4d897f.setContent(html_328b5cafb4e3afad2aac282cddb0c084);
+            
+        
+
+        marker_c71a5937cc4251c25dcbc6f227419212.bindPopup(popup_8f5acfe3746c7a1b6278e622cb4d897f)
+        ;
+
+        
+    
+    
+                marker_c71a5937cc4251c25dcbc6f227419212.setIcon(icon_74bbe39492a2d0adc1dee799e3c78280);
+            
+    
+            var marker_d26dbf99c4521f26c8a0b1f8e31a9725 = L.marker(
+                [26.0806125, 74.2766763888889],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_d75418811c3a9b47453b94774f6e75bf = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_1e4a1a9e3e3a5b242724bd7a7a851af2 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_bd2b4029f939f21ca11ef672c0ace4b8 = $(`<div id="html_bd2b4029f939f21ca11ef672c0ace4b8" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BEWR-ENB-9033<br>Route: AJMER-R4-S2</div>`)[0];
+                popup_1e4a1a9e3e3a5b242724bd7a7a851af2.setContent(html_bd2b4029f939f21ca11ef672c0ace4b8);
+            
+        
+
+        marker_d26dbf99c4521f26c8a0b1f8e31a9725.bindPopup(popup_1e4a1a9e3e3a5b242724bd7a7a851af2)
+        ;
+
+        
+    
+    
+                marker_d26dbf99c4521f26c8a0b1f8e31a9725.setIcon(icon_d75418811c3a9b47453b94774f6e75bf);
+            
+    
+            var marker_05be90c826f24984c4b19339c9125a86 = L.marker(
+                [26.0413777777778, 74.2992988888889],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_915636f9f90ee54ca8fbad199c9a7980 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8a521981eb8a6fd41ef869b14ef9d085 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_7a5d37599102da903b575515cbce3e1b = $(`<div id="html_7a5d37599102da903b575515cbce3e1b" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BEWR-ENB-9047<br>Route: AJMER-R4-S3</div>`)[0];
+                popup_8a521981eb8a6fd41ef869b14ef9d085.setContent(html_7a5d37599102da903b575515cbce3e1b);
+            
+        
+
+        marker_05be90c826f24984c4b19339c9125a86.bindPopup(popup_8a521981eb8a6fd41ef869b14ef9d085)
+        ;
+
+        
+    
+    
+                marker_05be90c826f24984c4b19339c9125a86.setIcon(icon_915636f9f90ee54ca8fbad199c9a7980);
+            
+    
+            var poly_line_ce11f167cda6e86bbd9aafeaf809159b = L.polyline(
+                [[26.9124, 75.7873], [26.0903497222222, 74.3082322222222], [26.0806125, 74.2766763888889], [26.0413777777778, 74.2992988888889]],
+                {"bubblingMouseEvents": true, "color": "purple", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "purple", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var marker_ed375b120102c93c8d265191e111bc53 = L.marker(
+                [26.1224547222222, 74.3503872222222],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_462e149ab175e66055503e5bf26acade = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_0baf55374408cf83a2f908b5401d4e8f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_8a2db77019563ad81d5c09feaa8ec9f1 = $(`<div id="html_8a2db77019563ad81d5c09feaa8ec9f1" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BEWR-ENB-9043<br>Route: AJMER-R5-S1</div>`)[0];
+                popup_0baf55374408cf83a2f908b5401d4e8f.setContent(html_8a2db77019563ad81d5c09feaa8ec9f1);
+            
+        
+
+        marker_ed375b120102c93c8d265191e111bc53.bindPopup(popup_0baf55374408cf83a2f908b5401d4e8f)
+        ;
+
+        
+    
+    
+                marker_ed375b120102c93c8d265191e111bc53.setIcon(icon_462e149ab175e66055503e5bf26acade);
+            
+    
+            var marker_925f54f4a945b99cb29f938de435fb75 = L.marker(
+                [26.1010244444444, 74.3208105555556],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_ce1f9ada254cc8b62831797c153fb8a3 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f5e3f689cead3418021194873b861828 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3726e320352849a406b961db49cefa00 = $(`<div id="html_3726e320352849a406b961db49cefa00" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BEWR-ENB-0042<br>Route: AJMER-R5-S2</div>`)[0];
+                popup_f5e3f689cead3418021194873b861828.setContent(html_3726e320352849a406b961db49cefa00);
+            
+        
+
+        marker_925f54f4a945b99cb29f938de435fb75.bindPopup(popup_f5e3f689cead3418021194873b861828)
+        ;
+
+        
+    
+    
+                marker_925f54f4a945b99cb29f938de435fb75.setIcon(icon_ce1f9ada254cc8b62831797c153fb8a3);
+            
+    
+            var marker_2d0c62bf0dd31f9bda51eae48a15a70c = L.marker(
+                [26.0953722222222, 74.2944208333333],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_d266dcb0353f9dcf33a83ff74a32971d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_023f0a8b14c1fc59f55c94e639fb4536 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_eea1e263f2e5b91aa07186fffc62ec8d = $(`<div id="html_eea1e263f2e5b91aa07186fffc62ec8d" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BEWR-ENB-0090<br>Route: AJMER-R5-S3</div>`)[0];
+                popup_023f0a8b14c1fc59f55c94e639fb4536.setContent(html_eea1e263f2e5b91aa07186fffc62ec8d);
+            
+        
+
+        marker_2d0c62bf0dd31f9bda51eae48a15a70c.bindPopup(popup_023f0a8b14c1fc59f55c94e639fb4536)
+        ;
+
+        
+    
+    
+                marker_2d0c62bf0dd31f9bda51eae48a15a70c.setIcon(icon_d266dcb0353f9dcf33a83ff74a32971d);
+            
+    
+            var poly_line_b0963d4246cc77fa931cf0ca0cf5a99c = L.polyline(
+                [[26.9124, 75.7873], [26.1224547222222, 74.3503872222222], [26.1010244444444, 74.3208105555556], [26.0953722222222, 74.2944208333333]],
+                {"bubblingMouseEvents": true, "color": "orange", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "orange", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var marker_b8d9f8ecd2c76216e6d69d98ed3fcd8a = L.marker(
+                [26.0886547222222, 74.5168133333333],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_3d9f239d391cb0778056900d4880a6ad = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "darkred",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_352056b848ba423c64867336fbe66827 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_2879f045172d7074b8378054acbe08a2 = $(`<div id="html_2879f045172d7074b8378054acbe08a2" style="width: 100.0%; height: 100.0%;">Site: I-RJ-MSUD-ENB-I008<br>Route: AJMER-R6-S1</div>`)[0];
+                popup_352056b848ba423c64867336fbe66827.setContent(html_2879f045172d7074b8378054acbe08a2);
+            
+        
+
+        marker_b8d9f8ecd2c76216e6d69d98ed3fcd8a.bindPopup(popup_352056b848ba423c64867336fbe66827)
+        ;
+
+        
+    
+    
+                marker_b8d9f8ecd2c76216e6d69d98ed3fcd8a.setIcon(icon_3d9f239d391cb0778056900d4880a6ad);
+            
+    
+            var marker_0e113fe418e818dbde9ad425bc4c0978 = L.marker(
+                [26.193101, 74.437701],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_8bfdcbbafb77470b1f06d94448c5ecb4 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "darkred",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_78d28e5f3cd3a5c35b5103f615a6ea1f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_515236ad4c52aafb9206a9bd2a69ba4d = $(`<div id="html_515236ad4c52aafb9206a9bd2a69ba4d" style="width: 100.0%; height: 100.0%;">Site: I-RJ-KRRV-ENB-6000<br>Route: AJMER-R6-S2</div>`)[0];
+                popup_78d28e5f3cd3a5c35b5103f615a6ea1f.setContent(html_515236ad4c52aafb9206a9bd2a69ba4d);
+            
+        
+
+        marker_0e113fe418e818dbde9ad425bc4c0978.bindPopup(popup_78d28e5f3cd3a5c35b5103f615a6ea1f)
+        ;
+
+        
+    
+    
+                marker_0e113fe418e818dbde9ad425bc4c0978.setIcon(icon_8bfdcbbafb77470b1f06d94448c5ecb4);
+            
+    
+            var marker_52affe30eec8c426a9229830b9fd4ac3 = L.marker(
+                [26.135001, 74.352001],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_bdf1408890d898b0f0136977a852b429 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "darkred",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d50403105c1d7ecd7acf01fb5fa756d0 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_7c0d1ef8e91488c0a096fe14139c7c59 = $(`<div id="html_7c0d1ef8e91488c0a096fe14139c7c59" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BEWR-ENB-6000<br>Route: AJMER-R6-S3</div>`)[0];
+                popup_d50403105c1d7ecd7acf01fb5fa756d0.setContent(html_7c0d1ef8e91488c0a096fe14139c7c59);
+            
+        
+
+        marker_52affe30eec8c426a9229830b9fd4ac3.bindPopup(popup_d50403105c1d7ecd7acf01fb5fa756d0)
+        ;
+
+        
+    
+    
+                marker_52affe30eec8c426a9229830b9fd4ac3.setIcon(icon_bdf1408890d898b0f0136977a852b429);
+            
+    
+            var poly_line_fd03ebc7f9efd4108ea572a13d892c84 = L.polyline(
+                [[26.9124, 75.7873], [26.0886547222222, 74.5168133333333], [26.193101, 74.437701], [26.135001, 74.352001]],
+                {"bubblingMouseEvents": true, "color": "darkred", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "darkred", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var marker_282e96aa07ec0ef7f46b0d1030db91a1 = L.marker(
+                [26.492001, 74.551601],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_71c304a8f8944e3816049904329e4a3b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "cadetblue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_78eaf7c3b3aa1c41acf5afe08f039ce3 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_19ad05bb5335080baa26efbd5becd36d = $(`<div id="html_19ad05bb5335080baa26efbd5becd36d" style="width: 100.0%; height: 100.0%;">Site: I-RJ-PSKR-ENB-6000<br>Route: AJMER-R7-S1</div>`)[0];
+                popup_78eaf7c3b3aa1c41acf5afe08f039ce3.setContent(html_19ad05bb5335080baa26efbd5becd36d);
+            
+        
+
+        marker_282e96aa07ec0ef7f46b0d1030db91a1.bindPopup(popup_78eaf7c3b3aa1c41acf5afe08f039ce3)
+        ;
+
+        
+    
+    
+                marker_282e96aa07ec0ef7f46b0d1030db91a1.setIcon(icon_71c304a8f8944e3816049904329e4a3b);
+            
+    
+            var marker_f0ac76db01c522266623f2c1583af58d = L.marker(
+                [26.3818322222222, 74.4366036111111],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_c5377052323f61f13e2a5c5e7314b1c0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "cadetblue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f5fe21089a4c09ef9a2d6b983e03f2c2 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_da9c688425900ba8829ef5dcb1ab3481 = $(`<div id="html_da9c688425900ba8829ef5dcb1ab3481" style="width: 100.0%; height: 100.0%;">Site: I-RJ-PISN-ENB-9024<br>Route: AJMER-R7-S2</div>`)[0];
+                popup_f5fe21089a4c09ef9a2d6b983e03f2c2.setContent(html_da9c688425900ba8829ef5dcb1ab3481);
+            
+        
+
+        marker_f0ac76db01c522266623f2c1583af58d.bindPopup(popup_f5fe21089a4c09ef9a2d6b983e03f2c2)
+        ;
+
+        
+    
+    
+                marker_f0ac76db01c522266623f2c1583af58d.setIcon(icon_c5377052323f61f13e2a5c5e7314b1c0);
+            
+    
+            var marker_4871391bdcdebf83eabf6177ba413f89 = L.marker(
+                [26.27392, 74.50673],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_3c9160583bb27043b89baf531e0550c0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "cadetblue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_212630aee87b6059643b54c8972cf301 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_b1aa8e967a488570aa56e3a2e9978245 = $(`<div id="html_b1aa8e967a488570aa56e3a2e9978245" style="width: 100.0%; height: 100.0%;">Site: I-RJ-PISN-ENB-9008<br>Route: AJMER-R7-S3</div>`)[0];
+                popup_212630aee87b6059643b54c8972cf301.setContent(html_b1aa8e967a488570aa56e3a2e9978245);
+            
+        
+
+        marker_4871391bdcdebf83eabf6177ba413f89.bindPopup(popup_212630aee87b6059643b54c8972cf301)
+        ;
+
+        
+    
+    
+                marker_4871391bdcdebf83eabf6177ba413f89.setIcon(icon_3c9160583bb27043b89baf531e0550c0);
+            
+    
+            var poly_line_4b556809afeebcb57b87f35a9608fad0 = L.polyline(
+                [[26.9124, 75.7873], [26.492001, 74.551601], [26.3818322222222, 74.4366036111111], [26.27392, 74.50673]],
+                {"bubblingMouseEvents": true, "color": "cadetblue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "cadetblue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var marker_2bfbc6eb93b24c932ab8e3bc9e14abd0 = L.marker(
+                [26.4605291666667, 74.7116272222222],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_cf358353915c11aee763099c11923d26 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_37b4f67b6ca43be72526e22a2369cc6a = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_1e36e6a8c6b07c31f21fd907fd975413 = $(`<div id="html_1e36e6a8c6b07c31f21fd907fd975413" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BDLY-ENB-9005<br>Route: AJMER-R8-S1</div>`)[0];
+                popup_37b4f67b6ca43be72526e22a2369cc6a.setContent(html_1e36e6a8c6b07c31f21fd907fd975413);
+            
+        
+
+        marker_2bfbc6eb93b24c932ab8e3bc9e14abd0.bindPopup(popup_37b4f67b6ca43be72526e22a2369cc6a)
+        ;
+
+        
+    
+    
+                marker_2bfbc6eb93b24c932ab8e3bc9e14abd0.setIcon(icon_cf358353915c11aee763099c11923d26);
+            
+    
+            var marker_2373af24bcb6dc85f066835616e83843 = L.marker(
+                [26.2758, 74.7484244444444],
+                {
+}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+    
+            var icon_b915560b839bb441e38c80acf303f42e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8835c03a4a6374cd964d7f1b38915ff9 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_060228b9a2eed1d0aa886f577502c8d2 = $(`<div id="html_060228b9a2eed1d0aa886f577502c8d2" style="width: 100.0%; height: 100.0%;">Site: I-RJ-NSRB-ENB-9043<br>Route: AJMER-R8-S2</div>`)[0];
+                popup_8835c03a4a6374cd964d7f1b38915ff9.setContent(html_060228b9a2eed1d0aa886f577502c8d2);
+            
+        
+
+        marker_2373af24bcb6dc85f066835616e83843.bindPopup(popup_8835c03a4a6374cd964d7f1b38915ff9)
+        ;
+
+        
+    
+    
+                marker_2373af24bcb6dc85f066835616e83843.setIcon(icon_b915560b839bb441e38c80acf303f42e);
+            
+    
+            var poly_line_4dde9b4111642b0220a2e93e805a3245 = L.polyline(
+                [[26.9124, 75.7873], [26.4605291666667, 74.7116272222222], [26.2758, 74.7484244444444]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_48a48f716ff6126d58326421b0b0bf0d);
+        
+</script>
+</html>

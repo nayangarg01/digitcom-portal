@@ -14,7 +14,7 @@
     <style>
         /* Additional page-specific styles */
         .page-header {
-            padding: 160px 2rem 60px;
+            padding: 100px 2rem 40px;
             background-color: var(--bg-alt);
             text-align: center;
             margin-top: 120px;
@@ -86,10 +86,36 @@
             overflow: hidden;
             border-radius: 16px;
             aspect-ratio: 1 / 1;
+            aspect-ratio: 1/1;
             cursor: pointer;
-            background-color: #f8fafc;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            background-color: #f1f5f9;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        /* Skeleton Shimmer Animation */
+        .gallery-item::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            z-index: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .gallery-item.loaded::before {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .gallery-item:hover {
@@ -97,32 +123,43 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.12);
         }
 
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.6s ease;
-            display: block;
-        }
-
-        .gallery-item:hover img {
-            transform: scale(1.1);
-        }
-
         .gallery-item .category-tag {
             position: absolute;
             top: 15px;
             left: 15px;
             background: rgba(255, 255, 255, 0.9);
-            padding: 5px 15px;
+            padding: 5px 12px;
             border-radius: 20px;
             font-size: 0.75rem;
-            font-weight: 700;
+            font-weight: 600;
             color: var(--accent);
             z-index: 2;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            letter-spacing: 1px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .gallery-item.loaded .category-tag {
+            opacity: 1;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.6s ease;
+            opacity: 0;
+            z-index: 2;
+        }
+
+        .gallery-item.loaded img {
+            opacity: 1;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.1);
         }
 
         /* Lightbox CSS */
@@ -281,46 +318,45 @@
             ...[
                 '10_cleaned.png', '14.png', '16.png', '1_cleaned.png',
                 '29.png', '3.png', '32.png', '5.png', '7.png', '8.png'
-            ].map(file => ({ category: 'fm', src: `gallery/FM/${file}`, label: 'FM Site' })),
+            ].map(file => ({ category: 'fm', src: `gallery/fm/${file}`, label: 'FM Site' })),
 
             // Mobile Networks (Consolidated: Airfiber + mobileNetworkPhotos + pantabandPhotos)
             // Airfiber
             ...[
-                'PHOTO-2026-03-17-17-12-09 2.jpg', 'PHOTO-2026-03-17-17-12-09 3.jpg',
-                'PHOTO-2026-03-17-17-12-09.jpg', 'PHOTO-2026-03-17-17-12-11.jpg',
-                'PHOTO-2026-03-17-17-12-14 2.jpg', 'PHOTO-2026-03-17-17-12-15 2.jpg',
-                'PHOTO-2026-03-17-17-12-15.jpg', 'PHOTO-2026-03-17-17-13-29 2.jpg',
-                'PHOTO-2026-03-17-17-13-29.jpg', 'PHOTO-2026-03-17-17-13-30 2.jpg',
-                'PHOTO-2026-03-17-17-13-30.jpg'
-            ].map(file => ({ category: 'mobile', src: `gallery/Airfiber/${file}`, label: 'AirFiber Install' })),
-            // mobileNetworkPhotos
-            ...[
-                'PHOTO-2026-03-17-16-05-56.jpg', 'PHOTO-2026-03-17-16-06-01 3.jpg',
-                'PHOTO-2026-03-17-16-06-01.jpg', 'PHOTO-2026-03-17-16-06-03.jpg',
-                'PHOTO-2026-03-17-16-06-06.jpg', 'PHOTO-2026-03-17-16-06-12 3.jpg',
-                'PHOTO-2026-03-17-16-06-17.jpg', 'PHOTO-2026-03-17-16-06-21.jpg',
-                'PHOTO-2026-03-17-16-06-23.jpg', 'PHOTO-2026-03-17-16-06-27.jpg'
-            ].map(file => ({ category: 'mobile', src: `gallery/mobileNetworkPhotos/${file}`, label: 'Network Setup' })),
+                'photo-2026-03-17-17-12-09 2.jpg', 'photo-2026-03-17-17-12-09 3.jpg',
+                'photo-2026-03-17-17-12-09.jpg', 'photo-2026-03-17-17-12-11.jpg',
+                'photo-2026-03-17-17-12-14 2.jpg', 'photo-2026-03-17-17-12-15 2.jpg',
+                'photo-2026-03-17-17-12-15.jpg', 'photo-2026-03-17-17-13-29 2.jpg',
+                'photo-2026-03-17-17-13-29.jpg', 'photo-2026-03-17-17-13-30 2.jpg',
+                'photo-2026-03-17-17-13-30.jpg'
+            ].map(file => ({ category: 'mobile', src: `gallery/airfiber/${file}`, label: 'AirFiber Install' })),
             // pantabandPhotos
             ...[
-                'PHOTO-2026-03-17-17-16-15.jpg', 'PHOTO-2026-03-17-17-16-17.jpg',
-                'PHOTO-2026-03-17-17-16-18.jpg', 'PHOTO-2026-03-17-17-16-19 2.jpg',
-                'PHOTO-2026-03-17-17-16-19 3.jpg', 'PHOTO-2026-03-17-17-16-19.jpg',
-                'PHOTO-2026-03-17-17-16-20 2.jpg', 'PHOTO-2026-03-17-17-16-20.jpg',
-                'PHOTO-2026-03-17-17-16-21 2.jpg', 'PHOTO-2026-03-17-17-16-21 3.jpg',
-                'PHOTO-2026-03-17-17-16-21.jpg'
-            ].map(file => ({ category: 'mobile', src: `gallery/pantabandPhotos/${file}`, label: 'Pentaband Site' })),
+                'photo-2026-03-17-17-16-15.jpg', 'photo-2026-03-17-17-16-17.jpg',
+                'photo-2026-03-17-17-16-18.jpg', 'photo-2026-03-17-17-16-19 2.jpg',
+                'photo-2026-03-17-17-16-19 3.jpg', 'photo-2026-03-17-17-16-19.jpg',
+                'photo-2026-03-17-17-16-20 2.jpg', 'photo-2026-03-17-17-16-20.jpg',
+                'photo-2026-03-17-17-16-21 2.jpg', 'photo-2026-03-17-17-16-21 3.jpg',
+                'photo-2026-03-17-17-16-21.jpg'
+            ].map(file => ({ category: 'mobile', src: `gallery/pantabandphotos/${file}`, label: 'Pentaband Site' })),
 
             // Solar (Mapped to solarPhotos folder)
             ...[
-                'PHOTO-2026-03-17-16-06-27.jpg', 'PHOTO-2026-03-17-16-06-28.jpg',
-                'PHOTO-2026-03-17-16-06-30.jpg', 'PHOTO-2026-03-17-16-06-31.jpg',
-                'PHOTO-2026-03-17-16-06-32 2.jpg', 'PHOTO-2026-03-17-16-06-32.jpg',
-                'PHOTO-2026-03-17-16-06-33 2.jpg', 'PHOTO-2026-03-17-16-06-33.jpg',
-                'PHOTO-2026-03-17-16-06-34 2.jpg', 'PHOTO-2026-03-17-16-06-34 3.jpg',
-                'PHOTO-2026-03-17-16-06-34.jpg', 'PHOTO-2026-03-17-16-06-35 2.jpg',
-                'PHOTO-2026-03-17-16-06-35 3.jpg', 'PHOTO-2026-03-17-16-06-35.jpg'
-            ].map(file => ({ category: 'solar', src: `gallery/solarPhotos/${file}`, label: 'Solar Project' }))
+                'photo-2026-03-17-16-05-56.jpg', 'photo-2026-03-17-16-06-01 3.jpg',
+                'photo-2026-03-17-16-06-01.jpg', 'photo-2026-03-17-16-06-03.jpg',
+                'photo-2026-03-17-16-06-06.jpg', 'photo-2026-03-17-16-06-12 3.jpg',
+                'photo-2026-03-17-16-06-17.jpg', 'photo-2026-03-17-16-06-21.jpg',
+                'photo-2026-03-17-16-06-23.jpg', 'photo-2026-03-17-16-06-27.jpg'
+            ].map(file => ({ category: 'solar', src: `gallery/mobilenetworkphotos/${file}`, label: 'Solar Install' })),
+            ...[
+                'photo-2026-03-17-16-06-27.jpg', 'photo-2026-03-17-16-06-28.jpg',
+                'photo-2026-03-17-16-06-30.jpg', 'photo-2026-03-17-16-06-31.jpg',
+                'photo-2026-03-17-16-06-32 2.jpg', 'photo-2026-03-17-16-06-32.jpg',
+                'photo-2026-03-17-16-06-33 2.jpg', 'photo-2026-03-17-16-06-33.jpg',
+                'photo-2026-03-17-16-06-34 2.jpg', 'photo-2026-03-17-16-06-34 3.jpg',
+                'photo-2026-03-17-16-06-34.jpg', 'photo-2026-03-17-16-06-35 2.jpg',
+                'photo-2026-03-17-16-06-35 3.jpg', 'photo-2026-03-17-16-06-35.jpg'
+            ].map(file => ({ category: 'solar', src: `gallery/solarphotos/${file}`, label: 'Solar Project' }))
         ];
 
         function renderGallery(filter = 'all') {
@@ -334,7 +370,9 @@
                     item.className = 'gallery-item';
                     item.innerHTML = `
                         <div class="category-tag">${proj.category}</div>
-                        <img src="${proj.src}" alt="${proj.label}" loading="lazy" onerror="this.parentElement.style.display='none';">
+                        <img src="${proj.src}" alt="${proj.label}" loading="lazy" 
+                             onload="this.parentElement.classList.add('loaded')"
+                             onerror="this.parentElement.style.display='none';">
                     `;
                     item.addEventListener('click', () => openLightbox(proj.src));
                     galleryGrid.appendChild(item);

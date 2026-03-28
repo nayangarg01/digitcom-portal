@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_bba3fcd18abe2aa74d0b1ad40c21817e {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_bba3fcd18abe2aa74d0b1ad40c21817e" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_bba3fcd18abe2aa74d0b1ad40c21817e = L.map(
+                "map_bba3fcd18abe2aa74d0b1ad40c21817e",
+                {
+                    center: [26.9124, 75.7873],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 9,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_3859aa086a5ac6da84412f8e7dd8fca6 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_3859aa086a5ac6da84412f8e7dd8fca6.addTo(map_bba3fcd18abe2aa74d0b1ad40c21817e);
+        
+    
+            var marker_4ec5a1aabb9fe84833f89b9bce1c8c3d = L.marker(
+                [26.9124, 75.7873],
+                {
+}
+            ).addTo(map_bba3fcd18abe2aa74d0b1ad40c21817e);
+        
+    
+            var icon_ebd8ed8e49db8d74c897ab4bcc8dc559 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "black",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6d3c7c023a06ce4d278d75c81c6e1fa9 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_1ed97a19e8851870d2148684f7f62d3e = $(`<div id="html_1ed97a19e8851870d2148684f7f62d3e" style="width: 100.0%; height: 100.0%;">WAREHOUSE: JAIPUR</div>`)[0];
+                popup_6d3c7c023a06ce4d278d75c81c6e1fa9.setContent(html_1ed97a19e8851870d2148684f7f62d3e);
+            
+        
+
+        marker_4ec5a1aabb9fe84833f89b9bce1c8c3d.bindPopup(popup_6d3c7c023a06ce4d278d75c81c6e1fa9)
+        ;
+
+        
+    
+    
+                marker_4ec5a1aabb9fe84833f89b9bce1c8c3d.setIcon(icon_ebd8ed8e49db8d74c897ab4bcc8dc559);
+            
+    
+            var marker_d6905ccd8b4ded001d164893bd555ab4 = L.marker(
+                [26.0026094444444, 75.1649472222222],
+                {
+}
+            ).addTo(map_bba3fcd18abe2aa74d0b1ad40c21817e);
+        
+    
+            var icon_b94fca5bc62ce069daa0d9d17bfe41fb = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_de2bae155ed14745da1fca925ee0b04a = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_f24b3794f675249ae3d4a56ae3b50df2 = $(`<div id="html_f24b3794f675249ae3d4a56ae3b50df2" style="width: 100.0%; height: 100.0%;">Site: I-RJ-KKRI-ENB-9031<br>Route: Manual</div>`)[0];
+                popup_de2bae155ed14745da1fca925ee0b04a.setContent(html_f24b3794f675249ae3d4a56ae3b50df2);
+            
+        
+
+        marker_d6905ccd8b4ded001d164893bd555ab4.bindPopup(popup_de2bae155ed14745da1fca925ee0b04a)
+        ;
+
+        
+    
+    
+                marker_d6905ccd8b4ded001d164893bd555ab4.setIcon(icon_b94fca5bc62ce069daa0d9d17bfe41fb);
+            
+    
+            var marker_b2e322a072ea82dc3e9fe4d201d71c13 = L.marker(
+                [26.0568608333333, 75.0091063888889],
+                {
+}
+            ).addTo(map_bba3fcd18abe2aa74d0b1ad40c21817e);
+        
+    
+            var icon_d4a1cd4f71763971307d72765e04233c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_3b9efd03fcf200351caa1d529b66da37 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_c92387ae1eea71c133bd7a08826f2561 = $(`<div id="html_c92387ae1eea71c133bd7a08826f2561" style="width: 100.0%; height: 100.0%;">Site: I-RJ-SRWR-ENB-A001<br>Route: Manual</div>`)[0];
+                popup_3b9efd03fcf200351caa1d529b66da37.setContent(html_c92387ae1eea71c133bd7a08826f2561);
+            
+        
+
+        marker_b2e322a072ea82dc3e9fe4d201d71c13.bindPopup(popup_3b9efd03fcf200351caa1d529b66da37)
+        ;
+
+        
+    
+    
+                marker_b2e322a072ea82dc3e9fe4d201d71c13.setIcon(icon_d4a1cd4f71763971307d72765e04233c);
+            
+    
+            var marker_0430b6bac1237225330f1bc47fdf9973 = L.marker(
+                [26.1266977777778, 74.9488022222222],
+                {
+}
+            ).addTo(map_bba3fcd18abe2aa74d0b1ad40c21817e);
+        
+    
+            var icon_613564754e67bfc10a521682b142186b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5f727fc3903da73872933bcff885ef68 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_dcf58501b74c260d34cff5fe2cd2a445 = $(`<div id="html_dcf58501b74c260d34cff5fe2cd2a445" style="width: 100.0%; height: 100.0%;">Site: I-RJ-SRWR-ENB-9006<br>Route: Manual</div>`)[0];
+                popup_5f727fc3903da73872933bcff885ef68.setContent(html_dcf58501b74c260d34cff5fe2cd2a445);
+            
+        
+
+        marker_0430b6bac1237225330f1bc47fdf9973.bindPopup(popup_5f727fc3903da73872933bcff885ef68)
+        ;
+
+        
+    
+    
+                marker_0430b6bac1237225330f1bc47fdf9973.setIcon(icon_613564754e67bfc10a521682b142186b);
+            
+    
+            var poly_line_bbef749aaaae7a4e8eedad45a8eade36 = L.polyline(
+                [[26.9124, 75.7873], [26.0026094444444, 75.1649472222222], [26.0568608333333, 75.0091063888889], [26.1266977777778, 74.9488022222222]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_bba3fcd18abe2aa74d0b1ad40c21817e);
+        
+</script>
+</html>

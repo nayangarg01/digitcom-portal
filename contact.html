@@ -11,10 +11,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="new-style.css">
     <script src="scripts/main.js" defer></script>
+    <script src="scripts/contact.js" defer></script>
     <style>
         /* Additional page-specific styles */
         .page-header {
-            padding: 160px 2rem 60px;
+            padding: 100px 2rem 40px;
             background-color: var(--bg-alt);
             text-align: center;
             margin-top: 120px;
@@ -140,18 +141,83 @@
             color: var(--primary-color);
         }
 
-        .map-container {
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            margin-top: 40px;
+        .office-label {
+            display: inline-block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--primary-color);
         }
 
-        .map-container iframe {
+        .map-container {
+            position: relative;
             width: 100%;
             height: 300px;
-            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-top: 10px;
+        }
+
+        .map-container a {
+            display: block;
+            width: 100%;
+            height: 100%;
+            text-decoration: none;
+        }
+
+        .map-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.33, 1, 0.68, 1);
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            color: white;
+            text-align: center;
+        }
+
+        .map-overlay span {
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 8px 16px;
+            border: 2px solid white;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(4px);
+        }
+
+        .map-container:hover img {
+            transform: scale(1.08);
+        }
+
+        .map-container:hover .map-overlay {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .map-container {
+                height: 250px;
+            }
         }
     </style>
 </head>
@@ -198,22 +264,22 @@
         <!-- Contact Form -->
         <div class="contact-form">
             <h3>Send us a message</h3>
-            <form action="#" method="post">
+            <form id="contact-form" onsubmit="return false;">
                 <div class="form-group">
                     <label for="name">Full Name</label>
-                    <input type="text" name="name" id="name" placeholder="John Doe" required>
+                    <input type="text" name="name" id="name" required>
                 </div>
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" name="email" id="email" placeholder="john@example.com" required>
+                    <input type="email" name="email" id="email" required>
                 </div>
                 <div class="form-group">
                     <label for="company">Company Name</label>
-                    <input type="text" name="company" id="company" placeholder="Your Company Ltd.">
+                    <input type="text" name="company" id="company">
                 </div>
                 <div class="form-group">
                     <label for="message">Message</label>
-                    <textarea name="message" id="message" rows="5" placeholder="How can we help you?" required></textarea>
+                    <textarea name="message" id="message" rows="5" required></textarea>
                 </div>
                 <button name="send" type="submit" value="1">Send Message</button>
             </form>
@@ -230,6 +296,18 @@
                     SECTOR 90, NOIDA, <br>
                     201315
                 </p>
+                
+                <div class="office-label">Bhutani Alphathum</div>
+                <!-- Interactive Office Location Card -->
+                <div class="map-container">
+                    <a href="https://www.google.com/maps/search/?api=1&query=A-308+BHUTANI+ALPHATHUM+SECTOR+90+NOIDA+201315" target="_blank">
+                        <img src="gallery/OfficeImg.webp" alt="Digitcom India Office - Bhutani Alphathum">
+                        <div class="map-overlay">
+                            <div class="map-icon">📍</div>
+                            <span>View on Google Maps</span>
+                        </div>
+                    </a>
+                </div>
             </div>
 
             <div class="contact-info-block">
@@ -241,11 +319,6 @@
             <div class="contact-info-block">
                 <h4>Email</h4>
                 <p><a href="mailto:info@digitcomindia.com">info@digitcomindia.com</a></p>
-            </div>
-
-            <!-- Google Maps Embed -->
-            <div class="map-container">
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d224368.39371590235!2d77.25804244618055!3d28.516983403738145!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390ce5a43173357b%3A0x37ffce30c87cc03f!2sNoida%2C+Uttar+Pradesh!5e0!3m2!1sen!2sin!4v1536842270100" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
         </div>
     </section>

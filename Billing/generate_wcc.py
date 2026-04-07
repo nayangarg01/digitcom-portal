@@ -5,6 +5,7 @@ import argparse
 import os
 from copy import copy
 import datetime
+
 from openpyxl.utils import get_column_letter
 
 def load_master_data(master_path, target_billing_file):
@@ -152,6 +153,7 @@ def generate_jms_sheet(df_sites, wb):
     ws = wb['JMS']
     
     # 1. Identify key horizontal and vertical tracking indices
+    # Row 10: Site IDs (Col 4 onwards)
     SITE_ROW = 10
     SITE_TYPE_ROW = 11
     SECTOR_ROW = 12
@@ -194,10 +196,12 @@ def generate_jms_sheet(df_sites, wb):
             c.number_format, c.alignment = s['number_format'], copy(s['alignment'])
 
     # Item Quantity Injection
+    # Scan Column B for descriptions and match with df_sites columns
     for r_idx in range(14, ws.max_row + 1):
         desc = str(ws.cell(row=r_idx, column=2).value).strip() if ws.cell(row=r_idx, column=2).value else ""
         if not desc or "TOTAL" in desc.upper(): continue
         
+        # Fuzzy match description with MASTERDPR columns
         match_col = next((c for c in df_sites.columns if desc.upper() in str(c).upper() or str(c).upper() in desc.upper()), None)
         if match_col:
             quantities = df_sites[match_col].values
@@ -223,11 +227,14 @@ def generate_jms_sheet(df_sites, wb):
             desc_val = ws.cell(row=r_idx, column=2).value
             if not desc_val or "TOTAL" in str(desc_val).upper():
                 if "TOTAL" in str(desc_val).upper():
+                    # Update Grand Total
                     sum_formula = f"=SUM({get_column_letter(amt_col)}16:{get_column_letter(amt_col)}{r_idx-1})"
                     ws.cell(row=r_idx, column=amt_col).value = sum_formula
                 continue
                 
+            # Total Quantity = SUM(Sites)
             ws.cell(row=r_idx, column=qty_col).value = f"=SUM({first_let}{r_idx}:{last_let}{r_idx})"
+            # Amount = Qty * Rate
             ws.cell(row=r_idx, column=amt_col).value = f"={get_column_letter(qty_col)}{r_idx}*{get_column_letter(rate_col)}{r_idx}"
 
     return True
@@ -236,9 +243,10 @@ def main():
     parser = argparse.ArgumentParser(description="Generate JIO Billing Formats from MASTERDPR.")
     parser.add_argument("master_file", help="Path to the MASTERDPR.xlsx file")
     parser.add_argument("billing_target", help="Target Billing File code (e.g., DC0105)")
-    parser.add_argument("template_path", help="Path to the DC0105_TEMPLATE.xlsx file")
-    parser.add_argument("output_path", help="Path where the generated file should be saved")
     args = parser.parse_args()
+
+    template_path = 'Billing/DC0105.xlsx' 
+    output_path = f'Billing/{args.billing_target.upper()}_Automated.xlsx'
 
     print(f"--- Processing {args.billing_target.upper()} ---")
     df_sites = load_master_data(args.master_file, args.billing_target)
@@ -246,7 +254,7 @@ def main():
     if df_sites is not None:
         print(f"Loaded {len(df_sites)} sites. Opening template...")
         try:
-            wb = openpyxl.load_workbook(args.template_path)
+            wb = openpyxl.load_workbook(template_path)
             
             print("Processing WCC Sheet...")
             generate_wcc_sheet(df_sites, wb)
@@ -254,8 +262,8 @@ def main():
             print("Processing JMS Sheet...")
             generate_jms_sheet(df_sites, wb)
             
-            wb.save(args.output_path)
-            print(f"Success! Finalized file: {args.output_path}")
+            wb.save(output_path)
+            print(f"Success! Finalized file: {output_path}")
         except Exception as e:
             print(f"Generation failed: {e}")
             import traceback

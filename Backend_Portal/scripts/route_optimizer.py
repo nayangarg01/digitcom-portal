@@ -2,130 +2,97 @@ import sys
 import os
 import pandas as pd
 import numpy as np
-import requests
+import googlemaps
 import json
-from ortools.constraint_solver import routing_enums_pb2
-from ortools.constraint_solver import pywrapcp
-import openpyxl
-from math import ceil, atan2
+import math
+import itertools
 
-def get_distance_matrix(locations, api_key):
-    """
-    Fetch full distance matrix from Google Maps API in parallel batches.
-    """
-    num_locations = len(locations)
-    matrix = np.zeros((num_locations, num_locations))
-    batch_size = 5
+# ──────────────────────────────────────────────
+# ROUTING CORE MATH
+# ──────────────────────────────────────────────
+def haversine(p1, p2):
+    R = 6371
+    lat1, lon1 = math.radians(p1[0]), math.radians(p1[1])
+    lat2, lon2 = math.radians(p2[0]), math.radians(p2[1])
+    dlat, dlon = lat2 - lat1, lon2 - lon1
+    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    return R * c
+
+def get_api_driving_distance(gmaps, origin, dest):
+    try:
+        routes = gmaps.directions(origin, dest, mode='driving', alternatives=True)
+        if routes:
+            def total_dist(r):
+                return sum(leg['distance']['value'] for leg in r['legs'])
+            shortest_route = min(routes, key=total_dist)
+            dist_m = total_dist(shortest_route)
+            return round(dist_m / 1000.0, 2)
+    except Exception as e:
+        pass
+    return round(haversine(origin, dest), 2)
+
+def optimize_segment(warehouse_coords, cluster):
+    best_p = None; min_d = float('inf')
+    for p in itertools.permutations(cluster):
+        d = haversine(warehouse_coords, p[0]['coords'])
+        if len(p) > 1: d += haversine(p[0]['coords'], p[1]['coords'])
+        if len(p) > 2: d += haversine(p[1]['coords'], p[2]['coords'])
+        if d < min_d: min_d = d; best_p = p
+    return best_p
+
+def segment_to_legs(warehouse_coords, segment):
+    route_legs = []; cp = warehouse_coords
+    for s in segment:
+        d = haversine(cp, s['coords'])
+        route_legs.append({"site": s, "haversine_dist": round(d, 2), "api_dist": 0.0})
+        cp = s['coords']
+    return route_legs
+
+def run_routing(warehouse_coords, cluster):
+    jc_groups = {}
+    for s in cluster:
+        row = s.get('row_data', {})
+        jc = str(row.get('INJECTED_JC', '')).strip().upper()
+        if jc not in jc_groups: jc_groups[jc] = []
+        jc_groups[jc].append(s)
     
-    from concurrent.futures import ThreadPoolExecutor
-
-    batches = []
-    for i in range(0, num_locations, batch_size):
-        for j in range(0, num_locations, batch_size):
-            batches.append((i, j))
-
-    def fetch_batch(coords):
-        start_i, start_j = coords
-        origins_batch = locations[start_i : min(start_i + batch_size, num_locations)]
-        dest_batch = locations[start_j : min(start_j + batch_size, num_locations)]
-        
-        origin_str = "|".join([f"{round(lat, 6)},{round(lng, 6)}" for lat, lng in origins_batch])
-        dest_str = "|".join([f"{round(lat, 6)},{round(lng, 6)}" for lat, lng in dest_batch])
-        
-        url = f"https://maps.googleapis.com/maps/api/distancematrix/json?origins={origin_str}&destinations={dest_str}&avoid=highways&key={api_key}"
-        
-        try:
-            response = requests.get(url).json()
-            if response['status'] == 'OK':
-                return (start_i, start_j, response['rows'])
-            else:
-                return (start_i, start_j, None)
-        except:
-            return (start_i, start_j, None)
-
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        results = list(executor.map(fetch_batch, batches))
-
-    for start_i, start_j, rows in results:
-        if rows is None: continue
-        for row_idx, row in enumerate(rows):
-            for col_idx, element in enumerate(row['elements']):
-                if element['status'] == 'OK':
-                    matrix[start_i + row_idx][start_j + col_idx] = element['distance']['value']
-                else:
-                    matrix[start_i + row_idx][start_j + col_idx] = 999999
-    return matrix
-
-def partition_sites(n):
-    if n < 2: return [n]
-    if n == 2: return [2]
-    if n == 3: return [3]
-    if n == 4: return [2, 2]
-    if n % 3 == 0: return [3] * (n // 3)
-    if n % 3 == 1: return [3] * ((n - 4) // 3) + [2, 2]
-    return [3] * ((n - 2) // 3) + [2]
-
-def solve_recursive_splitting(warehouse_coords, chunk, api_key):
-    """
-    Applies the recursive WH->B < A->B logic using real distances.
-    """
-    locations = [warehouse_coords] + [s['coords'] for s in chunk]
-    dist_matrix = get_distance_matrix(locations, api_key)
-    
-    # Indices in matrix: 0=WH, 1=A, 2=B, 3=C
-    p_sites = chunk.copy()
-    final_routes = []
-    
-    while p_sites:
-        if len(p_sites) == 1:
-            site = p_sites.pop(0)
-            dist_km = dist_matrix[0][chunk.index(site)+1] / 1000.0
-            final_routes.append([{ "site": site, "dist_km": max(0, dist_km - 50) }])
-        elif len(p_sites) == 2:
-            A, B = p_sites[0], p_sites[1]
-            idx_a, idx_b = chunk.index(A)+1, chunk.index(B)+1
-            dist_wh_b = dist_matrix[0][idx_b]
-            dist_a_b = dist_matrix[idx_a][idx_b]
+    for s in cluster:
+        my_jc = str(s.get('row_data', {}).get('INJECTED_JC', '')).strip().upper()
+        others = [o for o in cluster if str(o.get('row_data', {}).get('INJECTED_JC', '')).strip().upper() != my_jc]
+        if others: s['trans_dist'] = min(haversine(s['coords'], o['coords']) for o in others)
+        else: s['trans_dist'] = 999999.0
             
-            if dist_wh_b < dist_a_b:
-                # Split
-                dist_wh_a_km = dist_matrix[0][idx_a] / 1000.0
-                final_routes.append([{ "site": p_sites.pop(0), "dist_km": max(0, dist_wh_a_km - 50) }])
-            else:
-                # Together
-                dist_wh_a_km = dist_matrix[0][idx_a] / 1000.0
-                dist_a_b_km = dist_matrix[idx_a][idx_b] / 1000.0
-                final_routes.append([
-                    { "site": p_sites.pop(0), "dist_km": max(0, dist_wh_a_km - 50) },
-                    { "site": p_sites.pop(0), "dist_km": dist_a_b_km }
-                ])
-        else: # 3 sites
-            A, B, C = p_sites[0], p_sites[1], p_sites[2]
-            idx_a, idx_b, idx_c = chunk.index(A)+1, chunk.index(B)+1, chunk.index(C)+1
-            
-            if dist_matrix[0][idx_b] < dist_matrix[idx_a][idx_b]:
-                # A is separate
-                dist_wh_a_km = dist_matrix[0][idx_a] / 1000.0
-                final_routes.append([{ "site": p_sites.pop(0), "dist_km": max(0, dist_wh_a_km - 50) }])
-            elif dist_matrix[0][idx_c] < dist_matrix[idx_b][idx_c]:
-                # A, B together, C separate
-                dist_wh_a_km = dist_matrix[0][idx_a] / 1000.0
-                dist_a_b_km = dist_matrix[idx_a][idx_b] / 1000.0
-                final_routes.append([
-                    { "site": p_sites.pop(0), "dist_km": max(0, dist_wh_a_km - 50) },
-                    { "site": p_sites.pop(0), "dist_km": dist_a_b_km }
-                ])
-            else:
-                # All 3 together
-                dist_wh_a_km = dist_matrix[0][idx_a] / 1000.0
-                dist_a_b_km = dist_matrix[idx_a][idx_b] / 1000.0
-                dist_b_c_km = dist_matrix[idx_b][idx_c] / 1000.0
-                final_routes.append([
-                    { "site": p_sites.pop(0), "dist_km": max(0, dist_wh_a_km - 50) },
-                    { "site": p_sites.pop(0), "dist_km": dist_a_b_km },
-                    { "site": p_sites.pop(0), "dist_km": dist_b_c_km }
-                ])
+    final_routes = []; mixer_pool = []
+    
+    for jc, sites in jc_groups.items():
+        unvisited = sorted(sites, key=lambda x: x['trans_dist'], reverse=True)
+        while len(unvisited) >= 3:
+            seed = unvisited.pop(0)
+            clump = [seed]
+            for _ in range(2):
+                nearest = min(unvisited, key=lambda s: haversine(seed['coords'], s['coords']))
+                clump.append(nearest)
+                unvisited.remove(nearest)
+            best_p = optimize_segment(warehouse_coords, clump)
+            final_routes.append(segment_to_legs(warehouse_coords, best_p))
+        mixer_pool.extend(unvisited)
+    
+    unvisited_mixer = list(mixer_pool)
+    while unvisited_mixer:
+        seed = max(unvisited_mixer, key=lambda s: haversine(warehouse_coords, s['coords']))
+        unvisited_mixer.remove(seed)
+        clump = [seed]
+        for _ in range(2):
+            if not unvisited_mixer: break
+            nearest = min(unvisited_mixer, key=lambda s: haversine(seed['coords'], s['coords']))
+            clump.append(nearest)
+            unvisited_mixer.remove(nearest)
+        best_p = optimize_segment(warehouse_coords, clump)
+        final_routes.append(segment_to_legs(warehouse_coords, best_p))
+        
     return final_routes
+
 
 def main():
     if len(sys.argv) < 5:
@@ -133,115 +100,200 @@ def main():
         return
 
     file_path, origin_lat, origin_lng, api_key, output_path = sys.argv[1:6]
-    
-    # Warehouse Mapping (Jaipur - Bagru, Jodhpur - Mogra Khurd)
-    WAREHOUSE_MAP = {
-        'JAIPUR': (26.8139, 75.5450),
-        'JODHPUR': (26.1245, 73.0543),
-        'DEFAULT': (float(origin_lat), float(origin_lng))
+    gmaps = googlemaps.Client(key=api_key, timeout=10)
+
+    # Warehouse Fallbacks
+    WH_COORDS_FALLBACK = {
+        "JAIPUR": (26.810486, 75.496696),
+        "JODHPUR": (26.148422, 73.061378),
+        "DEFAULT": (float(origin_lat), float(origin_lng))
     }
 
     try:
-        # 1. Load Data
+        # Load File
         df = pd.read_excel(file_path) if file_path.endswith(('.xlsx', '.xls')) else pd.read_csv(file_path)
         
-        # 2. Extract Sites and Automatically Detect Warehouse Location
+        # Determine Columns robustly
         lat_col = next((c for c in df.columns if c.strip().lower() in ['latitude', 'lat', 'lat ']), None)
         lng_col = next((c for c in df.columns if c.strip().lower() in ['longitude', 'lng', 'lon', 'long', 'long ']), None)
         id_col = next((c for c in df.columns if c.strip().lower() in ['site id', 'site_id', 'siteid', 'enbsiteid']), None)
         cmp_col = next((c for c in df.columns if c.strip().lower() in ['cmp', 'company']), None)
         wh_col = next((c for c in df.columns if c.strip().lower() in ['wh', 'warehouse_name', 'wh ', 'warehouse']), None)
+        jc_col = next((c for c in df.columns if c.strip().lower() in ['jc', 'jio center', 'jio_center']), None)
+        date_col = next((c for c in df.columns if c.strip().lower() in ['min date', 'date', 'rfs date']), None)
+        band_col = next((c for c in df.columns if c.strip().lower() in ['activity', 'band', 'site type']), None)
 
-        # Detect Warehouse from first row
-        warehouse_coords = WAREHOUSE_MAP['DEFAULT']
-        if wh_col and not df.empty:
-            wh_val = str(df.iloc[0][wh_col]).upper().strip()
-            if 'JAIPUR' in wh_val:
-                warehouse_coords = WAREHOUSE_MAP['JAIPUR']
-            elif 'JODHPUR' in wh_val:
-                warehouse_coords = WAREHOUSE_MAP['JODHPUR']
-
-        site_data = []
+        if not lat_col or not lng_col:
+            print(json.dumps({"error": "Missing precise GPS Latitude/Longitude columns in the dataset"}))
+            return
+            
+        # Parse into engine internal structure
+        processing_sites = []
         for idx, row in df.iterrows():
             try:
                 lat, lng = float(row[lat_col]), float(row[lng_col])
-                if not np.isnan(lat) and not np.isnan(lng):
-                    # Calculate distance and angle from warehouse
-                    dist_to_wh = ((lat - warehouse_coords[0])**2 + (lng - warehouse_coords[1])**2)**0.5
-                    angle = atan2(lat - warehouse_coords[0], lng - warehouse_coords[1])
-                    site_data.append({
-                        "id": str(row[id_col]) if id_col else str(idx),
-                        "coords": (lat, lng),
-                        "orig_idx": idx,
-                        "dist_to_wh": dist_to_wh,
-                        "angle": angle,
-                        "cmp": str(row[cmp_col]).strip() if cmp_col else "Default"
-                    })
-            except: continue
+                if np.isnan(lat) or np.isnan(lng): continue
+                
+                band = str(row[band_col]).strip().upper() if band_col else "UNKNOWN"
+                cmp_val = str(row[cmp_col]).strip().upper() if cmp_col else "DEFAULT"
+                jc_val = str(row[jc_col]).strip().upper() if jc_col else ""
+                date_raw = str(row[date_col]).strip() if date_col else "NO_DATE"
+                date_obj = pd.to_datetime(date_raw, errors='coerce')
+                
+                if ' ' in date_raw and ':' in date_raw: 
+                    date_raw = date_raw.split()[0]
+                elif date_obj is not pd.NaT:
+                    date_raw = date_obj.strftime("%Y-%m-%d")
+                    
+                wh_name = str(row[wh_col]).strip().upper() if wh_col else "DEFAULT"
+                if wh_name == 'JLJH' or wh_name == 'JOD': wh_name = 'JODHPUR'
+                
+                site_data = {
+                    'df_idx': idx,
+                    'id': str(row[id_col]) if id_col else str(idx),
+                    'coords': (lat, lng),
+                    'BAND': band,
+                    'DATE': date_raw,
+                    'CMP': cmp_val,
+                    'WH_NAME': wh_name,
+                    'row_data': {'INJECTED_JC': jc_val}
+                }
+                processing_sites.append(site_data)
+            except Exception as e:
+                continue
 
-        if not site_data:
-            print(json.dumps({"error": "No valid sites found"}))
+        if not processing_sites:
+            print(json.dumps({"error": "No valid sites extracted"}))
             return
-
-        # 3. Phase 1: Group by CMP
-        cmp_groups = {}
-        for s in site_data:
-            c = s['cmp']
-            if c not in cmp_groups: cmp_groups[c] = []
-            cmp_groups[c].append(s)
-
-        final_all_routes = []
-        for cmp_name, group in cmp_groups.items():
-            # 3.1 Global Angular Sort (Sector-based)
-            # This ensures sites in the same direction are grouped together.
-            group.sort(key=lambda x: x['angle'])
             
-            # 3.2 Partition into n%3 chunks
-            sizes = partition_sites(len(group))
-            curr = 0
-            for size in sizes:
-                chunk = group[curr : curr + size]
-                
-                # 3.3 Local Sort by Distance (Inner to Outer)
-                # Helps ensure a logical progression within a sector.
-                chunk.sort(key=lambda x: x['dist_to_wh'])
-                
-                # 3.4 Apply recursive splitting with real distances
-                routes = solve_recursive_splitting(warehouse_coords, chunk, api_key)
-                final_all_routes.extend(routes)
-                curr += size
-
-        # 4. Finalize Results
-        df['CLUBBING'] = ""
-        df['AKTBC'] = 0.0
-        routes_json = []
-
-        # Labels will be in the format: A1, A2... or with Date prefix if we had it, 
-        # but here we follow the chr(65+i) style
-        for r_idx, route in enumerate(final_all_routes):
-            label = f"R{r_idx + 1}" # Using R1, R2... for clarity across many routes
-            route_obj = {"routeNumber": r_idx + 1, "label": label, "legs": []}
-            
-            for s_idx, leg_data in enumerate(route):
-                site = leg_data['site']
-                dist_km = leg_data['dist_km']
-                
-                df.at[site['orig_idx'], 'CLUBBING'] = f"{label}-S{s_idx + 1}"
-                df.at[site['orig_idx'], 'AKTBC'] = dist_km
-                
-                route_obj["legs"].append({
-                    "routeLabel": label,
-                    "stopSequence": s_idx + 1,
-                    "distanceKm": dist_km,
-                    "site": {"id": site['id'], "lat": site['coords'][0], "lng": site['coords'][1]}
-                })
-            routes_json.append(route_obj)
-
-        df['sort_key'] = df['CLUBBING'].apply(lambda x: x if x else "ZZZ")
-        df = df.sort_values(by='sort_key').drop(columns=['sort_key'])
-        df.to_excel(output_path, index=False)
+        df_processing = pd.DataFrame(processing_sites)
         
-        print(json.dumps({"success": True, "num_routes": len(final_all_routes), "routes": routes_json}))
+        final_output = {}
+        routes_json = []
+        route_global_counter = 0
+
+        groups = df_processing.groupby(['BAND', 'DATE', 'CMP'])
+        
+        for (band, date_val, cmp_name), group_df in groups:
+            # 1. Fetch exact Warehouse Coordinates purely based on what is MENTIONED
+            wh_name_for_group = group_df.iloc[0]['WH_NAME']
+            wh_coords = WH_COORDS_FALLBACK.get(wh_name_for_group, WH_COORDS_FALLBACK.get('DEFAULT'))
+
+            is_b6 = "B6" in band.upper()
+            sites_isolated = []
+            sites_triplet = []
+            
+            for _, s_row in group_df.iterrows():
+                s_dict = s_row.to_dict()
+                dist_wh = haversine(wh_coords, s_dict['coords'])
+                if is_b6:
+                    sites_isolated.append(s_dict)
+                else:
+                    if dist_wh < 50: sites_isolated.append(s_dict)
+                    else: sites_triplet.append(s_dict)
+                    
+            routes = []
+            for s in sites_isolated:
+                routes.append([{"site": s, "haversine_dist": haversine(wh_coords, s['coords']), "api_dist": 0.0}])
+                
+            if sites_triplet:
+                routes.extend(run_routing(wh_coords, sites_triplet))
+                
+            for route_loop_idx, route in enumerate(routes):
+                route_global_counter += 1
+                current_origin = wh_coords
+                
+                # Setup JSON representation for this route
+                route_label = f"R{route_global_counter}" # Simplified label logic for JSON UX
+                route_obj = {"routeNumber": route_global_counter, "label": route_label, "legs": []}
+                
+                for s_idx, leg in enumerate(route):
+                    s_dict = leg['site']
+                    dest = s_dict['coords']
+                    
+                    try: api_dist = get_api_driving_distance(gmaps, current_origin, dest)
+                    except: api_dist = leg['haversine_dist']
+                    
+                    base_api_dist = api_dist
+                    
+                    if s_idx == 0:
+                        true_wh_dist = base_api_dist
+                        if is_b6: api_dist = max(0.0, api_dist - 100.0)
+                        else: api_dist = max(0.0, api_dist - 50.0)
+                    else:
+                        try: true_wh_dist = get_api_driving_distance(gmaps, wh_coords, dest)
+                        except: true_wh_dist = haversine(wh_coords, dest)
+                            
+                    club_str = f"{s_dict['CMP']}-R{route_global_counter}-S{s_idx+1}"
+                    aktbc_val = max(0.0, api_dist)
+                    
+                    # Store to Final Matrix structure
+                    final_output[s_dict['df_idx']] = {
+                        'club': club_str,
+                        'dist': round(true_wh_dist, 2),
+                        'aktbc': round(aktbc_val, 2)
+                    }
+                    
+                    # Store to JSON structure
+                    route_obj["legs"].append({
+                        "routeLabel": club_str,
+                        "stopSequence": s_idx + 1,
+                        "distanceKm": round(aktbc_val, 2),
+                        "site": {"id": s_dict['id'], "lat": dest[0], "lng": dest[1]}
+                    })
+                    
+                    current_origin = dest
+                routes_json.append(route_obj)
+
+        if 'CLUBBING' not in df.columns: df['CLUBBING'] = ""
+        if 'KM FROM WH TO SITE' not in df.columns: df['KM FROM WH TO SITE'] = ""
+        if 'AKTBC' not in df.columns: df['AKTBC'] = ""
+
+        for idx, calc in final_output.items():
+            df.at[idx, 'CLUBBING'] = calc['club']
+            df.at[idx, 'KM FROM WH TO SITE'] = calc['dist']
+            df.at[idx, 'AKTBC'] = calc['aktbc']
+
+        # Format dates properly
+        if date_col:
+            df[date_col] = pd.to_datetime(df[date_col], errors='coerce').dt.strftime('%Y-%m-%d').fillna('')
+        rfs_col = next((c for c in df.columns if c.strip().lower() in ['rfs date', 'rfs_date']), None)
+        if rfs_col:
+            df[rfs_col] = pd.to_datetime(df[rfs_col], errors='coerce').dt.strftime('%Y-%m-%d').fillna('')
+
+        # Final Formatting and Export
+        with pd.ExcelWriter(output_path, engine='xlsxwriter', engine_kwargs={'options': {'nan_inf_to_errors': True, 'strings_to_urls': False}}) as writer:
+            wb = writer.book
+            ws = wb.add_worksheet("Optimized Routes")
+            
+            # Format classes
+            header_fmt = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#2F5597', 'font_color': 'white', 'border': 1})
+            std_fmt = wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1})
+            auto_fmt = wb.add_format({'bg_color': '#D9E1F2', 'border': 1, 'align': 'center', 'valign': 'vcenter'})
+            
+            # Write columns seamlessly
+            cols = list(df.columns)
+            
+            # Make sure CLUBBING, KM FROM WH TO SITE, AKTBC are together where possible or just re-insert them 
+            # We will just write the columns in original order, but placing them if they were newly created at the end.
+            for c_idx, col_name in enumerate(cols):
+                ws.write(0, c_idx, str(col_name), header_fmt)
+                
+            for r_idx, row in df.iterrows():
+                row_dict = row.to_dict()
+                for c_idx, col_name in enumerate(cols):
+                    val = row_dict.get(col_name, "")
+                    if col_name in ['CLUBBING', 'KM FROM WH TO SITE', 'AKTBC']:
+                        ws.write(r_idx + 1, c_idx, val, auto_fmt)
+                    else:
+                        ws.write(r_idx + 1, c_idx, val, std_fmt)
+                        
+            # Adjust column width
+            for c_idx, col_name in enumerate(cols):
+                max_len = min(max(len(str(col_name)), max(len(str(v)) for v in df[col_name].astype(str))), 40)
+                ws.set_column(c_idx, c_idx, max_len + 2)
+
+        print(json.dumps({"success": True, "num_routes": len(routes_json), "routes": routes_json}))
 
     except Exception as e:
         print(json.dumps({"error": str(e)}))

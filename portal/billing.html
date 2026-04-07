@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing Operations | Digitcom India Technologies</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../new-style.css">
+    <link rel="stylesheet" href="portal.css">
+    <style>
+        .billing-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #ccc;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: #fff;
+            font-family: inherit;
+        }
+        .btn-generate {
+            background: #28a745;
+            color: #fff;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-generate:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        .btn-generate:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        #status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        .status-success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+        .status-error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            display: none;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="portal-container">
+        <aside class="sidebar">
+            <div class="logo"><img src="../images/logo.jpg" alt="Digitcom Logo"></div>
+            <nav class="sidebar-menu">
+                <a href="dashboard.html">DPR Dashboard</a>
+                <a href="site-management.html">Site Management</a>
+                <a href="route-planning.html">Route Planning</a>
+                <a href="billing.html" class="active">Billing Operations</a>
+                <a href="#" onclick="logout()" style="margin-top: 50px;">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header-bar">
+                <h1>Billing Operations</h1>
+                <div class="user-info">Admin User</div>
+            </header>
+
+            <section class="billing-card">
+                <h3>Generate Work Completion Certificate (WCC)</h3>
+                <p style="color: #888; margin-bottom: 25px;">Upload your Master DPR tracker and enter the Billing File Number (DC Number) to generate a formatted WCC Excel file.</p>
+                
+                <div class="form-group">
+                    <label for="masterFile">Master DPR Tracker (.xlsx)</label>
+                    <input type="file" id="masterFile" class="form-control" accept=".xlsx">
+                </div>
+
+                <div class="form-group">
+                    <label for="billingTarget">Billing File Number (e.g., DC0105)</label>
+                    <input type="text" id="billingTarget" class="form-control" placeholder="Enter DC Number">
+                </div>
+
+                <button id="generateBtn" class="btn-generate" onclick="handleGenerateWCC()">
+                    <span class="loader" id="loader"></span>
+                    Generate WCC
+                </button>
+
+                <div id="status-message"></div>
+            </section>
+
+            <section class="billing-card" style="opacity: 0.5; pointer-events: none;">
+                <h3>Generate JMS (Coming Soon)</h3>
+                <p>Advanced Billing Module - Joint Measurement Sheet Automation</p>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        checkAuth();
+        
+        async function handleGenerateWCC() {
+            const fileInput = document.getElementById('masterFile');
+            const targetInput = document.getElementById('billingTarget');
+            const statusMsg = document.getElementById('status-message');
+            const loader = document.getElementById('loader');
+            const btn = document.getElementById('generateBtn');
+
+            if (!fileInput.files[0]) {
+                alert('Please upload a Master DPR file');
+                return;
+            }
+            if (!targetInput.value.trim()) {
+                alert('Please enter a Billing Target (DC Number)');
+                return;
+            }
+
+            // UI state
+            btn.disabled = true;
+            loader.style.display = 'block';
+            statusMsg.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('masterFile', fileInput.files[0]);
+            formData.append('billingTarget', targetInput.value.trim());
+
+            try {
+                const response = await fetch(`${API_URL}/billing/generate-wcc`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    statusMsg.className = 'status-success';
+                    statusMsg.innerHTML = `${data.message} <br><a href="${API_URL}${data.downloadUrl}" target="_blank" style="color:#28a745; font-weight:700; text-decoration:underline;">Click here to download your file</a>`;
+                    statusMsg.style.display = 'block';
+                    
+                    // Auto-trigger download
+                    window.location.href = `${API_URL}${data.downloadUrl}`;
+                } else {
+                    statusMsg.className = 'status-error';
+                    statusMsg.textContent = data.error || 'Failed to generate WCC. Please check the DC number and file format.';
+                    statusMsg.style.display = 'block';
+                }
+            } catch (err) {
+                console.error(err);
+                statusMsg.className = 'status-error';
+                statusMsg.textContent = 'Network error or server unavailable.';
+                statusMsg.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

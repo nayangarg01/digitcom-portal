@@ -72,7 +72,7 @@ export const generateWCC = async (req: Request, res: Response) => {
             res.json({
                 success: true,
                 message: `WCC for ${billingTarget} generated successfully.`,
-                downloadUrl: `/api/billing/download/${outputFileName}`
+                downloadUrl: `/billing/download/${outputFileName}`
             });
         });
 

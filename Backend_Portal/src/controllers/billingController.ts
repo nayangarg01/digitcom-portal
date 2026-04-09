@@ -9,10 +9,15 @@ import { spawn } from 'child_process';
 export const generateWCC = async (req: Request, res: Response) => {
     try {
         const { billingTarget } = req.body;
-        const file = req.file;
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        const masterFile = files['masterFile'] ? files['masterFile'][0] : null;
+        const mindumpFile = files['mindumpFile'] ? files['mindumpFile'][0] : null;
 
-        if (!file) {
+        if (!masterFile) {
             return res.status(400).json({ error: 'No Master DPR file uploaded' });
+        }
+        if (!mindumpFile) {
+            return res.status(400).json({ error: 'No MINDUMP file uploaded' });
         }
 
         if (!billingTarget || billingTarget.trim() === '') {
@@ -30,15 +35,16 @@ export const generateWCC = async (req: Request, res: Response) => {
         const outputFileName = `${billingTarget.toUpperCase()}_Unified_Billing_${Date.now()}.xlsx`;
         const outputPath = path.join(outputDir, outputFileName);
 
-        console.log(`Billing: Starting Unified Portfolio Generation for ${billingTarget}`);
+        console.log(`Billing: Starting Unified Portfolio Generation for ${billingTarget} with MINDUMP`);
 
         // Spawn Python process for Unified Billing generation
         const pythonProcess = spawn('python3', [
             scriptPath,
-            file.path,
+            masterFile.path,
             billingTarget,
             '--template', templatePath,
-            '--output', outputPath
+            '--output', outputPath,
+            '--mindump', mindumpFile.path
         ]);
 
         let pythonOutput = '';

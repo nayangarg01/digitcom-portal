@@ -399,7 +399,7 @@ def populate_main_matrix(sheet_name, df_sites, code_to_col_idx, wb, values_only=
 
     return True
 
-def generate_annexure_sheet(df_sites, wb):
+def generate_annexure_sheet(df_sites, wb, mindump_path=None):
     """
     Builds a 'Clean-Room' Annexure with Size 20 font and Snapshot 2 layout.
     LATEST-DATE LOGIC: For each site, finds the MAX(Date) in MINDUMP and pulls its rows.
@@ -421,24 +421,37 @@ def generate_annexure_sheet(df_sites, wb):
     pmp_ids = df_sites.iloc[:, 1].astype(str).str.strip().tolist()
 
     try:
-        df_dump = pd.read_excel('Billing/MINDUMP.xlsx')
-        df_dump['Site ID'] = df_dump['Site ID'].astype(str).str.strip()
-        
-        # 1. Per-Site Discovery Loop
-        df_all_snapshots = []
-        for pid in pmp_ids:
-            df_site = df_dump[df_dump['Site ID'] == pid]
-            if not df_site.empty:
-                latest_date = df_site['Date'].max()
-                df_snapshot = df_site[df_site['Date'] == latest_date]
-                df_all_snapshots.append(df_snapshot)
-        
-        if not df_all_snapshots:
-            print(f"WARNING: No material ever found in MINDUMP for sites {pmp_ids}")
-            df_filtered = pd.DataFrame()
+        # Priority: 1. Provided Path, 2. Fallback local, 3. Numbers fallback
+        if mindump_path and os.path.exists(mindump_path):
+            df_dump = pd.read_excel(mindump_path)
+        elif os.path.exists('Billing/MINDUMP.xlsx'):
+            df_dump = pd.read_excel('Billing/MINDUMP.xlsx')
         else:
-            df_filtered = pd.concat(df_all_snapshots)
-    except: return False
+            print("ERROR: MINDUMP file not found. Annexure will be empty.")
+            df_dump = pd.DataFrame()
+            
+        if not df_dump.empty:
+            df_dump['Site ID'] = df_dump['Site ID'].astype(str).str.strip()
+            
+            # 1. Per-Site Discovery Loop
+            df_all_snapshots = []
+            for pid in pmp_ids:
+                df_site = df_dump[df_dump['Site ID'] == pid]
+                if not df_site.empty:
+                    latest_date = df_site['Date'].max()
+                    df_snapshot = df_site[df_site['Date'] == latest_date]
+                    df_all_snapshots.append(df_snapshot)
+            
+            if not df_all_snapshots:
+                print(f"WARNING: No material found in MINDUMP for sites {pmp_ids}")
+                df_filtered = pd.DataFrame()
+            else:
+                df_filtered = pd.concat(df_all_snapshots)
+        else:
+            df_filtered = pd.DataFrame()
+    except Exception as e:
+        print(f"Annexure Error: {e}")
+        return False
 
     if df_filtered.empty:
         # We proceed to make an empty table with zeros later
@@ -695,12 +708,14 @@ def main():
     parser.add_argument("dc_number", help="DC Code (e.g. DC0105)")
     parser.add_argument("--template", help="Path to Master Template", default='Billing/MASTER_JMS_TEMPLATE.xlsx')
     parser.add_argument("--output", help="Path to save the generated file")
+    parser.add_argument("--mindump", help="Path to MINDUMP File")
     args = parser.parse_args()
 
     master_path = args.master_path
     dc_number = args.dc_number
     template_path = args.template
     output_path = args.output if args.output else f"Billing/{dc_number}_Unified_Billing.xlsx"
+    mindump_path = args.mindump
 
     print(f"--- Launching Unified Precision Billing Engine for {dc_number} ---")
     
@@ -750,7 +765,7 @@ def main():
             
             # Step 5: Annexure
             print("- Step 5: Populating Annexure (LatestSnapshot)...")
-            generate_annexure_sheet(df_sites, wb)
+            generate_annexure_sheet(df_sites, wb, mindump_path=mindump_path)
             
             # Step 6: RECO
             print("- Step 6: Populating RECO (Pure Logic)...")

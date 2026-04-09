@@ -115,6 +115,11 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="mindumpFile">MINDUMP File (.xlsx)</label>
+                    <input type="file" id="mindumpFile" class="form-control" accept=".xlsx">
+                </div>
+
+                <div class="form-group">
                     <label for="billingTarget">Billing File Number (e.g., DC0105)</label>
                     <input type="text" id="billingTarget" class="form-control" placeholder="Enter DC Number">
                 </div>
@@ -145,8 +150,14 @@
             const loader = document.getElementById('loader');
             const btn = document.getElementById('generateBtn');
 
+            const mindumpInput = document.getElementById('mindumpFile');
+
             if (!fileInput.files[0]) {
                 alert('Please upload a Master DPR file');
+                return;
+            }
+            if (!mindumpInput.files[0]) {
+                alert('Please upload the MINDUMP file');
                 return;
             }
             if (!targetInput.value.trim()) {
@@ -161,6 +172,7 @@
 
             const formData = new FormData();
             formData.append('masterFile', fileInput.files[0]);
+            formData.append('mindumpFile', mindumpInput.files[0]);
             formData.append('billingTarget', targetInput.value.trim());
 
             try {

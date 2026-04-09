@@ -61,15 +61,19 @@ export const generateWCC = async (req: Request, res: Response) => {
         pythonProcess.on('close', (code: number) => {
             if (code !== 0) {
                 console.error('Billing Python Error:', pythonError);
+                console.log('Billing Python Output:', pythonOutput);
                 return res.status(500).json({ 
-                    error: 'Billing engine failed to generate WCC.',
-                    details: pythonError
+                    error: 'Billing engine failed to generate portfolio.',
+                    details: pythonOutput + "\n" + pythonError
                 });
             }
 
             if (!fs.existsSync(outputPath)) {
                 console.error('Billing Output Error: File not generated at', outputPath);
-                return res.status(500).json({ error: 'Failed to generate output file' });
+                return res.status(500).json({ 
+                    error: 'Failed to generate output file',
+                    details: pythonOutput + "\n" + pythonError
+                });
             }
 
             console.log(`Billing: Successfully generated WCC for ${billingTarget}`);

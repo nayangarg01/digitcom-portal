@@ -8,10 +8,10 @@ import { spawn } from 'child_process';
  */
 export const generateWCC = async (req: Request, res: Response) => {
     try {
-        const { billingTarget, mode } = req.body;
-        const file = req.file;
+        const { billingTarget } = req.body;
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
-        if (!file) {
+        if (!files || !files['masterFile'] || files['masterFile'].length === 0) {
             return res.status(400).json({ error: 'No Master DPR file uploaded' });
         }
 
@@ -25,26 +25,34 @@ export const generateWCC = async (req: Request, res: Response) => {
             fs.mkdirSync(outputDir, { recursive: true });
         }
 
-        // Robust absolute path resolution for Render compatibility
+        // Robust absolute path resolution
         const backendRoot = path.resolve(__dirname, '../..');
-        const scriptPath = path.join(backendRoot, 'scripts/billing_engine.py');
-        const templatePath = path.join(backendRoot, 'scripts/DC0105_TEMPLATE.xlsx');
-        const outputFileName = `${billingTarget.toUpperCase()}_${(mode || 'Billing').toUpperCase()}_${Date.now()}.xlsx`;
+        const scriptPath = path.join(backendRoot, 'scripts/generate_billing_FULL.py');
+        const templatePath = path.join(backendRoot, 'scripts/MASTER_JMS_TEMPLATE.xlsx');
+        const outputFileName = `${billingTarget.toUpperCase()}_Unified_Billing_${Date.now()}.xlsx`;
         const outputPath = path.join(outputDir, outputFileName);
-        const absoluteMasterPath = path.resolve(backendRoot, file.path);
-        const generationMode = (mode || 'WCC').toUpperCase();
-
-        console.log(`Billing: Starting WCC Generation for ${billingTarget}`);
-
-        // Spawn Python process for WCC/JMS generation with absolute paths and mode
-        const pythonProcess = spawn('python3', [
+        
+        const absoluteMasterPath = path.resolve(backendRoot, files['masterFile'][0].path);
+        
+        // Construct arguments for Python
+        const pythonArgs = [
             scriptPath,
             absoluteMasterPath,
             billingTarget,
-            templatePath,
-            outputPath,
-            '--mode', generationMode
-        ]);
+            '--template', templatePath,
+            '--output', outputPath
+        ];
+
+        // Add mindump if provided
+        if (files['mindumpFile'] && files['mindumpFile'].length > 0) {
+            const absoluteMindumpPath = path.resolve(backendRoot, files['mindumpFile'][0].path);
+            pythonArgs.push('--mindump', absoluteMindumpPath);
+        }
+
+        console.log(`Billing: Starting Unified Generation for ${billingTarget}`);
+
+        // Spawn Python process
+        const pythonProcess = spawn('python3', pythonArgs);
 
         let pythonOutput = '';
         let pythonError = '';
@@ -61,7 +69,7 @@ export const generateWCC = async (req: Request, res: Response) => {
             if (code !== 0) {
                 console.error('Billing Python Error:', pythonError);
                 return res.status(500).json({ 
-                    error: 'Billing engine failed to generate WCC.',
+                    error: 'Billing engine failed to generate file.',
                     details: pythonError
                 });
             }
@@ -71,18 +79,18 @@ export const generateWCC = async (req: Request, res: Response) => {
                 return res.status(500).json({ error: 'Failed to generate output file' });
             }
 
-            console.log(`Billing: Successfully generated WCC for ${billingTarget}`);
+            console.log(`Billing: Successfully generated Billing File for ${billingTarget}`);
             
             // Return the download link
             res.json({
                 success: true,
-                message: `WCC for ${billingTarget} generated successfully.`,
+                message: `Billing file for ${billingTarget} generated successfully.`,
                 downloadUrl: `/billing/download/${outputFileName}`
             });
         });
 
     } catch (error: any) {
-        console.error('WCC Generation Route Error:', error);
+        console.error('Billing Generation Route Error:', error);
         res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 };

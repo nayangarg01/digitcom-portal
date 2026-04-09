@@ -106,38 +106,34 @@
             </header>
 
             <section class="billing-card">
-                <h3>Generate Work Completion Certificate (WCC)</h3>
-                <p style="color: #888; margin-bottom: 25px;">Upload your Master DPR tracker and enter the Billing File Number (DC Number) to generate a formatted WCC Excel file.</p>
+                <h3>Unified Billing Engine</h3>
+                <p style="color: #888; margin-bottom: 25px;">Upload the required tracking files to generate a complete, multi-sheet billing file (WCC, JMS, Abstract, BOQ, Annexure, and Reco).</p>
                 
                 <div class="form-group">
                     <label for="masterFile">Master DPR Tracker (.xlsx)</label>
                     <input type="file" id="masterFile" class="form-control" accept=".xlsx">
+                    <small style="color: #666; display: block; margin-top: 5px;">Primary tracker containing site data and item codes.</small>
                 </div>
 
                 <div class="form-group">
-                    <label for="billingTarget">Billing File Number (e.g., DC0105)</label>
-                    <input type="text" id="billingTarget" class="form-control" placeholder="Enter DC Number">
+                    <label for="mindumpFile">MINDUMP Data (.xlsx)</label>
+                    <input type="file" id="mindumpFile" class="form-control" accept=".xlsx">
+                    <small style="color: #666; display: block; margin-top: 5px;">Required for Annexure and snapshot generation.</small>
                 </div>
 
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <button class="btn-generate" onclick="handleGenerate('WCC')">
-                        Generate WCC
+                <div class="form-group">
+                    <label for="billingTarget">DC Number (Billing Target)</label>
+                    <input type="text" id="billingTarget" class="form-control" placeholder="e.g. DC0115">
+                </div>
+
+                <div style="display: flex; gap: 15px; align-items: center; margin-top: 30px;">
+                    <button class="btn-generate" onclick="handleGenerate()">
+                        Generate Full Billing File
                     </button>
-                    <button class="btn-generate" onclick="handleGenerate('JMS')" style="background: #17a2b8;">
-                        Generate JMS
-                    </button>
-                    <button class="btn-generate" onclick="handleGenerate('BOTH')" style="background: linear-gradient(135deg, #007bff, #6610f2);">
-                        Generate Both (Full File)
-                    </button>
-                    <span class="loader" id="loader" style="align-self: center;"></span>
+                    <span class="loader" id="loader"></span>
                 </div>
 
                 <div id="status-message"></div>
-            </section>
-
-            <section class="billing-card" style="opacity: 0.5; pointer-events: none;">
-                <h3>Generate JMS (Coming Soon)</h3>
-                <p>Advanced Billing Module - Joint Measurement Sheet Automation</p>
             </section>
         </main>
     </div>
@@ -146,19 +142,20 @@
     <script>
         checkAuth();
         
-        async function handleGenerate(mode) {
-            const fileInput = document.getElementById('masterFile');
+        async function handleGenerate() {
+            const masterInput = document.getElementById('masterFile');
+            const mindumpInput = document.getElementById('mindumpFile');
             const targetInput = document.getElementById('billingTarget');
             const statusMsg = document.getElementById('status-message');
             const loader = document.getElementById('loader');
             const buttons = document.querySelectorAll('.btn-generate');
 
-            if (!fileInput.files[0]) {
+            if (!masterInput.files[0]) {
                 alert('Please upload a Master DPR file');
                 return;
             }
             if (!targetInput.value.trim()) {
-                alert('Please enter a Billing Target (DC Number)');
+                alert('Please enter a DC Number');
                 return;
             }
 
@@ -168,9 +165,11 @@
             statusMsg.style.display = 'none';
 
             const formData = new FormData();
-            formData.append('masterFile', fileInput.files[0]);
+            formData.append('masterFile', masterInput.files[0]);
+            if (mindumpInput.files[0]) {
+                formData.append('mindumpFile', mindumpInput.files[0]);
+            }
             formData.append('billingTarget', targetInput.value.trim());
-            formData.append('mode', mode);
 
             try {
                 const response = await fetch(`${API_URL}/billing/generate-wcc`, {
@@ -192,7 +191,7 @@
                     window.location.href = `${API_URL}${data.downloadUrl}`;
                 } else {
                     statusMsg.className = 'status-error';
-                    statusMsg.textContent = data.error || 'Failed to generate billing file. Please check the DC number and file format.';
+                    statusMsg.textContent = data.error || 'Failed to generate billing file. Please check your data.';
                     statusMsg.style.display = 'block';
                 }
             } catch (err) {

@@ -7,7 +7,10 @@ const router = Router();
 const upload = multer({ dest: 'uploads/' });
 
 // WCC Generation Route
-router.post('/generate-wcc', authenticateJWT, isAdmin, upload.single('masterFile'), generateWCC);
+router.post('/generate-wcc', authenticateJWT, isAdmin, upload.fields([
+    { name: 'masterFile', maxCount: 1 },
+    { name: 'mindumpFile', maxCount: 1 }
+]), generateWCC);
 
 // Download Route
 router.get('/download/:fileName', downloadBillingFile);

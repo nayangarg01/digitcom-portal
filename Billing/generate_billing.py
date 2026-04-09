@@ -24,28 +24,47 @@ def load_master_data(master_path, dc_number):
         # Load KM SHEET (first sheet)
         df_full = pd.read_excel(master_path, header=None)
         
+        if df_full.empty:
+            print("ERROR: Master Tracker file is empty.")
+            return None, None
+            
         # 1. Discover the 'BILLING FILE' column index (where DC numbers live)
         # Search row 1 (0-indexed) which usually contains headers in this file
         dc_col_idx = 0
-        header_row = df_full.iloc[1].astype(str).str.strip().str.upper().tolist()
+        found_header = False
         
-        for i, h in enumerate(header_row):
-            if "BILLING FILE" in h or "DC NUMBER" in h:
+        # Safely extract headers from Row 1
+        raw_row1 = df_full.iloc[1].tolist() if len(df_full) > 1 else []
+        for i, h in enumerate(raw_row1):
+            h_str = str(h).upper().strip()
+            if "BILLING FILE" in h_str or "DC NUMBER" in h_str:
                 dc_col_idx = i
+                found_header = True
                 break
         
+        if not found_header:
+            print("WARNING: 'BILLING FILE' column not found in Row 2. Defaulting to column ID search.")
+            # Fallback: Search all columns for the DC number if header hit fails
+            for c_idx in range(df_full.shape[1]):
+                col_sample = df_full.iloc[:, c_idx].astype(str).str.upper().tolist()
+                if dc_number.upper() in col_sample:
+                    dc_col_idx = c_idx
+                    break
+
         # 2. Filter Sites based on the discovered Billing column
         df_sites = df_full[df_full.iloc[:, dc_col_idx].astype(str).str.strip().str.upper() == dc_number.upper()].copy()
         
-        if df_sites.empty: return None, None
-        
+        if df_sites.empty:
+            print(f"DATA ERROR: No site records found for DC Number '{dc_number}' in column {dc_col_idx}.")
+            return None, None
+            
         # FIX: Assign proper column names so .upper() works in downstream functions
         # Use the raw header row (Row 1) for column names
         raw_headers = df_full.iloc[1].tolist()
         df_sites.columns = [str(h).strip() for h in raw_headers]
         
         # 3. Discover Item Code mapping (Dual-Key: Check Row 0 AND Row 1)
-        # Template uses SAP Codes, Master has them in Row 1 (Index 0)
+        # Template uses SAP Codes, Master has them in Row 0 (Index 0)
         code_to_col_idx = {}
         row0 = df_full.iloc[0].tolist()
         row1 = df_full.iloc[1].tolist()
@@ -64,6 +83,8 @@ def load_master_data(master_path, dc_number):
         return df_sites, code_to_col_idx
     except Exception as e:
         print(f"Error loading Master: {e}")
+        import traceback
+        traceback.print_exc()
         return None, None
 
 def generate_wcc_sheet(df_sites, wb):

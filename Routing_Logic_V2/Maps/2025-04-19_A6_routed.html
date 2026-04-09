@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_bc72987104640697d545777042784698 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_bc72987104640697d545777042784698" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_bc72987104640697d545777042784698 = L.map(
+                "map_bc72987104640697d545777042784698",
+                {
+                    center: [26.810486, 75.496696],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 9,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_9c281b207ac39ea494e98e1bf64f6b0c = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_9c281b207ac39ea494e98e1bf64f6b0c.addTo(map_bc72987104640697d545777042784698);
+        
+    
+            var marker_0d4f097fcbc7b2380b1d1b2d51084f71 = L.marker(
+                [26.810486, 75.496696],
+                {
+}
+            ).addTo(map_bc72987104640697d545777042784698);
+        
+    
+            var icon_752c228ee945f8405cefd1cb30256cbf = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "black",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a62200651d09d950a55c343b9e21bdeb = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_7be3d141890d4f5fbf3e9f9b3b6aad6a = $(`<div id="html_7be3d141890d4f5fbf3e9f9b3b6aad6a" style="width: 100.0%; height: 100.0%;">WAREHOUSE: JAIPUR</div>`)[0];
+                popup_a62200651d09d950a55c343b9e21bdeb.setContent(html_7be3d141890d4f5fbf3e9f9b3b6aad6a);
+            
+        
+
+        marker_0d4f097fcbc7b2380b1d1b2d51084f71.bindPopup(popup_a62200651d09d950a55c343b9e21bdeb)
+        ;
+
+        
+    
+    
+                marker_0d4f097fcbc7b2380b1d1b2d51084f71.setIcon(icon_752c228ee945f8405cefd1cb30256cbf);
+            
+    
+            var marker_8aa6762fea6d62fbae761e52ae843c23 = L.marker(
+                [25.95606111111111, 76.21470527777778],
+                {
+}
+            ).addTo(map_bc72987104640697d545777042784698);
+        
+    
+            var icon_cf77523c1c445be4cf6a4650cffd3a7e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9d2d45d76607c4ffb186cad151733ff6 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_11e2510184fecb1aec213d0e9c5b5f6f = $(`<div id="html_11e2510184fecb1aec213d0e9c5b5f6f" style="width: 100.0%; height: 100.0%;">Site: I-RJ-UNRA-ENB-6004<br>Route: Ajmer-R1-S1<br>AKTBC (API): 138.82 km</div>`)[0];
+                popup_9d2d45d76607c4ffb186cad151733ff6.setContent(html_11e2510184fecb1aec213d0e9c5b5f6f);
+            
+        
+
+        marker_8aa6762fea6d62fbae761e52ae843c23.bindPopup(popup_9d2d45d76607c4ffb186cad151733ff6)
+        ;
+
+        
+    
+    
+                marker_8aa6762fea6d62fbae761e52ae843c23.setIcon(icon_cf77523c1c445be4cf6a4650cffd3a7e);
+            
+    
+            var poly_line_5e59bcd8182b944155f6a9f804202f3e = L.polyline(
+                [[26.810486, 75.496696], [25.95606111111111, 76.21470527777778]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_bc72987104640697d545777042784698);
+        
+</script>
+</html>

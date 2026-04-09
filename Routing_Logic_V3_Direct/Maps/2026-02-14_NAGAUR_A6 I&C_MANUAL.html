@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_7715d5050dadf08c7b1124f3ac4f2ea1 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_7715d5050dadf08c7b1124f3ac4f2ea1" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_7715d5050dadf08c7b1124f3ac4f2ea1 = L.map(
+                "map_7715d5050dadf08c7b1124f3ac4f2ea1",
+                {
+                    center: [26.148422, 73.061378],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 9,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_2f112b188f99ab3e9fb7324c98af1e47 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_2f112b188f99ab3e9fb7324c98af1e47.addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var marker_184871da123cd31f904e616bb18182c3 = L.marker(
+                [26.148422, 73.061378],
+                {
+}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var icon_dfc408f5fceb5536c8366f88605b90d0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "black",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5f4f9d45bd5e647f6505b6ed4c46c5be = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_02474f4a8583d88dea5d1b0f9932dc5a = $(`<div id="html_02474f4a8583d88dea5d1b0f9932dc5a" style="width: 100.0%; height: 100.0%;">WAREHOUSE: JODHPUR</div>`)[0];
+                popup_5f4f9d45bd5e647f6505b6ed4c46c5be.setContent(html_02474f4a8583d88dea5d1b0f9932dc5a);
+            
+        
+
+        marker_184871da123cd31f904e616bb18182c3.bindPopup(popup_5f4f9d45bd5e647f6505b6ed4c46c5be)
+        ;
+
+        
+    
+    
+                marker_184871da123cd31f904e616bb18182c3.setIcon(icon_dfc408f5fceb5536c8366f88605b90d0);
+            
+    
+            var marker_8bf32cc44e8e85deb93ddb2b7d7662e0 = L.marker(
+                [27.37377138888889, 74.08065416666666],
+                {
+}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var icon_406e0f3d99677f3b6b743c531fde205c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_1b10facf6704eb1a00deab504e10874e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_7df9ec270c138f1ee86c47ac3945c228 = $(`<div id="html_7df9ec270c138f1ee86c47ac3945c228" style="width: 100.0%; height: 100.0%;">Site: I-RJ-JAAL-ENB-I015<br>Band: A6 I&C</div>`)[0];
+                popup_1b10facf6704eb1a00deab504e10874e.setContent(html_7df9ec270c138f1ee86c47ac3945c228);
+            
+        
+
+        marker_8bf32cc44e8e85deb93ddb2b7d7662e0.bindPopup(popup_1b10facf6704eb1a00deab504e10874e)
+        ;
+
+        
+    
+    
+                marker_8bf32cc44e8e85deb93ddb2b7d7662e0.setIcon(icon_406e0f3d99677f3b6b743c531fde205c);
+            
+    
+            var poly_line_a6c83ea2c247140ff1c5617b289acfdb = L.polyline(
+                [[26.148422, 73.061378], [27.37377138888889, 74.08065416666666]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var marker_cfe8ba7f84ef66d529d396e02b19e3cb = L.marker(
+                [27.2016325, 74.56636472222222],
+                {
+}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var icon_761cb6c30e006eb3d9e968dc29523a2e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d87db3c9b15312a21e5c3378feb52259 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_25b993bfe006f2502eba2a2b3544d82d = $(`<div id="html_25b993bfe006f2502eba2a2b3544d82d" style="width: 100.0%; height: 100.0%;">Site: I-RJ-DDWN-ENB-6011<br>Band: A6 I&C</div>`)[0];
+                popup_d87db3c9b15312a21e5c3378feb52259.setContent(html_25b993bfe006f2502eba2a2b3544d82d);
+            
+        
+
+        marker_cfe8ba7f84ef66d529d396e02b19e3cb.bindPopup(popup_d87db3c9b15312a21e5c3378feb52259)
+        ;
+
+        
+    
+    
+                marker_cfe8ba7f84ef66d529d396e02b19e3cb.setIcon(icon_761cb6c30e006eb3d9e968dc29523a2e);
+            
+    
+            var poly_line_9a3ef75d264b0b0b74c169fcab7af0d6 = L.polyline(
+                [[26.148422, 73.061378], [27.2016325, 74.56636472222222]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var marker_6cdee6d4bff96aa78acc2f599dee99d8 = L.marker(
+                [27.106973333333336, 74.5028538888889],
+                {
+}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var icon_91bc05e9a662c153ec5fc4883835174c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_b6a1570aa140ed1056cd66d2d663cdca = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_57ef74bc0da4771ada8136e01c5a7249 = $(`<div id="html_57ef74bc0da4771ada8136e01c5a7249" style="width: 100.0%; height: 100.0%;">Site: I-RJ-MKRN-ENB-G001<br>Band: A6 I&C</div>`)[0];
+                popup_b6a1570aa140ed1056cd66d2d663cdca.setContent(html_57ef74bc0da4771ada8136e01c5a7249);
+            
+        
+
+        marker_6cdee6d4bff96aa78acc2f599dee99d8.bindPopup(popup_b6a1570aa140ed1056cd66d2d663cdca)
+        ;
+
+        
+    
+    
+                marker_6cdee6d4bff96aa78acc2f599dee99d8.setIcon(icon_91bc05e9a662c153ec5fc4883835174c);
+            
+    
+            var poly_line_dfcb963704d0a69ceabcf81b94cc3387 = L.polyline(
+                [[26.148422, 73.061378], [27.106973333333336, 74.5028538888889]],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "green", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var marker_1fc9b152295b082fd33dfd7139f47581 = L.marker(
+                [27.1992525, 74.79251944444444],
+                {
+}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var icon_c03795b138563aa5c1f16d2d7d756402 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_de691fca217966569b4b8ddee42fe003 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ff53c16864932bc1167e728893f3d26c = $(`<div id="html_ff53c16864932bc1167e728893f3d26c" style="width: 100.0%; height: 100.0%;">Site: I-RJ-NAWW-ENB-I020<br>Band: A6 I&C</div>`)[0];
+                popup_de691fca217966569b4b8ddee42fe003.setContent(html_ff53c16864932bc1167e728893f3d26c);
+            
+        
+
+        marker_1fc9b152295b082fd33dfd7139f47581.bindPopup(popup_de691fca217966569b4b8ddee42fe003)
+        ;
+
+        
+    
+    
+                marker_1fc9b152295b082fd33dfd7139f47581.setIcon(icon_c03795b138563aa5c1f16d2d7d756402);
+            
+    
+            var poly_line_766aaf1b9c88365036088eab5c00cb53 = L.polyline(
+                [[26.148422, 73.061378], [27.1992525, 74.79251944444444]],
+                {"bubblingMouseEvents": true, "color": "purple", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "purple", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var marker_c88f4ff8ee1847bfc114a40bb75b2792 = L.marker(
+                [27.118996666666668, 74.97831972222222],
+                {
+}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+    
+            var icon_5b30aaeb8f8e8066c06b29da7bf36519 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7463c48bf255b5e3677ce272ab2d6628 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_07893f5405e7f988b33e072e69b0ee0c = $(`<div id="html_07893f5405e7f988b33e072e69b0ee0c" style="width: 100.0%; height: 100.0%;">Site: I-RJ-NAWW-ENB-I003<br>Band: A6 I&C</div>`)[0];
+                popup_7463c48bf255b5e3677ce272ab2d6628.setContent(html_07893f5405e7f988b33e072e69b0ee0c);
+            
+        
+
+        marker_c88f4ff8ee1847bfc114a40bb75b2792.bindPopup(popup_7463c48bf255b5e3677ce272ab2d6628)
+        ;
+
+        
+    
+    
+                marker_c88f4ff8ee1847bfc114a40bb75b2792.setIcon(icon_5b30aaeb8f8e8066c06b29da7bf36519);
+            
+    
+            var poly_line_ed075febbc52aa1761c9b1775db3437f = L.polyline(
+                [[26.148422, 73.061378], [27.118996666666668, 74.97831972222222]],
+                {"bubblingMouseEvents": true, "color": "orange", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "orange", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_7715d5050dadf08c7b1124f3ac4f2ea1);
+        
+</script>
+</html>

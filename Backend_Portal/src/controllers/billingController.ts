@@ -25,17 +25,20 @@ export const generateWCC = async (req: Request, res: Response) => {
             fs.mkdirSync(outputDir, { recursive: true });
         }
 
-        const scriptPath = path.join(__dirname, '../../scripts/generate_wcc_backend.py');
-        const templatePath = path.join(__dirname, '../../scripts/DC0105_TEMPLATE.xlsx');
+        // Robust absolute path resolution for Render compatibility
+        const backendRoot = path.resolve(__dirname, '../..');
+        const scriptPath = path.join(backendRoot, 'scripts/generate_wcc_backend.py');
+        const templatePath = path.join(backendRoot, 'scripts/DC0105_TEMPLATE.xlsx');
         const outputFileName = `${billingTarget.toUpperCase()}_WCC_${Date.now()}.xlsx`;
         const outputPath = path.join(outputDir, outputFileName);
+        const absoluteMasterPath = path.resolve(backendRoot, file.path);
 
         console.log(`Billing: Starting WCC Generation for ${billingTarget}`);
 
-        // Spawn Python process for WCC generation
+        // Spawn Python process for WCC generation with absolute paths
         const pythonProcess = spawn('python3', [
             scriptPath,
-            file.path,
+            absoluteMasterPath,
             billingTarget,
             templatePath,
             outputPath

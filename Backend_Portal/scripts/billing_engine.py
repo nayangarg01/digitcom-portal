@@ -149,37 +149,37 @@ def populate_main_matrix(sheet_name, df_sites, code_to_col_idx, wb):
     num_sites = len(df_sites)
     START_COL, C_ROW, S_ROW, T_ROW, SEC_ROW, MAX_R = 4, 11, 12, 13, 14, 28
     
-    # Scaling
-    orig_total_col = None
-    for c in range(START_COL + 1, 60):
-        if "TOTAL QUANTITY" in str(ws.cell(row=12, column=c).value).upper():
-            orig_total_col = c; break
-    
-    if orig_total_col:
-        num_template_cols = orig_total_col - START_COL
-        if num_sites < num_template_cols:
-            for c_clear in range(START_COL + num_sites, orig_total_col):
-                for r_clear in range(11, MAX_R):
-                    cell = ws.cell(row=r_clear, column=c_clear)
-                    cell.value = None; cell.fill = PatternFill(fill_type=None)
-        elif num_sites > num_template_cols:
-            ws.insert_cols(orig_total_col, num_sites - num_template_cols)
-
-    # Re-discover column offsets
-    TOTAL_QTY_COL = None
+    # 0. Safety: Unmerge cells in the data matrix area to avoid 'MergedCell is read-only' errors
+    data_merge_ranges = []
+    for merged_range in list(ws.merged_cells.ranges):
+        if merged_range.min_row >= 11 and merged_range.max_row <= 30:
+            data_merge_ranges.append(merged_range)
+    for m_range in data_merge_ranges:
+        ws.unmerge_cells(str(m_range))
+        
+    # Re-discover column offsets after scaling
+    TOTAL_QTY_COL, rate_col, amt_col = None, None, None
     for c in range(START_COL, 65):
-        if "TOTAL QUANTITY" in str(ws.cell(row=12, column=c).value).upper():
-            TOTAL_QTY_COL = c; break
+        h = str(ws.cell(row=12, column=c).value).upper().strip()
+        if "TOTAL QUANTITY" in h: TOTAL_QTY_COL = c
+        elif "RATE AS PER SOW" in h: rate_col = c
+        elif "AMOUNT" in h: amt_col = c
+    
     if not TOTAL_QTY_COL: TOTAL_QTY_COL = START_COL + num_sites
+    if not rate_col: rate_col = TOTAL_QTY_COL + 1
+    if not amt_col: amt_col = rate_col + 1
 
     # Inject data
     for i, (_, site_row) in enumerate(df_sites.iterrows()):
         curr_col = START_COL + i
         ws.cell(row=C_ROW, column=curr_col).value = i + 1
+        
+        # Site Header
         cell_id = ws.cell(row=S_ROW, column=curr_col)
         cell_id.value = str(site_row['PMP ID']).strip()
         cell_id.font = Font(name='Verdana', size=35, bold=True)
         cell_id.alignment = Alignment(text_rotation=90, horizontal='center', vertical='center')
+        
         ws.cell(row=T_ROW, column=curr_col).value = str(site_row['Tower type']).strip()
         ws.cell(row=SEC_ROW, column=curr_col).value = site_row['NO OF SECTOR']
         
@@ -187,17 +187,31 @@ def populate_main_matrix(sheet_name, df_sites, code_to_col_idx, wb):
             item_id = ws.cell(row=r, column=1).value
             try: code = str(int(item_id)) if item_id else ""
             except: code = str(item_id).strip() if item_id else ""
+            
+            # Mandatory Row Bypass for items that might not have a clean ID in Column A
+            if not code and r == 26: code = "EXTRA VISIT"
+            if not code and r == 27: code = "POLE MOUNT"
+            
             val = site_row.iloc[code_to_col_idx[code]] if code in code_to_col_idx else 0.0
             cell = ws.cell(row=r, column=curr_col)
             cell.value = safe_float(val)
             cell.alignment = Alignment(horizontal='center', vertical='center')
 
-    # Copy Styles & Formulas
+    # 3. STYLE DNA MIRRORING, RATES & SUMMATIONS (Mirror Row 25 down)
     fcl, lcl = get_column_letter(START_COL), get_column_letter(START_COL + num_sites - 1)
-    for r in range(16, MAX_R):
-        for c in range(1, TOTAL_QTY_COL + 1):
+    for r in range(16, MAX_R + 1):
+        # Mirror Style from Row 25 for all columns
+        for c in range(1, amt_col + 1):
             copy_cell_style(ws.cell(row=25, column=c), ws.cell(row=r, column=c))
-        ws.cell(row=r, column=TOTAL_QTY_COL).value = f"=SUM({fcl}{r}:{lcl}{r})"
+            
+        if r < MAX_R:
+            # Inject Hardcoded Rates for row 26/27 if applicable
+            if r == 26: ws.cell(row=r, column=rate_col).value = 1000
+            elif r == 27: ws.cell(row=r, column=rate_col).value = 500
+            
+            # Row-wise Summations and Amount Calculations
+            ws.cell(row=r, column=TOTAL_QTY_COL).value = f"=SUM({fcl}{r}:{lcl}{r})"
+            ws.cell(row=r, column=amt_col).value = f"={get_column_letter(TOTAL_QTY_COL)}{r}*{get_column_letter(rate_col)}{r}"
     
     ws.cell(row=SEC_ROW, column=TOTAL_QTY_COL).value = f"=SUM({fcl}{SEC_ROW}:{lcl}{SEC_ROW})"
     return True

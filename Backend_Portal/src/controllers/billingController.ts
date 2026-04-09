@@ -6,7 +6,7 @@ import { spawn } from 'child_process';
 /**
  * Controller for handling Billing related operations like WCC generation.
  */
-export const generateWCC = async (req: Request, res: Response) => {
+export const generateFullBilling = async (req: Request, res: Response) => {
     try {
         const { billingTarget } = req.body;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -66,6 +66,17 @@ export const generateWCC = async (req: Request, res: Response) => {
         });
 
         pythonProcess.on('close', (code: number) => {
+            // Cleanup uploaded temp files
+            try {
+                if (fs.existsSync(absoluteMasterPath)) fs.unlinkSync(absoluteMasterPath);
+                if (files['mindumpFile'] && files['mindumpFile'].length > 0) {
+                    const absoluteMindumpPath = path.resolve(backendRoot, files['mindumpFile'][0].path);
+                    if (fs.existsSync(absoluteMindumpPath)) fs.unlinkSync(absoluteMindumpPath);
+                }
+            } catch (err) {
+                console.warn('Billing: Temp file cleanup failed', err);
+            }
+
             if (code !== 0) {
                 console.error('Billing Python Error:', pythonError);
                 return res.status(500).json({ 
@@ -81,11 +92,11 @@ export const generateWCC = async (req: Request, res: Response) => {
 
             console.log(`Billing: Successfully generated Billing File for ${billingTarget}`);
             
-            // Return the download link
+            // Return the download link (no leading slash to avoid double-slash with API_URL)
             res.json({
                 success: true,
                 message: `Billing file for ${billingTarget} generated successfully.`,
-                downloadUrl: `/billing/download/${outputFileName}`
+                downloadUrl: `billing/download/${outputFileName}`
             });
         });
 

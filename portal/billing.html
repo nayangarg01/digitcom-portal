@@ -172,7 +172,8 @@
             formData.append('billingTarget', targetInput.value.trim());
 
             try {
-                const response = await fetch(`${API_URL}/billing/generate-wcc`, {
+                // Pointing to the new unified endpoint /generate-file
+                const response = await fetch(`${API_URL}/billing/generate-file`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -184,11 +185,18 @@
 
                 if (response.ok && data.success) {
                     statusMsg.className = 'status-success';
-                    statusMsg.innerHTML = `${data.message} <br><a href="${API_URL}${data.downloadUrl}" target="_blank" style="color:#28a745; font-weight:700; text-decoration:underline;">Click here to download your file</a>`;
+                    // Ensure API_URL and downloadUrl join correctly without double slashes
+                    const fullDownloadUrl = `${API_URL}/${data.downloadUrl}`;
+                    statusMsg.innerHTML = `${data.message} <br><a href="${fullDownloadUrl}" target="_blank" style="color:#28a745; font-weight:700; text-decoration:underline;">Click here to download your file</a>`;
                     statusMsg.style.display = 'block';
                     
-                    // Auto-trigger download
-                    window.location.href = `${API_URL}${data.downloadUrl}`;
+                    // Robust Auto-trigger download using a invisible link
+                    const link = document.createElement('a');
+                    link.href = fullDownloadUrl;
+                    link.setAttribute('download', ''); // Encourages download over opening
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
                 } else {
                     statusMsg.className = 'status-error';
                     statusMsg.textContent = data.error || 'Failed to generate billing file. Please check your data.';

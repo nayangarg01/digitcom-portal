@@ -119,10 +119,18 @@
                     <input type="text" id="billingTarget" class="form-control" placeholder="Enter DC Number">
                 </div>
 
-                <button id="generateBtn" class="btn-generate" onclick="handleGenerateWCC()">
-                    <span class="loader" id="loader"></span>
-                    Generate WCC
-                </button>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <button class="btn-generate" onclick="handleGenerate('WCC')">
+                        Generate WCC
+                    </button>
+                    <button class="btn-generate" onclick="handleGenerate('JMS')" style="background: #17a2b8;">
+                        Generate JMS
+                    </button>
+                    <button class="btn-generate" onclick="handleGenerate('BOTH')" style="background: linear-gradient(135deg, #007bff, #6610f2);">
+                        Generate Both (Full File)
+                    </button>
+                    <span class="loader" id="loader" style="align-self: center;"></span>
+                </div>
 
                 <div id="status-message"></div>
             </section>
@@ -138,12 +146,12 @@
     <script>
         checkAuth();
         
-        async function handleGenerateWCC() {
+        async function handleGenerate(mode) {
             const fileInput = document.getElementById('masterFile');
             const targetInput = document.getElementById('billingTarget');
             const statusMsg = document.getElementById('status-message');
             const loader = document.getElementById('loader');
-            const btn = document.getElementById('generateBtn');
+            const buttons = document.querySelectorAll('.btn-generate');
 
             if (!fileInput.files[0]) {
                 alert('Please upload a Master DPR file');
@@ -155,13 +163,14 @@
             }
 
             // UI state
-            btn.disabled = true;
+            buttons.forEach(b => b.disabled = true);
             loader.style.display = 'block';
             statusMsg.style.display = 'none';
 
             const formData = new FormData();
             formData.append('masterFile', fileInput.files[0]);
             formData.append('billingTarget', targetInput.value.trim());
+            formData.append('mode', mode);
 
             try {
                 const response = await fetch(`${API_URL}/billing/generate-wcc`, {
@@ -183,7 +192,7 @@
                     window.location.href = `${API_URL}${data.downloadUrl}`;
                 } else {
                     statusMsg.className = 'status-error';
-                    statusMsg.textContent = data.error || 'Failed to generate WCC. Please check the DC number and file format.';
+                    statusMsg.textContent = data.error || 'Failed to generate billing file. Please check the DC number and file format.';
                     statusMsg.style.display = 'block';
                 }
             } catch (err) {
@@ -192,7 +201,7 @@
                 statusMsg.textContent = 'Network error or server unavailable.';
                 statusMsg.style.display = 'block';
             } finally {
-                btn.disabled = false;
+                buttons.forEach(b => b.disabled = false);
                 loader.style.display = 'none';
             }
         }

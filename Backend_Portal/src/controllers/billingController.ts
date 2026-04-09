@@ -8,7 +8,7 @@ import { spawn } from 'child_process';
  */
 export const generateWCC = async (req: Request, res: Response) => {
     try {
-        const { billingTarget } = req.body;
+        const { billingTarget, mode } = req.body;
         const file = req.file;
 
         if (!file) {
@@ -27,21 +27,23 @@ export const generateWCC = async (req: Request, res: Response) => {
 
         // Robust absolute path resolution for Render compatibility
         const backendRoot = path.resolve(__dirname, '../..');
-        const scriptPath = path.join(backendRoot, 'scripts/generate_wcc_backend.py');
+        const scriptPath = path.join(backendRoot, 'scripts/billing_engine.py');
         const templatePath = path.join(backendRoot, 'scripts/DC0105_TEMPLATE.xlsx');
-        const outputFileName = `${billingTarget.toUpperCase()}_WCC_${Date.now()}.xlsx`;
+        const outputFileName = `${billingTarget.toUpperCase()}_${(mode || 'Billing').toUpperCase()}_${Date.now()}.xlsx`;
         const outputPath = path.join(outputDir, outputFileName);
         const absoluteMasterPath = path.resolve(backendRoot, file.path);
+        const generationMode = (mode || 'WCC').toUpperCase();
 
         console.log(`Billing: Starting WCC Generation for ${billingTarget}`);
 
-        // Spawn Python process for WCC generation with absolute paths
+        // Spawn Python process for WCC/JMS generation with absolute paths and mode
         const pythonProcess = spawn('python3', [
             scriptPath,
             absoluteMasterPath,
             billingTarget,
             templatePath,
-            outputPath
+            outputPath,
+            '--mode', generationMode
         ]);
 
         let pythonOutput = '';

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_a609bf045f2e0d2b3087c1d13175a8f4 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_a609bf045f2e0d2b3087c1d13175a8f4" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_a609bf045f2e0d2b3087c1d13175a8f4 = L.map(
+                "map_a609bf045f2e0d2b3087c1d13175a8f4",
+                {
+                    center: [26.810486, 75.496696],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 9,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_df807e7164e9aa70d7afa9a79f6ea1c9 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_df807e7164e9aa70d7afa9a79f6ea1c9.addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var marker_e1c0f9a6547ff947f96eff8c86ad8f2b = L.marker(
+                [26.810486, 75.496696],
+                {
+}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var icon_81fa2d3fc90e28bdd4e978db23bb76f6 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "black",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_814df7889df3142889ce49612bc586bb = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_eda71efe1ad632fd4f2a9abfd1518f9d = $(`<div id="html_eda71efe1ad632fd4f2a9abfd1518f9d" style="width: 100.0%; height: 100.0%;">WAREHOUSE: JAIPUR</div>`)[0];
+                popup_814df7889df3142889ce49612bc586bb.setContent(html_eda71efe1ad632fd4f2a9abfd1518f9d);
+            
+        
+
+        marker_e1c0f9a6547ff947f96eff8c86ad8f2b.bindPopup(popup_814df7889df3142889ce49612bc586bb)
+        ;
+
+        
+    
+    
+                marker_e1c0f9a6547ff947f96eff8c86ad8f2b.setIcon(icon_81fa2d3fc90e28bdd4e978db23bb76f6);
+            
+    
+            var marker_876fdae96d21bfacad37345ccbe0d11c = L.marker(
+                [26.8693, 75.7615],
+                {
+}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var icon_a62124c85298fda10f1c4cb43bc9f86f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7eee61b8ec94da57b25329706d5e5b1f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_5abe7380e00d8627afe58b6ce7deb29a = $(`<div id="html_5abe7380e00d8627afe58b6ce7deb29a" style="width: 100.0%; height: 100.0%;">Site: I-RJ-JPUR-ENB-1409<br>Route: Jaipur-2-R1-S1<br>AKTBC (API): 0.0 km</div>`)[0];
+                popup_7eee61b8ec94da57b25329706d5e5b1f.setContent(html_5abe7380e00d8627afe58b6ce7deb29a);
+            
+        
+
+        marker_876fdae96d21bfacad37345ccbe0d11c.bindPopup(popup_7eee61b8ec94da57b25329706d5e5b1f)
+        ;
+
+        
+    
+    
+                marker_876fdae96d21bfacad37345ccbe0d11c.setIcon(icon_a62124c85298fda10f1c4cb43bc9f86f);
+            
+    
+            var poly_line_a21b41dc83aab1ffe221119775ad6b75 = L.polyline(
+                [[26.810486, 75.496696], [26.8693, 75.7615]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var marker_516d69ab40d98989651ac078685b5072 = L.marker(
+                [26.8185, 75.8457],
+                {
+}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var icon_b4eff0044cde3ac4071dbb8b387dbc40 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5aa90c4a9ef86d00da23f32fa1cff5d9 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_d1c029186d3162c6612314898365d93d = $(`<div id="html_d1c029186d3162c6612314898365d93d" style="width: 100.0%; height: 100.0%;">Site: I-RJ-JPUR-ENB-1228<br>Route: Jaipur-2-R2-S1<br>AKTBC (API): 0.0 km</div>`)[0];
+                popup_5aa90c4a9ef86d00da23f32fa1cff5d9.setContent(html_d1c029186d3162c6612314898365d93d);
+            
+        
+
+        marker_516d69ab40d98989651ac078685b5072.bindPopup(popup_5aa90c4a9ef86d00da23f32fa1cff5d9)
+        ;
+
+        
+    
+    
+                marker_516d69ab40d98989651ac078685b5072.setIcon(icon_b4eff0044cde3ac4071dbb8b387dbc40);
+            
+    
+            var poly_line_3ba18495d4f1512134fb8a74dc553db9 = L.polyline(
+                [[26.810486, 75.496696], [26.8185, 75.8457]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var marker_7ff76656aba497319aa310f4fa30a462 = L.marker(
+                [26.8038, 75.8247],
+                {
+}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var icon_fdb8a82a7f5d6ba5dc05f5f0cee22e46 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_dc869c4b591cf7061be904cd4eb6c552 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_376d31066c70c349154203e149ac50c6 = $(`<div id="html_376d31066c70c349154203e149ac50c6" style="width: 100.0%; height: 100.0%;">Site: I-RJ-JPUR-ENB-1122<br>Route: Jaipur-2-R3-S1<br>AKTBC (API): 0.0 km</div>`)[0];
+                popup_dc869c4b591cf7061be904cd4eb6c552.setContent(html_376d31066c70c349154203e149ac50c6);
+            
+        
+
+        marker_7ff76656aba497319aa310f4fa30a462.bindPopup(popup_dc869c4b591cf7061be904cd4eb6c552)
+        ;
+
+        
+    
+    
+                marker_7ff76656aba497319aa310f4fa30a462.setIcon(icon_fdb8a82a7f5d6ba5dc05f5f0cee22e46);
+            
+    
+            var poly_line_3efd89eb05e77b1982903bb27a462b7b = L.polyline(
+                [[26.810486, 75.496696], [26.8038, 75.8247]],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "green", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var marker_72bfe3e68de92ff5ac7928207ab977be = L.marker(
+                [26.81715, 75.80912],
+                {
+}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var icon_eadfd89d77b9e0e117ed4ef72be02a5e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f116abd8eeea8f59f5abae2852e47490 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_6a9072a98c12c470fdab535699fa4a00 = $(`<div id="html_6a9072a98c12c470fdab535699fa4a00" style="width: 100.0%; height: 100.0%;">Site: I-RJ-JPUR-ENB-0902<br>Route: Jaipur-2-R4-S1<br>AKTBC (API): 0.0 km</div>`)[0];
+                popup_f116abd8eeea8f59f5abae2852e47490.setContent(html_6a9072a98c12c470fdab535699fa4a00);
+            
+        
+
+        marker_72bfe3e68de92ff5ac7928207ab977be.bindPopup(popup_f116abd8eeea8f59f5abae2852e47490)
+        ;
+
+        
+    
+    
+                marker_72bfe3e68de92ff5ac7928207ab977be.setIcon(icon_eadfd89d77b9e0e117ed4ef72be02a5e);
+            
+    
+            var poly_line_99a1ea602e588915c7d3c0e184ac2028 = L.polyline(
+                [[26.810486, 75.496696], [26.81715, 75.80912]],
+                {"bubblingMouseEvents": true, "color": "purple", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "purple", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var marker_c1f7cd614149a3f4980c224e46ca13a7 = L.marker(
+                [26.98689, 75.7839],
+                {
+}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+    
+            var icon_437c2d41e673a41164e9f7ab6098d3da = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_30e1fcece79f904078ad39cca1877b53 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_6edc6ba6472955fbcc4a9a83b838285b = $(`<div id="html_6edc6ba6472955fbcc4a9a83b838285b" style="width: 100.0%; height: 100.0%;">Site: I-RJ-JPUR-ENB-0887<br>Route: Jaipur-2-R5-S1<br>AKTBC (API): 0.0 km</div>`)[0];
+                popup_30e1fcece79f904078ad39cca1877b53.setContent(html_6edc6ba6472955fbcc4a9a83b838285b);
+            
+        
+
+        marker_c1f7cd614149a3f4980c224e46ca13a7.bindPopup(popup_30e1fcece79f904078ad39cca1877b53)
+        ;
+
+        
+    
+    
+                marker_c1f7cd614149a3f4980c224e46ca13a7.setIcon(icon_437c2d41e673a41164e9f7ab6098d3da);
+            
+    
+            var poly_line_485caa9ed05eee7cbd9b19050e14ce13 = L.polyline(
+                [[26.810486, 75.496696], [26.98689, 75.7839]],
+                {"bubblingMouseEvents": true, "color": "orange", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "orange", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_a609bf045f2e0d2b3087c1d13175a8f4);
+        
+</script>
+</html>

@@ -30,14 +30,18 @@ def load_master_data(master_path, target_billing_file):
 
     return df_filtered
 
-def generate_wcc_sheet(df_sites, wb):
+def generate_wcc_sheet(df_sites, template_path, output_path):
     """Injects the filtered sites specifically into the WCC Template sheet."""
-    if 'WCC' not in wb.sheetnames:
-        print("Error: WCC sheet not found in template.")
+    try:
+        wb = openpyxl.load_workbook(template_path)
+        if 'WCC' not in wb.sheetnames:
+            print("Error: WCC sheet not found in template.")
+            return False
+        ws = wb['WCC']
+    except Exception as e:
+        print(f"Error loading template {template_path}: {e}")
         return False
         
-    ws = wb['WCC']
-    
     # Target exactly the explicit string the user confirmed
     aktbc_col = next((c for c in df_sites.columns if 'CHRG EXTRA TRANSPORT' in str(c).upper() or 'AKTBC' == str(c).strip().upper()), None)
     
@@ -141,125 +145,28 @@ def generate_wcc_sheet(df_sites, wb):
             col_let = get_column_letter(c_idx)
             ws.cell(row=summary_row, column=c_idx).value = f"=SUM({col_let}{start_row}:{col_let}{last_row})"
 
-    return True
-
-def generate_jms_sheet(df_sites, wb):
-    """Injects the filtered sites into the horizontal matrix JMS Template sheet."""
-    if 'JMS' not in wb.sheetnames:
-        print("Error: JMS sheet not found in template.")
+    try:
+        wb.save(output_path)
+        print(f"WCC successfully generated: {output_path}")
+        return True
+    except Exception as e:
+        print(f"Error saving WCC file: {e}")
         return False
-        
-    ws = wb['JMS']
-    
-    # 1. Identify key horizontal and vertical tracking indices
-    SITE_ROW = 10
-    SITE_TYPE_ROW = 11
-    SECTOR_ROW = 12
-    START_COL = 4 # 'D'
-    
-    # Site mapping
-    towers = [str(t).strip() for t in df_sites['Tower type']] if 'Tower type' in df_sites.columns else ["GBT"]*len(df_sites)
-    sectors = [v for v in df_sites['NO OF SECTOR']] if 'NO OF SECTOR' in df_sites.columns else [1]*len(df_sites)
-    site_ids = [str(s).strip() for s in (df_sites['PMP ID'] if 'PMP ID' in df_sites.columns else df_sites.iloc[:, 0])]
-
-    # Column Management
-    if len(df_sites) > 22:
-        ws.insert_cols(START_COL + 22, amount=(len(df_sites) - 22))
-    elif len(df_sites) < 22:
-        amount_to_delete = 22 - len(df_sites)
-        ws.delete_cols(START_COL + len(df_sites), amount=amount_to_delete)
-
-    # Pre-copy styles from Column D (Start column)
-    col_styles = {}
-    for r_idx in range(1, ws.max_row + 1):
-        cell = ws.cell(row=r_idx, column=START_COL)
-        col_styles[r_idx] = {
-            'font': copy(cell.font), 'border': copy(cell.border), 'fill': copy(cell.fill),
-            'number_format': cell.number_format, 'alignment': copy(cell.alignment)
-        }
-
-    # Write Site Headers and Apply styles across columns
-    for i in range(len(df_sites)):
-        curr_col = START_COL + i
-        # Write headers
-        ws.cell(row=SITE_ROW, column=curr_col).value = site_ids[i]
-        ws.cell(row=SITE_TYPE_ROW, column=curr_col).value = towers[i]
-        ws.cell(row=SECTOR_ROW, column=curr_col).value = sectors[i]
-        
-        # Apply style to whole column
-        for r_idx, s in col_styles.items():
-            if r_idx < 10: continue # Skip top header fluff
-            c = ws.cell(row=r_idx, column=curr_col)
-            c.font, c.border, c.fill = copy(s['font']), copy(s['border']), copy(s['fill'])
-            c.number_format, c.alignment = s['number_format'], copy(s['alignment'])
-
-    # Item Quantity Injection
-    for r_idx in range(14, ws.max_row + 1):
-        desc = str(ws.cell(row=r_idx, column=2).value).strip() if ws.cell(row=r_idx, column=2).value else ""
-        if not desc or "TOTAL" in desc.upper(): continue
-        
-        match_col = next((c for c in df_sites.columns if desc.upper() in str(c).upper() or str(c).upper() in desc.upper()), None)
-        if match_col:
-            quantities = df_sites[match_col].values
-            for i, qty in enumerate(quantities):
-                ws.cell(row=r_idx, column=START_COL + i).value = float(qty) if pd.notna(qty) else 0.0
-
-    # Summary Column Logic (Total Qty, Amount)
-    summary_start_col = None
-    for c_idx in range(START_COL + len(df_sites), ws.max_column + 1):
-        if "Total Quantity" in str(ws.cell(row=SITE_TYPE_ROW + 1, column=c_idx).value):
-            summary_start_col = c_idx
-            break
-            
-    if summary_start_col:
-        qty_col = summary_start_col
-        rate_col = qty_col + 1
-        amt_col = qty_col + 2
-        
-        first_let = get_column_letter(START_COL)
-        last_let = get_column_letter(START_COL + len(df_sites) - 1)
-        
-        for r_idx in range(16, ws.max_row):
-            desc_val = ws.cell(row=r_idx, column=2).value
-            if not desc_val or "TOTAL" in str(desc_val).upper():
-                if "TOTAL" in str(desc_val).upper():
-                    sum_formula = f"=SUM({get_column_letter(amt_col)}16:{get_column_letter(amt_col)}{r_idx-1})"
-                    ws.cell(row=r_idx, column=amt_col).value = sum_formula
-                continue
-                
-            ws.cell(row=r_idx, column=qty_col).value = f"=SUM({first_let}{r_idx}:{last_let}{r_idx})"
-            ws.cell(row=r_idx, column=amt_col).value = f"={get_column_letter(qty_col)}{r_idx}*{get_column_letter(rate_col)}{r_idx}"
-
-    return True
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate JIO Billing Formats from MASTERDPR.")
+    parser = argparse.ArgumentParser(description="Generate JIO WCC Billing Sheet.")
     parser.add_argument("master_file", help="Path to the MASTERDPR.xlsx file")
     parser.add_argument("billing_target", help="Target Billing File code (e.g., DC0105)")
     parser.add_argument("template_path", help="Path to the DC0105_TEMPLATE.xlsx file")
     parser.add_argument("output_path", help="Path where the generated file should be saved")
     args = parser.parse_args()
 
-    print(f"--- Processing {args.billing_target.upper()} ---")
+    print(f"--- Starting Standalone WCC Generation for {args.billing_target.upper()} ---")
     df_sites = load_master_data(args.master_file, args.billing_target)
     
     if df_sites is not None:
-        print(f"Loaded {len(df_sites)} sites. Opening template...")
-        try:
-            wb = openpyxl.load_workbook(args.template_path)
-            
-            print("Processing WCC Sheet...")
-            generate_wcc_sheet(df_sites, wb)
-            
-            print("Processing JMS Sheet...")
-            generate_jms_sheet(df_sites, wb)
-            
-            wb.save(args.output_path)
-            print(f"Success! Finalized file: {args.output_path}")
-        except Exception as e:
-            print(f"Generation failed: {e}")
-            import traceback
-            traceback.print_exc()
+        print(f"Loaded {len(df_sites)} sites. Processing...")
+        generate_wcc_sheet(df_sites, args.template_path, args.output_path)
     else:
         print("Generation aborted due to missing data.")
 

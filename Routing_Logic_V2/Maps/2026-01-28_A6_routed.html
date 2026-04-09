@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_0c177b17266335dab0edce0fc5004afa {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_0c177b17266335dab0edce0fc5004afa" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_0c177b17266335dab0edce0fc5004afa = L.map(
+                "map_0c177b17266335dab0edce0fc5004afa",
+                {
+                    center: [26.148422, 73.061378],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 9,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_b767d1f1a2ad4a14e5aa3e018131dff0 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_b767d1f1a2ad4a14e5aa3e018131dff0.addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var marker_8c37f146a29e638aa13fceb2274231e1 = L.marker(
+                [26.148422, 73.061378],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_37f10c0d4ce824b76c659b6514c116fd = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "black",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c21005fa1b80e287de9b2ae2d78f9932 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_5fed3bd42f922a82a8bc6e2ef5b9c656 = $(`<div id="html_5fed3bd42f922a82a8bc6e2ef5b9c656" style="width: 100.0%; height: 100.0%;">WAREHOUSE: JODHPUR</div>`)[0];
+                popup_c21005fa1b80e287de9b2ae2d78f9932.setContent(html_5fed3bd42f922a82a8bc6e2ef5b9c656);
+            
+        
+
+        marker_8c37f146a29e638aa13fceb2274231e1.bindPopup(popup_c21005fa1b80e287de9b2ae2d78f9932)
+        ;
+
+        
+    
+    
+                marker_8c37f146a29e638aa13fceb2274231e1.setIcon(icon_37f10c0d4ce824b76c659b6514c116fd);
+            
+    
+            var marker_1162dccc13a6082f06a7c261531e258e = L.marker(
+                [26.69541027777778, 74.62631833333333],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_0c30734199ed768c4f9d0229d48816df = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_b700620f4feae1ae2a3983d089f4d608 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_faa5aa8244dabcae2712c16375206035 = $(`<div id="html_faa5aa8244dabcae2712c16375206035" style="width: 100.0%; height: 100.0%;">Site: I-RJ-PASS-ENB-9023<br>Route: Nagaur-R1-S1<br>AKTBC (API): 161.24 km</div>`)[0];
+                popup_b700620f4feae1ae2a3983d089f4d608.setContent(html_faa5aa8244dabcae2712c16375206035);
+            
+        
+
+        marker_1162dccc13a6082f06a7c261531e258e.bindPopup(popup_b700620f4feae1ae2a3983d089f4d608)
+        ;
+
+        
+    
+    
+                marker_1162dccc13a6082f06a7c261531e258e.setIcon(icon_0c30734199ed768c4f9d0229d48816df);
+            
+    
+            var marker_b134a3ddbf89daa2b7aaa639e9b3cfd1 = L.marker(
+                [26.71598277777778, 74.59971694444444],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_9a31eba71965847236c2c9c9f92a012e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6a9210fb9f4690bccd649288f8b96aa2 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_64bb36f7c06f21230b90af419cb70c4e = $(`<div id="html_64bb36f7c06f21230b90af419cb70c4e" style="width: 100.0%; height: 100.0%;">Site: I-RJ-PASS-ENB-9017<br>Route: Nagaur-R1-S2<br>AKTBC (API): 4.11 km</div>`)[0];
+                popup_6a9210fb9f4690bccd649288f8b96aa2.setContent(html_64bb36f7c06f21230b90af419cb70c4e);
+            
+        
+
+        marker_b134a3ddbf89daa2b7aaa639e9b3cfd1.bindPopup(popup_6a9210fb9f4690bccd649288f8b96aa2)
+        ;
+
+        
+    
+    
+                marker_b134a3ddbf89daa2b7aaa639e9b3cfd1.setIcon(icon_9a31eba71965847236c2c9c9f92a012e);
+            
+    
+            var marker_1f33be7674ba627c54f9bb897b5c0775 = L.marker(
+                [27.12462111111111, 74.6310086111111],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_d633b4937665439728030939274d460d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_62e77295f46c40a26e464b8ada8dfba4 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_84d54c58c957ae3ed4051f6ebd74fad1 = $(`<div id="html_84d54c58c957ae3ed4051f6ebd74fad1" style="width: 100.0%; height: 100.0%;">Site: I-RJ-MKRN-ENB-9035<br>Route: Nagaur-R1-S3<br>AKTBC (API): 71.41 km</div>`)[0];
+                popup_62e77295f46c40a26e464b8ada8dfba4.setContent(html_84d54c58c957ae3ed4051f6ebd74fad1);
+            
+        
+
+        marker_1f33be7674ba627c54f9bb897b5c0775.bindPopup(popup_62e77295f46c40a26e464b8ada8dfba4)
+        ;
+
+        
+    
+    
+                marker_1f33be7674ba627c54f9bb897b5c0775.setIcon(icon_d633b4937665439728030939274d460d);
+            
+    
+            var poly_line_8f86bc41b3ccd5c116299cc3b9e3303b = L.polyline(
+                [[26.148422, 73.061378], [26.69541027777778, 74.62631833333333], [26.71598277777778, 74.59971694444444], [27.12462111111111, 74.6310086111111]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var marker_e035d400c74a5427fda6b05abdc87dbc = L.marker(
+                [26.57612, 73.863],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_1bbce39adfe56cc0b49209e9627a2723 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c5e71b2c034721e54bc472e4f1ca2962 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_aaf0d4c2745e95a7c92f032b86d922ff = $(`<div id="html_aaf0d4c2745e95a7c92f032b86d922ff" style="width: 100.0%; height: 100.0%;">Site: I-RJ-MRTA-ENB-6001<br>Route: Nagaur-R2-S1<br>AKTBC (API): 59.31 km</div>`)[0];
+                popup_c5e71b2c034721e54bc472e4f1ca2962.setContent(html_aaf0d4c2745e95a7c92f032b86d922ff);
+            
+        
+
+        marker_e035d400c74a5427fda6b05abdc87dbc.bindPopup(popup_c5e71b2c034721e54bc472e4f1ca2962)
+        ;
+
+        
+    
+    
+                marker_e035d400c74a5427fda6b05abdc87dbc.setIcon(icon_1bbce39adfe56cc0b49209e9627a2723);
+            
+    
+            var marker_922f09ebf0f25212937da38326e96242 = L.marker(
+                [26.51477, 74.31346],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_fa15bdd140455d33c5f31f83786b714f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6fab8e7a96d54c7b25c9b5fe5047def8 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_af2b03830ed3204d3d803568f2ea4503 = $(`<div id="html_af2b03830ed3204d3d803568f2ea4503" style="width: 100.0%; height: 100.0%;">Site: I-RJ-DENA-ENB-6074<br>Route: Nagaur-R2-S2<br>AKTBC (API): 60.26 km</div>`)[0];
+                popup_6fab8e7a96d54c7b25c9b5fe5047def8.setContent(html_af2b03830ed3204d3d803568f2ea4503);
+            
+        
+
+        marker_922f09ebf0f25212937da38326e96242.bindPopup(popup_6fab8e7a96d54c7b25c9b5fe5047def8)
+        ;
+
+        
+    
+    
+                marker_922f09ebf0f25212937da38326e96242.setIcon(icon_fa15bdd140455d33c5f31f83786b714f);
+            
+    
+            var marker_fdc11c8733e6df5c140512f52dd92849 = L.marker(
+                [26.56105, 74.47147],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_bb94e1b3b55c4ecbb0f970af893f8da1 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_3ca16f0a7f8dd2f29d6e02342a8331fd = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_fbdc336cd95e23081fdc9641cf25a618 = $(`<div id="html_fbdc336cd95e23081fdc9641cf25a618" style="width: 100.0%; height: 100.0%;">Site: I-RJ-DENA-ENB-6083<br>Route: Nagaur-R2-S3<br>AKTBC (API): 22.44 km</div>`)[0];
+                popup_3ca16f0a7f8dd2f29d6e02342a8331fd.setContent(html_fbdc336cd95e23081fdc9641cf25a618);
+            
+        
+
+        marker_fdc11c8733e6df5c140512f52dd92849.bindPopup(popup_3ca16f0a7f8dd2f29d6e02342a8331fd)
+        ;
+
+        
+    
+    
+                marker_fdc11c8733e6df5c140512f52dd92849.setIcon(icon_bb94e1b3b55c4ecbb0f970af893f8da1);
+            
+    
+            var poly_line_c73189fa3baf85eef270efb10e9b101b = L.polyline(
+                [[26.148422, 73.061378], [26.57612, 73.863], [26.51477, 74.31346], [26.56105, 74.47147]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var marker_2d4c77b383dfbcf1d7c1d1692bf871ff = L.marker(
+                [26.97268, 73.41547],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_52d1137c958aabe2db3c79435cd7e996 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_4459b110faff4322cb0e640b170e1e2d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_25faa04064b6b51e8e127bb07bfa9f5d = $(`<div id="html_25faa04064b6b51e8e127bb07bfa9f5d" style="width: 100.0%; height: 100.0%;">Site: I-RJ-KESR-ENB-V001<br>Route: Nagaur-R3-S1<br>AKTBC (API): 61.57 km</div>`)[0];
+                popup_4459b110faff4322cb0e640b170e1e2d.setContent(html_25faa04064b6b51e8e127bb07bfa9f5d);
+            
+        
+
+        marker_2d4c77b383dfbcf1d7c1d1692bf871ff.bindPopup(popup_4459b110faff4322cb0e640b170e1e2d)
+        ;
+
+        
+    
+    
+                marker_2d4c77b383dfbcf1d7c1d1692bf871ff.setIcon(icon_52d1137c958aabe2db3c79435cd7e996);
+            
+    
+            var poly_line_4d1adb21e1166d3de57ed03c21fdc0d5 = L.polyline(
+                [[26.148422, 73.061378], [26.97268, 73.41547]],
+                {"bubblingMouseEvents": true, "color": "green", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "green", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var marker_d6237ea3c347ecd757f2d155f798a5a9 = L.marker(
+                [25.33293, 72.67241],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_c337143a71d7fe531bbb49189b8e0859 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a2831591b1ae5a18764f3cbc9e74c331 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_bcf6d3bc51099fa1b07ad99501ecf237 = $(`<div id="html_bcf6d3bc51099fa1b07ad99501ecf237" style="width: 100.0%; height: 100.0%;">Site: I-RJ-JLOR-ENB-9037<br>Route: Sirohi-R1-S1<br>AKTBC (API): 70.7 km</div>`)[0];
+                popup_a2831591b1ae5a18764f3cbc9e74c331.setContent(html_bcf6d3bc51099fa1b07ad99501ecf237);
+            
+        
+
+        marker_d6237ea3c347ecd757f2d155f798a5a9.bindPopup(popup_a2831591b1ae5a18764f3cbc9e74c331)
+        ;
+
+        
+    
+    
+                marker_d6237ea3c347ecd757f2d155f798a5a9.setIcon(icon_c337143a71d7fe531bbb49189b8e0859);
+            
+    
+            var marker_b5c715a7bacde60a693f63562da0ccb5 = L.marker(
+                [25.20187, 72.58847],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_2ffae290ab59c9396c4428ce7ff84443 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_4055a76e88eea167a60f52bda85fdcf4 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_a0b124e3a8c0257a28d0482d991ccd91 = $(`<div id="html_a0b124e3a8c0257a28d0482d991ccd91" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BAGA-ENB-6000<br>Route: Sirohi-R1-S2<br>AKTBC (API): 21.24 km</div>`)[0];
+                popup_4055a76e88eea167a60f52bda85fdcf4.setContent(html_a0b124e3a8c0257a28d0482d991ccd91);
+            
+        
+
+        marker_b5c715a7bacde60a693f63562da0ccb5.bindPopup(popup_4055a76e88eea167a60f52bda85fdcf4)
+        ;
+
+        
+    
+    
+                marker_b5c715a7bacde60a693f63562da0ccb5.setIcon(icon_2ffae290ab59c9396c4428ce7ff84443);
+            
+    
+            var marker_db8cb22bdc18f29c5c638ee192af01ac = L.marker(
+                [25.00635888888889, 72.30446388888889],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_592449500e1c7545d39ff97d749acd1c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_cdee4932011cc447f8d599081f0634f3 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_eb4138e4bf82ffaf0933bd3767585eec = $(`<div id="html_eb4138e4bf82ffaf0933bd3767585eec" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BNML-ENB-9034<br>Route: Sirohi-R1-S3<br>AKTBC (API): 42.85 km</div>`)[0];
+                popup_cdee4932011cc447f8d599081f0634f3.setContent(html_eb4138e4bf82ffaf0933bd3767585eec);
+            
+        
+
+        marker_db8cb22bdc18f29c5c638ee192af01ac.bindPopup(popup_cdee4932011cc447f8d599081f0634f3)
+        ;
+
+        
+    
+    
+                marker_db8cb22bdc18f29c5c638ee192af01ac.setIcon(icon_592449500e1c7545d39ff97d749acd1c);
+            
+    
+            var poly_line_a6d8200caefb5faedf822599f16300fe = L.polyline(
+                [[26.148422, 73.061378], [25.33293, 72.67241], [25.20187, 72.58847], [25.00635888888889, 72.30446388888889]],
+                {"bubblingMouseEvents": true, "color": "purple", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "purple", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var marker_dd31a2443d4cdcc27efea34eefcdf5f1 = L.marker(
+                [25.08525805555555, 72.17239166666667],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_26cc4902020cbd127ee0788e4f74db0b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_489a2e2911722ee3a1aab4d3bbe76f2f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_f9c3abc438b5937ba31067ae939feb09 = $(`<div id="html_f9c3abc438b5937ba31067ae939feb09" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BORA-ENB-9028<br>Route: Sirohi-R2-S1<br>AKTBC (API): 133.45 km</div>`)[0];
+                popup_489a2e2911722ee3a1aab4d3bbe76f2f.setContent(html_f9c3abc438b5937ba31067ae939feb09);
+            
+        
+
+        marker_dd31a2443d4cdcc27efea34eefcdf5f1.bindPopup(popup_489a2e2911722ee3a1aab4d3bbe76f2f)
+        ;
+
+        
+    
+    
+                marker_dd31a2443d4cdcc27efea34eefcdf5f1.setIcon(icon_26cc4902020cbd127ee0788e4f74db0b);
+            
+    
+            var marker_308ca07cc3b1cd5100e404bd30b88403 = L.marker(
+                [24.88981, 72.09261],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_332b9dfa66ca862fe8b9737164300ba6 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_99f76857e82923624cd53868217d99ee = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_4e2ab0d40d3541892ac0a4efa85a047f = $(`<div id="html_4e2ab0d40d3541892ac0a4efa85a047f" style="width: 100.0%; height: 100.0%;">Site: I-RJ-KDRD-ENB-6000<br>Route: Sirohi-R2-S2<br>AKTBC (API): 36.3 km</div>`)[0];
+                popup_99f76857e82923624cd53868217d99ee.setContent(html_4e2ab0d40d3541892ac0a4efa85a047f);
+            
+        
+
+        marker_308ca07cc3b1cd5100e404bd30b88403.bindPopup(popup_99f76857e82923624cd53868217d99ee)
+        ;
+
+        
+    
+    
+                marker_308ca07cc3b1cd5100e404bd30b88403.setIcon(icon_332b9dfa66ca862fe8b9737164300ba6);
+            
+    
+            var marker_0525f509f081c0703bb8fd2866af0de6 = L.marker(
+                [24.81371, 72.45611],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_fe234307c2b31ebecf87374065f014ce = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_1f79f773db3101a31dcfad53480be58b = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_60c8fc7e5c6fe4297bde146a43bf10d9 = $(`<div id="html_60c8fc7e5c6fe4297bde146a43bf10d9" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BNML-ENB-6004<br>Route: Sirohi-R2-S3<br>AKTBC (API): 56.51 km</div>`)[0];
+                popup_1f79f773db3101a31dcfad53480be58b.setContent(html_60c8fc7e5c6fe4297bde146a43bf10d9);
+            
+        
+
+        marker_0525f509f081c0703bb8fd2866af0de6.bindPopup(popup_1f79f773db3101a31dcfad53480be58b)
+        ;
+
+        
+    
+    
+                marker_0525f509f081c0703bb8fd2866af0de6.setIcon(icon_fe234307c2b31ebecf87374065f014ce);
+            
+    
+            var poly_line_ec35b72937e164e0bf6cb083d3e7f5ba = L.polyline(
+                [[26.148422, 73.061378], [25.08525805555555, 72.17239166666667], [24.88981, 72.09261], [24.81371, 72.45611]],
+                {"bubblingMouseEvents": true, "color": "orange", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "orange", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var marker_6e24b5c6d8a457a3f481679dd7ce3cd1 = L.marker(
+                [25.22256, 72.09222],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_35dbcb96992d1469534dbd143c19eaf5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "darkred",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2dbc6124485eba6b153560e3f08ac8f0 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_b27dff26d677c3e0088a8f1a1dff2100 = $(`<div id="html_b27dff26d677c3e0088a8f1a1dff2100" style="width: 100.0%; height: 100.0%;">Site: I-RJ-JAAW-ENB-6004<br>Route: Sirohi-R3-S1<br>AKTBC (API): 138.87 km</div>`)[0];
+                popup_2dbc6124485eba6b153560e3f08ac8f0.setContent(html_b27dff26d677c3e0088a8f1a1dff2100);
+            
+        
+
+        marker_6e24b5c6d8a457a3f481679dd7ce3cd1.bindPopup(popup_2dbc6124485eba6b153560e3f08ac8f0)
+        ;
+
+        
+    
+    
+                marker_6e24b5c6d8a457a3f481679dd7ce3cd1.setIcon(icon_35dbcb96992d1469534dbd143c19eaf5);
+            
+    
+            var marker_354b73a032f2b277ffd4991bdc5b85c6 = L.marker(
+                [24.99861, 72.05461],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_92b8cd701e8f23deb933ee1d786ab10b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "darkred",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_02de4d2fa32f847d7c83152463652269 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_7adeed01928ce02fd066a94a98fc2f0e = $(`<div id="html_7adeed01928ce02fd066a94a98fc2f0e" style="width: 100.0%; height: 100.0%;">Site: I-RJ-BORA-ENB-6003<br>Route: Sirohi-R3-S2<br>AKTBC (API): 40.44 km</div>`)[0];
+                popup_02de4d2fa32f847d7c83152463652269.setContent(html_7adeed01928ce02fd066a94a98fc2f0e);
+            
+        
+
+        marker_354b73a032f2b277ffd4991bdc5b85c6.bindPopup(popup_02de4d2fa32f847d7c83152463652269)
+        ;
+
+        
+    
+    
+                marker_354b73a032f2b277ffd4991bdc5b85c6.setIcon(icon_92b8cd701e8f23deb933ee1d786ab10b);
+            
+    
+            var marker_ee90c5e646bb8142d6e697c77fadd9b8 = L.marker(
+                [25.0629225, 71.87469999999999],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_63d38467a6e8cfc4a6cdda2eb28537d5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "darkred",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_31245e54c42672ea62c27f276dce3aed = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_51e8b80a5fe42ec4ba64f0eef637ecbd = $(`<div id="html_51e8b80a5fe42ec4ba64f0eef637ecbd" style="width: 100.0%; height: 100.0%;">Site: I-RJ-SNCE-ENB-9092<br>Route: Sirohi-R3-S3<br>AKTBC (API): 34.31 km</div>`)[0];
+                popup_31245e54c42672ea62c27f276dce3aed.setContent(html_51e8b80a5fe42ec4ba64f0eef637ecbd);
+            
+        
+
+        marker_ee90c5e646bb8142d6e697c77fadd9b8.bindPopup(popup_31245e54c42672ea62c27f276dce3aed)
+        ;
+
+        
+    
+    
+                marker_ee90c5e646bb8142d6e697c77fadd9b8.setIcon(icon_63d38467a6e8cfc4a6cdda2eb28537d5);
+            
+    
+            var poly_line_1f9c93fa559154b2c08478e762788529 = L.polyline(
+                [[26.148422, 73.061378], [25.22256, 72.09222], [24.99861, 72.05461], [25.0629225, 71.87469999999999]],
+                {"bubblingMouseEvents": true, "color": "darkred", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "darkred", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var marker_9417eb209148f6c36e43777a11063e18 = L.marker(
+                [24.74111944444445, 71.95590972222223],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_6ec01c84a4f5dcb46e1a7091bd58d03b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "cadetblue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5c6549a67ed4d4534d5a7179831e333c = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_c73552e2b761466ad6f774c9585ef684 = $(`<div id="html_c73552e2b761466ad6f774c9585ef684" style="width: 100.0%; height: 100.0%;">Site: I-RJ-SNCE-ENB-9107<br>Route: Sirohi-R4-S1<br>AKTBC (API): 215.41 km</div>`)[0];
+                popup_5c6549a67ed4d4534d5a7179831e333c.setContent(html_c73552e2b761466ad6f774c9585ef684);
+            
+        
+
+        marker_9417eb209148f6c36e43777a11063e18.bindPopup(popup_5c6549a67ed4d4534d5a7179831e333c)
+        ;
+
+        
+    
+    
+                marker_9417eb209148f6c36e43777a11063e18.setIcon(icon_6ec01c84a4f5dcb46e1a7091bd58d03b);
+            
+    
+            var marker_2975823d02ea08b548ce8eb04c024185 = L.marker(
+                [24.68613388888889, 71.84848694444445],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_1312b102ef0b9e0ce2053ec2d81cf728 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "cadetblue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_21a84cc51b5fdbeacf5ff5f88019123e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_d62691a1e58f4d5a97aff23c70ca749e = $(`<div id="html_d62691a1e58f4d5a97aff23c70ca749e" style="width: 100.0%; height: 100.0%;">Site: I-RJ-SNCE-ENB-9102<br>Route: Sirohi-R4-S2<br>AKTBC (API): 14.41 km</div>`)[0];
+                popup_21a84cc51b5fdbeacf5ff5f88019123e.setContent(html_d62691a1e58f4d5a97aff23c70ca749e);
+            
+        
+
+        marker_2975823d02ea08b548ce8eb04c024185.bindPopup(popup_21a84cc51b5fdbeacf5ff5f88019123e)
+        ;
+
+        
+    
+    
+                marker_2975823d02ea08b548ce8eb04c024185.setIcon(icon_1312b102ef0b9e0ce2053ec2d81cf728);
+            
+    
+            var marker_30c064b73fedbac90d9346dedcbf3bc8 = L.marker(
+                [24.76783944444444, 71.7101875],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_755489da87422bc53eeed7ac8a8a4235 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "cadetblue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_0530bd189c464a76bbcd2f5a2cb57cfd = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_55dc5b3d4d4e40dbac5611409335a8ba = $(`<div id="html_55dc5b3d4d4e40dbac5611409335a8ba" style="width: 100.0%; height: 100.0%;">Site: I-RJ-SNCE-ENB-9036<br>Route: Sirohi-R4-S3<br>AKTBC (API): 20.18 km</div>`)[0];
+                popup_0530bd189c464a76bbcd2f5a2cb57cfd.setContent(html_55dc5b3d4d4e40dbac5611409335a8ba);
+            
+        
+
+        marker_30c064b73fedbac90d9346dedcbf3bc8.bindPopup(popup_0530bd189c464a76bbcd2f5a2cb57cfd)
+        ;
+
+        
+    
+    
+                marker_30c064b73fedbac90d9346dedcbf3bc8.setIcon(icon_755489da87422bc53eeed7ac8a8a4235);
+            
+    
+            var poly_line_ae5033f74813feffd6c5a08e7d045d8a = L.polyline(
+                [[26.148422, 73.061378], [24.74111944444445, 71.95590972222223], [24.68613388888889, 71.84848694444445], [24.76783944444444, 71.7101875]],
+                {"bubblingMouseEvents": true, "color": "cadetblue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "cadetblue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var marker_423be82eeacf4b92397744e321491568 = L.marker(
+                [25.23593, 72.13494],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_f0c7c85ca59b2ab73d3d57e228178b68 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_e4acf5d32ef8c71cb4f0adeb6d80b38d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_0b1a9ab584cf177e3ad5034b1f835f4b = $(`<div id="html_0b1a9ab584cf177e3ad5034b1f835f4b" style="width: 100.0%; height: 100.0%;">Site: I-RJ-JAAW-ENB-6003<br>Route: Sirohi-R5-S1<br>AKTBC (API): 114.23 km</div>`)[0];
+                popup_e4acf5d32ef8c71cb4f0adeb6d80b38d.setContent(html_0b1a9ab584cf177e3ad5034b1f835f4b);
+            
+        
+
+        marker_423be82eeacf4b92397744e321491568.bindPopup(popup_e4acf5d32ef8c71cb4f0adeb6d80b38d)
+        ;
+
+        
+    
+    
+                marker_423be82eeacf4b92397744e321491568.setIcon(icon_f0c7c85ca59b2ab73d3d57e228178b68);
+            
+    
+            var marker_261f528d2cdfe53139bc17806929dd7f = L.marker(
+                [24.832035, 71.77481888888889],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_96d0ff95f6cfc3b59e9fade03c676329 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_99c5a9dd119f3cc418f68a5d1fd7042b = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e2c8a599fdafb57f3cf96c0696034166 = $(`<div id="html_e2c8a599fdafb57f3cf96c0696034166" style="width: 100.0%; height: 100.0%;">Site: I-RJ-SNCE-ENB-9008<br>Route: Sirohi-R5-S2<br>AKTBC (API): 71.92 km</div>`)[0];
+                popup_99c5a9dd119f3cc418f68a5d1fd7042b.setContent(html_e2c8a599fdafb57f3cf96c0696034166);
+            
+        
+
+        marker_261f528d2cdfe53139bc17806929dd7f.bindPopup(popup_99c5a9dd119f3cc418f68a5d1fd7042b)
+        ;
+
+        
+    
+    
+                marker_261f528d2cdfe53139bc17806929dd7f.setIcon(icon_96d0ff95f6cfc3b59e9fade03c676329);
+            
+    
+            var marker_9c24796ca5e7fbb8360a069042cf735e = L.marker(
+                [24.80157972222222, 71.48662472222222],
+                {
+}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+    
+            var icon_836455af020b185bb6e52d94990d8f0c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_01389ca510642b168c8d03c0c8190fc0 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_01632cba4c777b8249a863ee2b6e8f2b = $(`<div id="html_01632cba4c777b8249a863ee2b6e8f2b" style="width: 100.0%; height: 100.0%;">Site: I-RJ-SNCE-ENB-9076<br>Route: Sirohi-R5-S3<br>AKTBC (API): 34.02 km</div>`)[0];
+                popup_01389ca510642b168c8d03c0c8190fc0.setContent(html_01632cba4c777b8249a863ee2b6e8f2b);
+            
+        
+
+        marker_9c24796ca5e7fbb8360a069042cf735e.bindPopup(popup_01389ca510642b168c8d03c0c8190fc0)
+        ;
+
+        
+    
+    
+                marker_9c24796ca5e7fbb8360a069042cf735e.setIcon(icon_836455af020b185bb6e52d94990d8f0c);
+            
+    
+            var poly_line_2a9f7ac6e9a623a37f8328077be53227 = L.polyline(
+                [[26.148422, 73.061378], [25.23593, 72.13494], [24.832035, 71.77481888888889], [24.80157972222222, 71.48662472222222]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_0c177b17266335dab0edce0fc5004afa);
+        
+</script>
+</html>

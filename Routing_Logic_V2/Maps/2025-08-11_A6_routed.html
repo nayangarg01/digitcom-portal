@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_e7fab913d592b80d568b546d08495166 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_e7fab913d592b80d568b546d08495166" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_e7fab913d592b80d568b546d08495166 = L.map(
+                "map_e7fab913d592b80d568b546d08495166",
+                {
+                    center: [26.148422, 73.061378],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 9,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_c75807daabe1d57acd88fc080acd8bf8 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_c75807daabe1d57acd88fc080acd8bf8.addTo(map_e7fab913d592b80d568b546d08495166);
+        
+    
+            var marker_b6795135878b4c46c1dddd7255ec7e97 = L.marker(
+                [26.148422, 73.061378],
+                {
+}
+            ).addTo(map_e7fab913d592b80d568b546d08495166);
+        
+    
+            var icon_f099a7e052f9368d2de03cd880708b58 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "black",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_727dfbe4379ef2c5c60a5a7058616039 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_f82e11d0fc5edbdef03cf200f8e73454 = $(`<div id="html_f82e11d0fc5edbdef03cf200f8e73454" style="width: 100.0%; height: 100.0%;">WAREHOUSE: JODHPUR</div>`)[0];
+                popup_727dfbe4379ef2c5c60a5a7058616039.setContent(html_f82e11d0fc5edbdef03cf200f8e73454);
+            
+        
+
+        marker_b6795135878b4c46c1dddd7255ec7e97.bindPopup(popup_727dfbe4379ef2c5c60a5a7058616039)
+        ;
+
+        
+    
+    
+                marker_b6795135878b4c46c1dddd7255ec7e97.setIcon(icon_f099a7e052f9368d2de03cd880708b58);
+            
+    
+            var marker_98a7f8d5e26e5f2f1163b50b4d211d79 = L.marker(
+                [27.18212694444444, 74.40487194444445],
+                {
+}
+            ).addTo(map_e7fab913d592b80d568b546d08495166);
+        
+    
+            var icon_ce82a8bbc18821b9ce6438e8997e8709 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_36cd86870e72b3296eb06fee70d08d87 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_9dd4dbf5e29356522b8235a6dc8ec703 = $(`<div id="html_9dd4dbf5e29356522b8235a6dc8ec703" style="width: 100.0%; height: 100.0%;">Site: I-RJ-DDWN-ENB-9017<br>Route: Nagaur-R1-S1<br>AKTBC (API): 166.71 km</div>`)[0];
+                popup_36cd86870e72b3296eb06fee70d08d87.setContent(html_9dd4dbf5e29356522b8235a6dc8ec703);
+            
+        
+
+        marker_98a7f8d5e26e5f2f1163b50b4d211d79.bindPopup(popup_36cd86870e72b3296eb06fee70d08d87)
+        ;
+
+        
+    
+    
+                marker_98a7f8d5e26e5f2f1163b50b4d211d79.setIcon(icon_ce82a8bbc18821b9ce6438e8997e8709);
+            
+    
+            var marker_7bba7e74f14068f13f2c553a8efda9b3 = L.marker(
+                [27.1992525, 74.79251944444444],
+                {
+}
+            ).addTo(map_e7fab913d592b80d568b546d08495166);
+        
+    
+            var icon_8e6d1f79d72f24b36d98c957314d14aa = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a16acfc0ecc9a06dd664c6658bcdfc42 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3e26af62517dcb1356604b1ceae3d910 = $(`<div id="html_3e26af62517dcb1356604b1ceae3d910" style="width: 100.0%; height: 100.0%;">Site: I-RJ-NAWW-ENB-I020<br>Route: Nagaur-R1-S2<br>AKTBC (API): 52.81 km</div>`)[0];
+                popup_a16acfc0ecc9a06dd664c6658bcdfc42.setContent(html_3e26af62517dcb1356604b1ceae3d910);
+            
+        
+
+        marker_7bba7e74f14068f13f2c553a8efda9b3.bindPopup(popup_a16acfc0ecc9a06dd664c6658bcdfc42)
+        ;
+
+        
+    
+    
+                marker_7bba7e74f14068f13f2c553a8efda9b3.setIcon(icon_8e6d1f79d72f24b36d98c957314d14aa);
+            
+    
+            var poly_line_94c2f2c3422df5322893008b01abf840 = L.polyline(
+                [[26.148422, 73.061378], [27.18212694444444, 74.40487194444445], [27.1992525, 74.79251944444444]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_e7fab913d592b80d568b546d08495166);
+        
+</script>
+</html>

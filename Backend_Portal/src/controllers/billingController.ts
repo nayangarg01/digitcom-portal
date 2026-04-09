@@ -44,14 +44,14 @@ export const generateWCC = async (req: Request, res: Response) => {
 
         res.write(`--- Launching Unified Precision Billing Engine for ${billingTarget} ---\n`);
 
-        // Spawn Python process
+        // Spawn Python process with absolute paths for all file inputs
         const pythonProcess = spawn('python3', [
             scriptPath,
-            masterFile.path,
+            path.resolve(projectRoot, 'Backend_Portal', masterFile.path),
             billingTarget,
             '--template', templatePath,
             '--output', outputPath,
-            '--mindump', mindumpFile.path
+            '--mindump', path.resolve(projectRoot, 'Backend_Portal', mindumpFile.path)
         ], {
             cwd: projectRoot // Run Python from the project root so it can find secondary files if needed
         });

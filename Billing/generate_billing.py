@@ -762,6 +762,7 @@ def main():
             generate_wcc_sheet(df_sites, wb)
             populate_main_wcc(df_sites, wb, dc_number)
             
+            """
             # Step 2: JMS
             print("- Step 2: Populating JMS (Style DNA Mirroring)...")
             populate_main_matrix('JMS', df_sites, code_to_col_idx, wb)
@@ -789,6 +790,11 @@ def main():
             # Step 6: RECO
             print("- Step 6: Populating RECO (Pure Logic)...")
             generate_reco_sheet(df_sites, wb)
+            """
+            
+            # PHASED ROLLOUT: Steps 2-6 are temporarily disabled to verify WCC stability on Render.
+            # We will re-enable them one by one after confirming WCC works.
+            print("- Steps 2-6: Skipped for phased rollout (WCC-only mode active).")
 
             # Ensure output directory exists for backend reliability
             output_dir = os.path.dirname(os.path.abspath(output_path))

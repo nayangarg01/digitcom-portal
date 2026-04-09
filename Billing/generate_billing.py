@@ -721,7 +721,7 @@ def main():
     
     df_sites, code_to_col_idx = load_master_data(master_path, dc_number)
     
-    if df_sites is not None:
+    if df_sites is not None and not df_sites.empty:
         try:
             # Load from provided or default template path
             wb = openpyxl.load_workbook(template_path)
@@ -729,14 +729,12 @@ def main():
             # Global Header Swap
             target_sheets = wb.sheetnames
             for sheet_name in target_sheets:
-                ws_temp = wb[sheet_name]
-                for r in range(1, 15):
-                    for c in range(1, 15):
-                        v = ws_temp.cell(row=r, column=c).value
-                        if v:
-                            str_v = str(v)
-                            if "DC0118" in str_v: ws_temp.cell(row=r, column=c).value = str_v.replace("DC0118", dc_number)
-                            elif "DC0105" in str_v: ws_temp.cell(row=r, column=c).value = str_v.replace("DC0105", dc_number)
+                ws_h = wb[sheet_name]
+                for r in range(1, 10):
+                    for c in range(1, 20):
+                        cell = ws_h.cell(row=r, column=c)
+                        if "DC-CODE" in str(cell.value):
+                            cell.value = str(cell.value).replace("DC-CODE", dc_number)
 
             # Step 1: Main WCC & WCC
             print("- Step 1: Populating WCC and Main WCC Headers...")
@@ -779,10 +777,16 @@ def main():
             wb.save(output_path)
             print(f"COMPLETE: {output_path}")
         except Exception as e:
-            print(f"Error: {e}")
-            import traceback; traceback.print_exc()
+            print(f"ERROR: {e}")
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
     else:
-        print(f"DC Code {dc_number} not found.")
+        if df_sites is None:
+            print(f"CRITICAL ERROR: Failed to load Master Tracker file at {master_path}")
+        else:
+            print(f"DATA ERROR: No site records found for DC Number '{dc_number}' in the provided Master Tracker.")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

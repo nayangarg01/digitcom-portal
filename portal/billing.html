@@ -195,7 +195,8 @@
                     window.location.href = `${API_URL}${data.downloadUrl}`;
                 } else {
                     statusMsg.className = 'status-error';
-                    statusMsg.textContent = data.error || 'Failed to generate billing portfolio. Please check the DC number and file format.';
+                    const errorDetails = data.details ? `<br><small style="color: #dc3545; display: block; margin-top: 10px; font-family: monospace; font-size: 11px; line-height: 1.4; text-align: left; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px;">${data.details.replace(/\n/g, '<br>')}</small>` : '';
+                    statusMsg.innerHTML = `<strong>${data.error || 'Failed to generate billing portfolio.'}</strong>${errorDetails}`;
                     statusMsg.style.display = 'block';
                 }
             } catch (err) {

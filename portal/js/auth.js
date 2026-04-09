@@ -1,4 +1,8 @@
-const API_URL = 'https://digitcom-backend.onrender.com/api';
+// Dynamic API URL: uses current host or falls back to production if running as local file
+const API_URL = (window.location.origin === 'null' || window.location.protocol === 'file:') 
+    ? 'https://digitcom-backend.onrender.com/api' 
+    : window.location.origin + '/api';
+
 window.API_URL = API_URL; // Exposure for other scripts
 
 const loginForm = document.getElementById('login-form');

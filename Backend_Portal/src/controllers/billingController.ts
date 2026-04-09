@@ -24,13 +24,13 @@ export const generateWCC = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Billing Target (e.g. DC0105) is required' });
         }
 
-        // Use process.cwd() to resolve paths from the project root reliably on Render
-        const rootDir = process.cwd();
-        const scriptPath = path.join(rootDir, 'Billing/generate_billing.py');
-        const templatePath = path.join(rootDir, 'Billing/MASTER_JMS_TEMPLATE.xlsx');
+        // Use __dirname to resolve paths relative to this file's location for maximum reliability
+        const projectRoot = path.resolve(__dirname, '../../..');
+        const scriptPath = path.join(projectRoot, 'Billing/generate_billing.py');
+        const templatePath = path.join(projectRoot, 'Billing/MASTER_JMS_TEMPLATE.xlsx');
         
-        // Ensure temporary billing outputs directory exists
-        const outputDir = path.join(rootDir, 'Backend_Portal/uploads/billing_outputs');
+        // Ensure temporary billing outputs directory exists in Backend_Portal/uploads/billing_outputs
+        const outputDir = path.resolve(__dirname, '../../uploads/billing_outputs');
         if (!fs.existsSync(outputDir)) {
             fs.mkdirSync(outputDir, { recursive: true });
         }
@@ -52,7 +52,9 @@ export const generateWCC = async (req: Request, res: Response) => {
             '--template', templatePath,
             '--output', outputPath,
             '--mindump', mindumpFile.path
-        ]);
+        ], {
+            cwd: projectRoot // Run Python from the project root so it can find secondary files if needed
+        });
 
         let pythonOutput = '';
         let pythonError = '';

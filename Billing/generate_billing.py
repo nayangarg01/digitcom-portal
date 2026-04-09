@@ -670,16 +670,6 @@ def populate_main_wcc(df_sites, wb, dc_number):
     ws.cell(row=32, column=4).value = f"{num_sites} SITES"
     # Cell [32, 9]: Completion Date
     ws.cell(row=32, column=9).value = date_range
-    
-    # 2. Logo Insertion (Top Middle Area)
-    logo_path = 'Billing/images/jio_logo.png'
-    if os.path.exists(logo_path):
-        from openpyxl.drawing.image import Image as XLImage
-        img = XLImage(logo_path)
-        img.width = 120
-        img.height = 120
-        # Placeholder cell A1 for logo
-        ws.add_image(img, 'A1')
 
 def populate_declaration_data(df_sites, wb, dc_number):
     """
@@ -699,29 +689,60 @@ def populate_declaration_data(df_sites, wb, dc_number):
                 new_v = re.sub(r'\d+\s+SITES', f"{num_sites} SITES", v, flags=re.I)
                 cell.value = new_v
 
-def populate_boq_signatures(ws):
+def apply_signatures_to_sheet(ws, is_boq=False):
     """
-    Adds the Triple-Signatory Block (PIC, DEPLOYMENT HEAD, RJIO CTO) to the BOQ.
+    Dynamically anchors signatures 2 rows below the 'TOTAL' row.
+    Applies Left Alignment and Template Style Cloning (Size 34/24).
     """
-    # SS Audit: Row 27 (Labels), 28 (Roles), 29 (Names), 30 (Dates)
+    # 1. FIND THE TOTAL ROW
+    total_row = 26 # Fallback
+    for r in range(15, 60):
+        # We look for "TOTAL" in the last few columns (Total Qty/Amt area)
+        for c in range(20, 50):
+            v = str(ws.cell(row=r, column=c).value or "").upper()
+            if "TOTAL" == v:
+                total_row = r
+                break
+    
+    start_row = total_row + 2
+    
+    # 2. DEFINE SIGNATORIES
     signatures = [
         {'col': 3, 'sign': 'SIGN:', 'role': 'PROJECT-IN-CHARGE', 'name': 'MR. YUNUS KHAN'},
-        {'col': 14, 'sign': 'SIGN:', 'role': 'DEPLOYMENT HEAD', 'name': 'MR. MANISH NAHAR'},
-        {'col': 24, 'sign': 'SIGN:', 'role': 'RJIO CTO', 'name': 'MR. RAJEEV KUMAR GUPTA'}
+        {'col': 14, 'sign': 'SIGN:', 'role': 'DEPLOYMENT HEAD', 'name': 'MR. MANISH NAHAR'}
     ]
+    if is_boq:
+        signatures.append({'col': 24, 'sign': 'SIGN:', 'role': 'RJIO CTO', 'name': 'MR. RAJEEV KUMAR GUPTA'})
+    
+    # 3. APPLY WITH FIDELITY
+    # Row 27 in template is the style anchor (Size 34, Bold, etc.)
+    # Row 29 in template is the style anchor (Size 24, Bold, etc.)
     
     for sig in signatures:
-        col = sig['col']
-        ws.cell(row=27, column=col).value = sig['sign']
-        ws.cell(row=28, column=col).value = sig['role']
-        ws.cell(row=29, column=col).value = sig['name']
-        ws.cell(row=30, column=col).value = 'DATE:'
+        tc = sig['col']
+        # Sign Row
+        cell_sign = ws.cell(row=start_row, column=tc)
+        cell_sign.value = sig['sign']
+        copy_cell_style(ws.cell(row=27, column=3), cell_sign)
+        cell_sign.alignment = Alignment(horizontal='left', vertical='center')
         
-        # Consistent Styling for all 3
-        for r in range(27, 31):
-            cell = ws.cell(row=r, column=col)
-            cell.font = Font(name='Calibri', size=11, bold=True)
-            cell.alignment = Alignment(horizontal='center', vertical='center')
+        # Role Row
+        cell_role = ws.cell(row=start_row+1, column=tc)
+        cell_role.value = sig['role']
+        copy_cell_style(ws.cell(row=28, column=3), cell_role)
+        cell_role.alignment = Alignment(horizontal='left', vertical='center')
+        
+        # Name Row
+        cell_name = ws.cell(row=start_row+2, column=tc)
+        cell_name.value = sig['name']
+        copy_cell_style(ws.cell(row=29, column=3), cell_name)
+        cell_name.alignment = Alignment(horizontal='left', vertical='center')
+        
+        # Date Row
+        cell_date = ws.cell(row=start_row+3, column=tc)
+        cell_date.value = 'DATE:'
+        copy_cell_style(ws.cell(row=30, column=3), cell_date)
+        cell_date.alignment = Alignment(horizontal='left', vertical='center')
 
 def main():
     parser = argparse.ArgumentParser(description="Unified Precision Billing Engine")
@@ -741,7 +762,7 @@ def main():
         try:
             wb = openpyxl.load_workbook('Billing/MASTER_JMS_TEMPLATE.xlsx')
             
-            # Global Header Swap (DC0118/DC0105 -> actual DC)
+            # Global Header Swap
             target_sheets = wb.sheetnames
             for sheet_name in target_sheets:
                 ws_temp = wb[sheet_name]
@@ -750,12 +771,10 @@ def main():
                         v = ws_temp.cell(row=r, column=c).value
                         if v:
                             str_v = str(v)
-                            if "DC0118" in str_v:
-                                ws_temp.cell(row=r, column=c).value = str_v.replace("DC0118", dc_number)
-                            elif "DC0105" in str_v:
-                                ws_temp.cell(row=r, column=c).value = str_v.replace("DC0105", dc_number)
+                            if "DC0118" in str_v: ws_temp.cell(row=r, column=c).value = str_v.replace("DC0118", dc_number)
+                            elif "DC0105" in str_v: ws_temp.cell(row=r, column=c).value = str_v.replace("DC0105", dc_number)
 
-            # Step 1: WCC
+            # Step 1: Main WCC & WCC
             print("- Step 1: Populating WCC and Main WCC Headers...")
             generate_wcc_sheet(df_sites, wb)
             populate_main_wcc(df_sites, wb, dc_number)
@@ -763,41 +782,41 @@ def main():
             # Step 2: JMS
             print("- Step 2: Populating JMS (Style DNA Mirroring)...")
             populate_main_matrix('JMS', df_sites, code_to_col_idx, wb)
+            apply_signatures_to_sheet(wb['JMS'], is_boq=False)
             
-            # Step 3: Cloning JMS into Abstract & BOQ
+            # Step 3: Cloning into Abstract & BOQ
             print("- Step 3: Cloning JMS into Abstract & BOQ...")
             jms_ws = wb['JMS']
             for name in ['Abstract', 'BOQ']:
-                if name in wb.sheetnames:
-                    wb.remove(wb[name])
+                if name in wb.sheetnames: wb.remove(wb[name])
                 new_ws = wb.copy_worksheet(jms_ws)
                 new_ws.title = name
                 for r in range(1, 10):
                     for c in range(1, 30):
                         cell = new_ws.cell(row=r, column=c)
                         if str(cell.value).upper() == "JMS": cell.value = name.upper()
-                if name == 'BOQ': populate_boq_signatures(new_ws)
+                if name == 'BOQ': apply_signatures_to_sheet(new_ws, is_boq=True)
+                else: apply_signatures_to_sheet(new_ws, is_boq=False)
             
             # Step 4: Declaration
             print("- Step 4: Updating Declaration...")
             populate_declaration_data(df_sites, wb, dc_number)
             
             # Step 5: Annexure
-            print("- Step 5: Populating Annexure (Snapshot 2 Perfection)...")
+            print("- Step 5: Populating Annexure (LatestSnapshot)...")
             generate_annexure_sheet(df_sites, wb)
             
             # Step 6: RECO
-            print("- Step 6: Populating RECO (Live Formula Reconciliation)...")
+            print("- Step 6: Populating RECO (Pure Logic)...")
             generate_reco_sheet(df_sites, wb)
 
             wb.save(output_path)
             print(f"COMPLETE: {output_path}")
         except Exception as e:
-            print(f"Error during population: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Error: {e}")
+            import traceback; traceback.print_exc()
     else:
-        print(f"DC Code {dc_number} not found in {master_path}.")
+        print(f"DC Code {dc_number} not found.")
 
 if __name__ == "__main__":
     main()

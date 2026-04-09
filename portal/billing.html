@@ -106,8 +106,8 @@
             </header>
 
             <section class="billing-card">
-                <h3>Generate Work Completion Certificate (WCC)</h3>
-                <p style="color: #888; margin-bottom: 25px;">Upload your Master DPR tracker and enter the Billing File Number (DC Number) to generate a formatted WCC Excel file.</p>
+                <h3>Generate Unified Billing Portfolio</h3>
+                <p style="color: #888; margin-bottom: 25px;">Upload your Master DPR tracker and enter the Billing File Number (DC Number) to generate a formatted Unified Billing portfolio (WCC, JMS, Abstract, BOQ, Annexure, RECO).</p>
                 
                 <div class="form-group">
                     <label for="masterFile">Master DPR Tracker (.xlsx)</label>
@@ -119,9 +119,9 @@
                     <input type="text" id="billingTarget" class="form-control" placeholder="Enter DC Number">
                 </div>
 
-                <button id="generateBtn" class="btn-generate" onclick="handleGenerateWCC()">
+                <button id="generateBtn" class="btn-generate" onclick="handleGenerateBilling()">
                     <span class="loader" id="loader"></span>
-                    Generate WCC
+                    Generate Billing File
                 </button>
 
                 <div id="status-message"></div>
@@ -138,7 +138,7 @@
     <script>
         checkAuth();
         
-        async function handleGenerateWCC() {
+        async function handleGenerateBilling() {
             const fileInput = document.getElementById('masterFile');
             const targetInput = document.getElementById('billingTarget');
             const statusMsg = document.getElementById('status-message');
@@ -183,7 +183,7 @@
                     window.location.href = `${API_URL}${data.downloadUrl}`;
                 } else {
                     statusMsg.className = 'status-error';
-                    statusMsg.textContent = data.error || 'Failed to generate WCC. Please check the DC number and file format.';
+                    statusMsg.textContent = data.error || 'Failed to generate billing portfolio. Please check the DC number and file format.';
                     statusMsg.style.display = 'block';
                 }
             } catch (err) {

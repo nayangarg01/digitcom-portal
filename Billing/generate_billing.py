@@ -689,70 +689,18 @@ def populate_declaration_data(df_sites, wb, dc_number):
                 new_v = re.sub(r'\d+\s+SITES', f"{num_sites} SITES", v, flags=re.I)
                 cell.value = new_v
 
-def apply_signatures_to_sheet(ws, is_boq=False):
-    """
-    Dynamically anchors signatures 2 rows below the 'TOTAL' row.
-    Applies Left Alignment and Template Style Cloning (Size 34/24).
-    """
-    # 1. FIND THE TOTAL ROW
-    total_row = 26 # Fallback
-    for r in range(15, 60):
-        # We look for "TOTAL" in the last few columns (Total Qty/Amt area)
-        for c in range(20, 50):
-            v = str(ws.cell(row=r, column=c).value or "").upper()
-            if "TOTAL" == v:
-                total_row = r
-                break
-    
-    start_row = total_row + 2
-    
-    # 2. DEFINE SIGNATORIES
-    signatures = [
-        {'col': 3, 'sign': 'SIGN:', 'role': 'PROJECT-IN-CHARGE', 'name': 'MR. YUNUS KHAN'},
-        {'col': 14, 'sign': 'SIGN:', 'role': 'DEPLOYMENT HEAD', 'name': 'MR. MANISH NAHAR'}
-    ]
-    if is_boq:
-        signatures.append({'col': 24, 'sign': 'SIGN:', 'role': 'RJIO CTO', 'name': 'MR. RAJEEV KUMAR GUPTA'})
-    
-    # 3. APPLY WITH FIDELITY
-    # Row 27 in template is the style anchor (Size 34, Bold, etc.)
-    # Row 29 in template is the style anchor (Size 24, Bold, etc.)
-    
-    for sig in signatures:
-        tc = sig['col']
-        # Sign Row
-        cell_sign = ws.cell(row=start_row, column=tc)
-        cell_sign.value = sig['sign']
-        copy_cell_style(ws.cell(row=27, column=3), cell_sign)
-        cell_sign.alignment = Alignment(horizontal='left', vertical='center')
-        
-        # Role Row
-        cell_role = ws.cell(row=start_row+1, column=tc)
-        cell_role.value = sig['role']
-        copy_cell_style(ws.cell(row=28, column=3), cell_role)
-        cell_role.alignment = Alignment(horizontal='left', vertical='center')
-        
-        # Name Row
-        cell_name = ws.cell(row=start_row+2, column=tc)
-        cell_name.value = sig['name']
-        copy_cell_style(ws.cell(row=29, column=3), cell_name)
-        cell_name.alignment = Alignment(horizontal='left', vertical='center')
-        
-        # Date Row
-        cell_date = ws.cell(row=start_row+3, column=tc)
-        cell_date.value = 'DATE:'
-        copy_cell_style(ws.cell(row=30, column=3), cell_date)
-        cell_date.alignment = Alignment(horizontal='left', vertical='center')
-
 def main():
     parser = argparse.ArgumentParser(description="Unified Precision Billing Engine")
     parser.add_argument("master_path", help="Path to Master Tracker")
     parser.add_argument("dc_number", help="DC Code (e.g. DC0105)")
+    parser.add_argument("--template", help="Path to Master Template", default='Billing/MASTER_JMS_TEMPLATE.xlsx')
+    parser.add_argument("--output", help="Path to save the generated file")
     args = parser.parse_args()
 
     master_path = args.master_path
     dc_number = args.dc_number
-    output_path = f"Billing/{dc_number}_Unified_Billing.xlsx"
+    template_path = args.template
+    output_path = args.output if args.output else f"Billing/{dc_number}_Unified_Billing.xlsx"
 
     print(f"--- Launching Unified Precision Billing Engine for {dc_number} ---")
     
@@ -760,7 +708,8 @@ def main():
     
     if df_sites is not None:
         try:
-            wb = openpyxl.load_workbook('Billing/MASTER_JMS_TEMPLATE.xlsx')
+            # Load from provided or default template path
+            wb = openpyxl.load_workbook(template_path)
             
             # Global Header Swap
             target_sheets = wb.sheetnames
@@ -782,7 +731,6 @@ def main():
             # Step 2: JMS
             print("- Step 2: Populating JMS (Style DNA Mirroring)...")
             populate_main_matrix('JMS', df_sites, code_to_col_idx, wb)
-            apply_signatures_to_sheet(wb['JMS'], is_boq=False)
             
             # Step 3: Cloning into Abstract & BOQ
             print("- Step 3: Cloning JMS into Abstract & BOQ...")
@@ -792,11 +740,9 @@ def main():
                 new_ws = wb.copy_worksheet(jms_ws)
                 new_ws.title = name
                 for r in range(1, 10):
-                    for c in range(1, 30):
+                    for c in range(1, 40):
                         cell = new_ws.cell(row=r, column=c)
                         if str(cell.value).upper() == "JMS": cell.value = name.upper()
-                if name == 'BOQ': apply_signatures_to_sheet(new_ws, is_boq=True)
-                else: apply_signatures_to_sheet(new_ws, is_boq=False)
             
             # Step 4: Declaration
             print("- Step 4: Updating Declaration...")
@@ -810,6 +756,11 @@ def main():
             print("- Step 6: Populating RECO (Pure Logic)...")
             generate_reco_sheet(df_sites, wb)
 
+            # Ensure output directory exists for backend reliability
+            output_dir = os.path.dirname(os.path.abspath(output_path))
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
+                
             wb.save(output_path)
             print(f"COMPLETE: {output_path}")
         except Exception as e:

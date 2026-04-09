@@ -166,47 +166,72 @@
             }
 
             // UI state
-            btn.disabled = true;
-            loader.style.display = 'block';
-            statusMsg.style.display = 'none';
+            const token = localStorage.getItem('token');
 
+            if (!fileInput.files[0] || !mindumpInput.files[0] || !targetInput.value.trim()) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            generateBtn.disabled = true;
+            loader.style.display = 'block';
+            
             const formData = new FormData();
             formData.append('masterFile', fileInput.files[0]);
             formData.append('mindumpFile', mindumpInput.files[0]);
             formData.append('billingTarget', targetInput.value.trim());
 
+            statusMsg.className = 'status-info';
+            statusMsg.innerHTML = '<strong>Initializing Precision Engine...</strong>';
+            statusMsg.style.display = 'block';
+
             try {
                 const response = await fetch(`${API_URL}/billing/generate-wcc`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
+                    headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
 
-                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
-                if (response.ok && data.success) {
-                    statusMsg.className = 'status-success';
-                    statusMsg.innerHTML = `${data.message} <br><a href="${API_URL}${data.downloadUrl}" target="_blank" style="color:#28a745; font-weight:700; text-decoration:underline;">Click here to download your file</a>`;
-                    statusMsg.style.display = 'block';
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullLog = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
                     
-                    // Auto-trigger download
-                    window.location.href = `${API_URL}${data.downloadUrl}`;
-                } else {
-                    statusMsg.className = 'status-error';
-                    const errorDetails = data.details ? `<br><small style="color: #dc3545; display: block; margin-top: 10px; font-family: monospace; font-size: 11px; line-height: 1.4; text-align: left; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px;">${data.details.replace(/\n/g, '<br>')}</small>` : '';
-                    statusMsg.innerHTML = `<strong>${data.error || 'Failed to generate billing portfolio.'}</strong>${errorDetails}`;
-                    statusMsg.style.display = 'block';
+                    const chunk = decoder.decode(value, { stream: true });
+                    fullLog += chunk;
+                    
+                    // Look for the special completion marker
+                    if (fullLog.includes('COMPLETE_PATH:')) {
+                        const parts = fullLog.split('COMPLETE_PATH:');
+                        const downloadPath = parts[1].trim();
+                        statusMsg.className = 'status-success';
+                        statusMsg.innerHTML = '<strong>Generation Complete! Downloading Portfolio...</strong>';
+                        window.location.href = `${API_URL}${downloadPath}`;
+                        break;
+                    } else if (fullLog.includes('FAILED:') || fullLog.includes('BUILD FAILED')) {
+                        statusMsg.className = 'status-error';
+                        statusMsg.innerHTML = `<strong>Generation Failed</strong><br><small style="display:block;margin-top:10px;font-family:monospace;font-size:11px;background:rgba(0,0,0,0.2);padding:10px;">${fullLog.replace(/\n/g, '<br>')}</small>`;
+                        break;
+                    } else {
+                        // Regular progress update
+                        statusMsg.innerHTML = `<div style="text-align:left;font-family:monospace;font-size:12px;">${fullLog.replace(/\n/g, '<br>')}</div>`;
+                    }
                 }
             } catch (err) {
-                console.error(err);
+                console.error('Terminal Error:', err);
                 statusMsg.className = 'status-error';
-                statusMsg.textContent = 'Network error or server unavailable.';
-                statusMsg.style.display = 'block';
+                statusMsg.textContent = 'Connection lost or server error. Please try again.';
             } finally {
-                btn.disabled = false;
+                generateBtn.disabled = false;
                 loader.style.display = 'none';
+                generateBtn.textContent = 'Generate Billing File';
             }
         }
     </script>

@@ -24,20 +24,27 @@ export const generateWCC = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Billing Target (e.g. DC0105) is required' });
         }
 
+        // Use process.cwd() to resolve paths from the project root reliably on Render
+        const rootDir = process.cwd();
+        const scriptPath = path.join(rootDir, 'Billing/generate_billing.py');
+        const templatePath = path.join(rootDir, 'Billing/MASTER_JMS_TEMPLATE.xlsx');
+        
         // Ensure temporary billing outputs directory exists
-        const outputDir = path.join(__dirname, '../../uploads/billing_outputs');
+        const outputDir = path.join(rootDir, 'Backend_Portal/uploads/billing_outputs');
         if (!fs.existsSync(outputDir)) {
             fs.mkdirSync(outputDir, { recursive: true });
         }
 
-        const scriptPath = path.join(__dirname, '../../../Billing/generate_billing.py');
-        const templatePath = path.join(__dirname, '../../../Billing/MASTER_JMS_TEMPLATE.xlsx');
         const outputFileName = `${billingTarget.toUpperCase()}_Unified_Billing_${Date.now()}.xlsx`;
         const outputPath = path.join(outputDir, outputFileName);
 
-        console.log(`Billing: Starting Unified Portfolio Generation for ${billingTarget} with MINDUMP`);
+        // Set headers for streaming response
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Transfer-Encoding', 'chunked');
 
-        // Spawn Python process for Unified Billing generation
+        res.write(`--- Launching Unified Precision Billing Engine for ${billingTarget} ---\n`);
+
+        // Spawn Python process
         const pythonProcess = spawn('python3', [
             scriptPath,
             masterFile.path,
@@ -50,40 +57,37 @@ export const generateWCC = async (req: Request, res: Response) => {
         let pythonOutput = '';
         let pythonError = '';
 
-        pythonProcess.stdout.on('data', (data: any) => {
-            pythonOutput += data.toString();
+        pythonProcess.stdout.on('data', (data) => {
+            const chunk = data.toString();
+            pythonOutput += chunk;
+            // Support direct streaming to frontend
+            res.write(chunk);
+            console.log(`Python STDOUT: ${chunk.trim()}`);
         });
 
-        pythonProcess.stderr.on('data', (data: any) => {
-            pythonError += data.toString();
+        pythonProcess.stderr.on('data', (data) => {
+            const chunk = data.toString();
+            pythonError += chunk;
+            res.write(`ERROR: ${chunk}`);
+            console.error(`Python STDERR: ${chunk.trim()}`);
         });
 
         pythonProcess.on('close', (code: number) => {
             if (code !== 0) {
-                console.error('Billing Python Error:', pythonError);
-                console.log('Billing Python Output:', pythonOutput);
-                return res.status(500).json({ 
-                    error: 'Billing engine failed to generate portfolio.',
-                    details: pythonOutput + "\n" + pythonError
-                });
+                res.write(`\nBUILD FAILED (Code ${code})\n`);
+                return res.end();
             }
 
             if (!fs.existsSync(outputPath)) {
-                console.error('Billing Output Error: File not generated at', outputPath);
-                return res.status(500).json({ 
-                    error: 'Failed to generate output file',
-                    details: pythonOutput + "\n" + pythonError
-                });
+                res.write(`\nFAILED: Output file not found at ${outputPath}\n`);
+                return res.end();
             }
 
-            console.log(`Billing: Successfully generated WCC for ${billingTarget}`);
-            
-            // Return the download link
-            res.json({
-                success: true,
-                message: `WCC for ${billingTarget} generated successfully.`,
-                downloadUrl: `/billing/download/${outputFileName}`
-            });
+            // Provide final JSON-like delimiter for the frontend to parse if needed, 
+            // or just the download URL as a special final chunk
+            const relativeDownloadPath = `/billing/download/${outputFileName}`;
+            res.write(`\nCOMPLETE_PATH:${relativeDownloadPath}\n`);
+            res.end();
         });
 
     } catch (error: any) {

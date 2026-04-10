@@ -185,19 +185,13 @@
 
                 if (response.ok && data.success) {
                     statusMsg.className = 'status-success';
-                    // Ensure API_URL and downloadUrl join correctly without double slashes
-                    const fullDownloadUrl = `${API_URL}/${data.downloadUrl}`;
+                    // Ensure API_URL and downloadUrl join correctly
+                    const fullDownloadUrl = `${API_URL}${data.downloadUrl}`;
                     statusMsg.innerHTML = `${data.message} <br><a href="${fullDownloadUrl}" target="_blank" style="color:#28a745; font-weight:700; text-decoration:underline;">Click here to download your file</a>`;
                     statusMsg.style.display = 'block';
                     
-                    // Robust Auto-trigger download using a invisible link
-                    const targetFileName = `${targetInput.value.trim().toUpperCase()}_Unified_Billing.xlsx`;
-                    const link = document.createElement('a');
-                    link.href = fullDownloadUrl;
-                    link.setAttribute('download', targetFileName); // FORCE correct filename
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
+                    // Reverting to the proven working auto-trigger method
+                    window.location.href = fullDownloadUrl;
                 } else {
                     statusMsg.className = 'status-error';
                     statusMsg.textContent = data.error || 'Failed to generate billing file. Please check your data.';

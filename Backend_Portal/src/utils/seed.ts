@@ -1,13 +1,13 @@
 import bcrypt from 'bcrypt';
 import prisma from './prisma';
 
-async function main() {
+export async function seedAdmin() {
   const username = 'admin';
   const password = 'adminPassword123'; // Recommended to change this immediately after login
 
   const existingUser = await prisma.user.findUnique({ where: { username } });
   if (existingUser) {
-    console.log('Admin user already exists.');
+    console.log('Auth: Admin user already exists.');
     return;
   }
 
@@ -21,16 +21,7 @@ async function main() {
     },
   });
 
-  console.log('Initial Admin user seeded successfully.');
-  console.log('Username: admin');
-  console.log('Password: adminPassword123');
+  console.log('Auth: Initial Admin user seeded successfully.');
+  console.log('Auth: Username: admin');
+  console.log('Auth: Password: adminPassword123');
 }
-
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

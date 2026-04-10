@@ -12,6 +12,7 @@ import documentRoutes from './routes/documentRoutes';
 import contactRoutes from './routes/contactRoutes';
 import billingRoutes from './routes/billingRoutes';
 import path from 'path';
+import { seedAdmin } from './utils/seed';
 
 const app = express();
 const PORT = process.env.PORT || 10000; // Use 10000 as default for Render if PORT is missing
@@ -48,7 +49,14 @@ app.use((err: any, req: Request, res: Response, next: any) => {
 });
 
 // Start the server
-app.listen(Number(PORT), '0.0.0.0', () => {
+app.listen(Number(PORT), '0.0.0.0', async () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Checking PORT: ${process.env.PORT || 'undefined (using default 3000)'}`);
+  
+  // Ensure admin user exists
+  try {
+    await seedAdmin();
+  } catch (err) {
+    console.error('Auth: Auto-seeding failed!', err);
+  }
 });

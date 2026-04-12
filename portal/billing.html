@@ -196,16 +196,37 @@
                             const resp = await fetch(url, {
                                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                             });
+                            
+                            if (!resp.ok) throw new Error('Network response was not ok');
+                            
                             const blob = await resp.blob();
-                            const blobUrl = window.URL.createObjectURL(blob);
+                            // Force Excel MIME type for Chrome compatibility
+                            const excelBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                            const blobUrl = window.URL.createObjectURL(excelBlob);
+                            
                             const a = document.createElement('a');
                             a.style.display = 'none';
                             a.href = blobUrl;
                             a.download = filename;
+                            
+                            // Extra assurance for Chrome
+                            a.setAttribute('download', (filename || 'Billing_File.xlsx').replace(/[/\\?%*:|"<>]/g, '-'));
+                            
                             document.body.appendChild(a);
-                            a.click();
-                            window.URL.revokeObjectURL(blobUrl);
-                            document.body.removeChild(a);
+                            
+                            // Trigger download using a more robust MouseEvent
+                            const clickEvent = new MouseEvent('click', {
+                                view: window,
+                                bubbles: true,
+                                cancelable: true
+                            });
+                            a.dispatchEvent(clickEvent);
+                            
+                            // Revoke after a delay to ensure the browser has triggered the save
+                            setTimeout(() => {
+                                window.URL.revokeObjectURL(blobUrl);
+                                document.body.removeChild(a);
+                            }, 200);
                         } catch (err) {
                             console.error('Download failed:', err);
                             alert('Download failed. Please try again.');

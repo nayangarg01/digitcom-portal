@@ -212,15 +212,32 @@
                 if (!response.ok) throw new Error('Download failed');
                 
                 const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
+                // Force Excel MIME type for Chrome compatibility
+                const excelBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const blobUrl = window.URL.createObjectURL(excelBlob);
+                
                 const a = document.createElement('a');
                 a.style.display = 'none';
-                a.href = url;
-                a.download = 'Optimized_Dispatch_Plan.xlsx';
+                a.href = blobUrl;
+                const fileNameToSave = 'Optimized_Dispatch_Plan.xlsx';
+                a.download = fileNameToSave;
+                a.setAttribute('download', fileNameToSave);
+                
                 document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+                
+                // Trigger download using a more robust MouseEvent
+                const clickEvent = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true
+                });
+                a.dispatchEvent(clickEvent);
+                
+                // Revoke after a delay to ensure the browser has triggered the save
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(blobUrl);
+                    document.body.removeChild(a);
+                }, 200);
             } catch (error) {
                 console.error('Download error:', error);
                 alert('Failed to download the file. Please try generating the route again.');

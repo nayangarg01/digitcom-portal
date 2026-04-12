@@ -119,6 +119,13 @@
                         </div>
                     </div>
 
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="show-manual-routes" checked>
+                            Show Manual Routes (Comparison)
+                        </label>
+                    </div>
+
                     <button class="btn" id="generate-btn" style="width: 100%; padding: 12px; font-weight: 600;">Generate Dispatch Plan</button>
 
                     <div class="route-results" id="route-results">
@@ -148,6 +155,7 @@
         
         let selectedFile = null;
         let generatedRoutes = null;
+        let manualRoutes = null;
         let lastFilename = null;
         let map = L.map('map').setView([26.8139, 75.5450], 7);
         let routeLayers = [];
@@ -184,6 +192,7 @@
                 const result = await response.json();
                 if (result.success) {
                     generatedRoutes = result.routes;
+                    manualRoutes = result.manual_routes;
                     lastFilename = result.filename;
                     displayRoutes(result);
                     exportBtn.style.display = 'block';
@@ -212,7 +221,6 @@
                 if (!response.ok) throw new Error('Download failed');
                 
                 const blob = await response.blob();
-                // Force Excel MIME type for Chrome compatibility
                 const excelBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                 const blobUrl = window.URL.createObjectURL(excelBlob);
                 
@@ -225,7 +233,6 @@
                 
                 document.body.appendChild(a);
                 
-                // Trigger download using a more robust MouseEvent
                 const clickEvent = new MouseEvent('click', {
                     view: window,
                     bubbles: true,
@@ -233,7 +240,6 @@
                 });
                 a.dispatchEvent(clickEvent);
                 
-                // Revoke after a delay to ensure the browser has triggered the save
                 setTimeout(() => {
                     window.URL.revokeObjectURL(blobUrl);
                     document.body.removeChild(a);
@@ -247,35 +253,27 @@
         function displayRoutes(data) {
             const resultsDiv = document.getElementById('route-results');
             resultsDiv.innerHTML = '';
-            
-            // Clear existing map layers
             routeLayers.forEach(layer => map.removeLayer(layer));
             routeLayers = [];
 
-            // Expanded color palette for more than 3 routes
-            const colors = [
-                '#ff4d4d', '#4d79ff', '#2eb82e', '#ffa500', 
-                '#9932cc', '#00ced1', '#ff1493', '#7cfc00',
-                '#4b0082', '#ff4500', '#2f4f4f', '#8b4513'
-            ];
-            const warehouse = data.warehouse || { lat: 26.8139, lng: 75.5450 }; // Fallback
-
-
+            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+            
+            // Render Automated Routes
             data.routes.forEach((route, idx) => {
                 const color = colors[idx % colors.length];
-                
-                // Add to list
                 const card = document.createElement('div');
-                card.className = `route-card`;
-                card.style.borderLeft = `4px solid ${color}`;
+                card.className = 'route-card';
                 card.innerHTML = `
-                    <strong>Route ${route.label}</strong><br>
-                    Legs: ${route.legs.length}<br>
-                    <small>Sequence: ${route.legs.map(l => l.site.id).join(' → ')}</small>
+                    <div class="route-header" style="border-left-color: ${color}">
+                        <strong>Route ${route.label}</strong>
+                        <span style="float: right">Legs: ${route.legs.length}</span>
+                    </div>
+                    <div class="route-sequence">
+                        Sequence: ${route.legs.map(l => l.site.id.split('-').slice(-2).join('-')).join(' → ')}
+                    </div>
                 `;
                 resultsDiv.appendChild(card);
 
-                // Add warehouse marker for this route
                 const origin = route.origin_coords || { lat: 26.8139, lng: 75.5450 };
                 const whMarker = L.circleMarker([origin.lat, origin.lng], {
                     radius: 8,
@@ -287,31 +285,81 @@
                 }).addTo(map).bindPopup(`<strong>Warehouse:</strong> Route ${route.label} Origin`);
                 routeLayers.push(whMarker);
 
-                // Draw on map
                 const pathPoints = [[origin.lat, origin.lng]];
                 route.legs.forEach(leg => {
                     pathPoints.push([leg.site.lat, leg.site.lng]);
                     const marker = L.circleMarker([leg.site.lat, leg.site.lng], {
                         radius: 6,
                         fillColor: color,
-                        color: "#000",
-                        weight: 1,
+                        color: "#fff",
+                        weight: 2,
                         opacity: 1,
                         fillOpacity: 0.8
-                    }).addTo(map).bindPopup(`Site ID: ${leg.site.id}<br>Route: ${route.label}<br>Leg Dist: ${leg.distanceKm}km`);
+                    }).addTo(map).bindPopup(`
+                        <strong>Site:</strong> ${leg.site.id}<br>
+                        <strong>Stop:</strong> ${leg.stopSequence}<br>
+                        <strong>Route:</strong> ${leg.routeLabel}<br>
+                        <strong>Dist:</strong> ${leg.distanceKm} km
+                    `);
                     routeLayers.push(marker);
                 });
 
-                const polyline = L.polyline(pathPoints, {color: color, weight: 4, opacity: 0.7}).addTo(map);
+                const polyline = L.polyline(pathPoints, {
+                    color: color,
+                    weight: 4,
+                    opacity: 0.7,
+                    smoothFactor: 1
+                }).addTo(map);
                 routeLayers.push(polyline);
             });
 
-            // Auto-zoom to fit all routes
+            // Render Manual Routes if checked
+            const showManual = document.getElementById('show-manual-routes').checked;
+            if (showManual && data.manual_routes) {
+                data.manual_routes.forEach((route, idx) => {
+                    const mColor = '#888';
+                    const origin = route.origin_coords;
+                    const pathPoints = [[origin.lat, origin.lng]];
+                    
+                    route.legs.forEach(leg => {
+                        pathPoints.push([leg.site.lat, leg.site.lng]);
+                        const marker = L.circleMarker([leg.site.lat, leg.site.lng], {
+                            radius: 4,
+                            fillColor: "rgba(0,0,0,0)",
+                            color: mColor,
+                            weight: 2,
+                            opacity: 0.5,
+                            dashArray: '3, 3'
+                        }).addTo(map).bindPopup(`<strong>Manual Route ${route.label}</strong> Stop ${leg.stopSequence}`);
+                        routeLayers.push(marker);
+                    });
+
+                    const polyline = L.polyline(pathPoints, {
+                        color: mColor,
+                        weight: 2,
+                        opacity: 0.5,
+                        dashArray: '10, 10',
+                        smoothFactor: 1
+                    }).addTo(map).bindPopup(`<strong>Manual Route:</strong> ${route.label}`);
+                    routeLayers.push(polyline);
+                });
+            }
+
             if (routeLayers.length > 0) {
                 const group = new L.featureGroup(routeLayers);
                 map.fitBounds(group.getBounds());
             }
         }
+
+        document.getElementById('show-manual-routes').addEventListener('change', () => {
+            if (generatedRoutes) {
+                displayRoutes({
+                    routes: generatedRoutes,
+                    manual_routes: manualRoutes,
+                    success: true
+                });
+            }
+        });
     </script>
 </body>
 </html>

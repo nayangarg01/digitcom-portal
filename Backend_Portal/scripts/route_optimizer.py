@@ -251,8 +251,13 @@ def main():
                 routes_json.append(route_obj)
 
         if 'CLUBBING' not in df.columns: df['CLUBBING'] = ""
-        if 'KM FROM WH TO SITE' not in df.columns: df['KM FROM WH TO SITE'] = ""
-        if 'AKTBC' not in df.columns: df['AKTBC'] = ""
+        else: df['CLUBBING'] = df['CLUBBING'].astype(object)
+        
+        if 'KM FROM WH TO SITE' not in df.columns: df['KM FROM WH TO SITE'] = 0.0
+        df['KM FROM WH TO SITE'] = df['KM FROM WH TO SITE'].astype(object)
+        
+        if 'AKTBC' not in df.columns: df['AKTBC'] = 0.0
+        df['AKTBC'] = df['AKTBC'].astype(object)
 
         for idx, calc in final_output.items():
             df.at[idx, 'CLUBBING'] = calc['club']
@@ -275,6 +280,7 @@ def main():
             header_fmt = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#2F5597', 'font_color': 'white', 'border': 1})
             std_fmt = wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1})
             auto_fmt = wb.add_format({'bg_color': '#D9E1F2', 'border': 1, 'align': 'center', 'valign': 'vcenter'})
+            num_fmt = wb.add_format({'bg_color': '#D9E1F2', 'border': 1, 'align': 'center', 'valign': 'vcenter', 'num_format': '0.00'})
             
             # Write columns seamlessly
             cols = list(df.columns)
@@ -288,7 +294,11 @@ def main():
                 row_dict = row.to_dict()
                 for c_idx, col_name in enumerate(cols):
                     val = row_dict.get(col_name, "")
-                    if col_name in ['CLUBBING', 'KM FROM WH TO SITE', 'AKTBC']:
+                    if col_name in ['KM FROM WH TO SITE', 'AKTBC']:
+                        try: val = float(val)
+                        except: pass
+                        ws.write(r_idx + 1, c_idx, val, num_fmt)
+                    elif col_name == 'CLUBBING':
                         ws.write(r_idx + 1, c_idx, val, auto_fmt)
                     else:
                         ws.write(r_idx + 1, c_idx, val, std_fmt)

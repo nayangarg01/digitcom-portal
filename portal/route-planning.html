@@ -107,14 +107,6 @@
 
             <div class="planning-grid">
                 <div class="control-panel">
-                    <div class="form-group">
-                        <label>Select Origin Warehouse</label>
-                        <select id="origin-warehouse">
-                            <option value="Jaipur - Bagru">Jaipur - Bagru</option>
-                            <option value="Jodhpur - Mogra Khurd">Jodhpur - Mogra Khurd</option>
-                            <option value="Lucknow - Safedabad">Lucknow - Safedabad</option>
-                        </select>
-                    </div>
 
                     <div class="dropzone" id="dropzone">
                         <input type="file" id="fileInput" hidden accept=".csv, .xlsx, .xls">
@@ -177,10 +169,8 @@
         generateBtn.addEventListener('click', async () => {
             if (!selectedFile) return alert('Please upload a site list first.');
             
-            const originName = document.getElementById('origin-warehouse').value;
             const formData = new FormData();
             formData.append('file', selectedFile);
-            formData.append('originName', originName);
 
             loader.style.display = 'flex';
             const token = localStorage.getItem('token');
@@ -231,16 +221,6 @@
             ];
             const warehouse = data.warehouse || { lat: 26.8139, lng: 75.5450 }; // Fallback
 
-            // Add warehouse marker
-            const whMarker = L.circleMarker([warehouse.lat, warehouse.lng], {
-                radius: 10,
-                fillColor: "#000",
-                color: "#fff",
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 1
-            }).addTo(map).bindPopup(`<strong>Warehouse:</strong> Origin`);
-            routeLayers.push(whMarker);
 
             data.routes.forEach((route, idx) => {
                 const color = colors[idx % colors.length];
@@ -256,8 +236,20 @@
                 `;
                 resultsDiv.appendChild(card);
 
+                // Add warehouse marker for this route
+                const origin = route.origin_coords || { lat: 26.8139, lng: 75.5450 };
+                const whMarker = L.circleMarker([origin.lat, origin.lng], {
+                    radius: 8,
+                    fillColor: "#000",
+                    color: "#fff",
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 1
+                }).addTo(map).bindPopup(`<strong>Warehouse:</strong> Route ${route.label} Origin`);
+                routeLayers.push(whMarker);
+
                 // Draw on map
-                const pathPoints = [[warehouse.lat, warehouse.lng]];
+                const pathPoints = [[origin.lat, origin.lng]];
                 route.legs.forEach(leg => {
                     pathPoints.push([leg.site.lat, leg.site.lng]);
                     const marker = L.circleMarker([leg.site.lat, leg.site.lng], {

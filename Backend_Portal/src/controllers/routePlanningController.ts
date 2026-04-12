@@ -61,12 +61,7 @@ export const generateRoutes = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    if (!originName || !WAREHOUSES[originName]) {
-      console.error('Route Generation: Invalid origin warehouse:', originName);
-      return res.status(400).json({ error: 'Invalid origin warehouse selected' });
-    }
-
-    const warehouse = WAREHOUSES[originName];
+    const warehouse = (originName && WAREHOUSES[originName]) ? WAREHOUSES[originName] : WAREHOUSES['Jaipur - Bagru'];
 
     // 1. File Parsing (Preserve all columns)
     const workbook = xlsx.readFile(file.path);

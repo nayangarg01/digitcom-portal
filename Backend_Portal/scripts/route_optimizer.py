@@ -210,7 +210,12 @@ def main():
                 
                 # Setup JSON representation for this route
                 route_label = f"R{route_global_counter}" # Simplified label logic for JSON UX
-                route_obj = {"routeNumber": route_global_counter, "label": route_label, "legs": []}
+                route_obj = {
+                    "routeNumber": route_global_counter, 
+                    "label": route_label, 
+                    "origin_coords": {"lat": current_origin[0], "lng": current_origin[1]},
+                    "legs": []
+                }
                 
                 for s_idx, leg in enumerate(route):
                     s_dict = leg['site']

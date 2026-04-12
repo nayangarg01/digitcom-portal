@@ -40,8 +40,8 @@ interface RouteLeg {
 // Lucknow - Safedabad (Lat: 26.8906, Lon: 81.0558)
 
 const WAREHOUSES: Record<string, { lat: number; lng: number }> = {
-  'Jaipur - Bagru': { lat: 26.8139, lng: 75.5450 },
-  'Jodhpur - Mogra Khurd': { lat: 26.1245, lng: 73.0543 },
+  'Jaipur - JLKD': { lat: 26.810486, lng: 75.496696 },
+  'Jodhpur - JLJH': { lat: 26.148422, lng: 73.061378 },
   'Lucknow - Safedabad': { lat: 26.8906, lng: 81.0558 }
 };
 
@@ -61,7 +61,7 @@ export const generateRoutes = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const warehouse = (originName && WAREHOUSES[originName]) ? WAREHOUSES[originName] : WAREHOUSES['Jaipur - Bagru'];
+    const warehouse = (originName && WAREHOUSES[originName]) ? WAREHOUSES[originName] : WAREHOUSES['Jaipur - JLKD'];
 
     // 1. File Parsing (Preserve all columns)
     const workbook = xlsx.readFile(file.path);
@@ -154,6 +154,65 @@ export const downloadOptimized = (req: Request, res: Response) => {
     } else {
         res.status(404).json({ error: 'File not found. Please generate the route first.' });
     }
+};
+
+export const calculateManualDistances = async (req: Request, res: Response) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No file uploaded' });
+
+    const apiKey = process.env.Maps_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'Maps API key not configured' });
+
+    const timestamp = Date.now();
+    const outputFilename = `Manual_Distance_Result_${timestamp}.xlsx`;
+    const scriptPath = path.join(__dirname, '../../scripts/calculate_manual_distances.py');
+    const outputPath = path.join(__dirname, `../../uploads/${outputFilename}`);
+    
+    const { spawn } = require('child_process');
+    const pythonProcess = spawn('python3', [scriptPath, file.path, apiKey]);
+
+    let pythonOutput = '';
+    let pythonError = '';
+
+    pythonProcess.stdout.on('data', (data: any) => pythonOutput += data.toString());
+    pythonProcess.stderr.on('data', (data: any) => pythonError += data.toString());
+
+    pythonProcess.on('close', (code: number) => {
+        if (code !== 0) {
+            console.error('Python Script Error:', pythonError);
+            return res.status(500).json({ error: 'Distance engine failed.' });
+        }
+
+        try {
+            const result = JSON.parse(pythonOutput);
+            if (!result.success) return res.status(400).json({ error: result.error });
+
+            // The script saves the file in the same directory as input, but we want it in uploads
+            // Wait, my script saves it as "Manual_Distance_Result_filename" in the same dir
+            // Let's ensure the backend finds it.
+            const generatedFilename = result.filename; 
+            const sourcePath = path.join(path.dirname(file.path), generatedFilename);
+            const finalPath = path.join(__dirname, `../../uploads/${outputFilename}`);
+            
+            if (fs.existsSync(sourcePath)) {
+                fs.renameSync(sourcePath, finalPath);
+            }
+
+            res.json({
+                success: true,
+                downloadUrl: '/api/route-planning/download-optimized',
+                filename: outputFilename,
+                message: result.message
+            });
+        } catch (e) {
+            res.status(500).json({ error: 'Failed to parse distance results' });
+        }
+    });
+
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Internal Server Error' });
+  }
 };
 
 export const exportRoutePlan = async (req: Request, res: Response) => {

@@ -101,7 +101,7 @@
 
         <main class="main-content">
             <header class="header-bar">
-                <h1>Automated Route Planning</h1>
+                <h1>Route Planning & Distance Automation</h1>
                 <div class="user-info">Admin User</div>
             </header>
 
@@ -120,7 +120,8 @@
                     </div>
 
 
-                    <button class="btn" id="generate-btn" style="width: 100%; padding: 12px; font-weight: 600;">Generate Dispatch Plan</button>
+                    <button class="btn" id="generate-btn" style="width: 100%; padding: 12px; font-weight: 600; margin-bottom: 10px;">Generate Dispatch Plan (Auto)</button>
+                    <button class="btn" id="manual-btn" style="width: 100%; padding: 12px; font-weight: 600; background: #6366f1;">Calculate Manual Distances (Level 1)</button>
 
                     <div class="route-results" id="route-results">
                         <!-- Route summaries will appear here -->
@@ -144,6 +145,7 @@
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');
         const generateBtn = document.getElementById('generate-btn');
+        const manualBtn = document.getElementById('manual-btn');
         const exportBtn = document.getElementById('export-btn');
         const loader = document.getElementById('loader');
         
@@ -198,6 +200,41 @@
                 alert('Connection error: Could not connect to the route planning server.');
             } finally {
                 loader.style.display = 'none';
+            }
+        });
+
+        manualBtn.addEventListener('click', async () => {
+            if (!selectedFile) return alert('Please upload a sheet with manual CLUBBING first.');
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            document.querySelector('#loader p').textContent = 'Calculating Road Distances (Level 1)...';
+            loader.style.display = 'flex';
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/route-planning/calculate-manual-distances`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    lastFilename = result.filename;
+                    alert(`Calculated distances successfully: ${result.message}`);
+                    exportBtn.style.display = 'block';
+                    exportBtn.textContent = 'Download Calculated File (Excel)';
+                    // Clear map as this is non-visual
+                    routeLayers.forEach(layer => map.removeLayer(layer));
+                    routeLayers = [];
+                } else {
+                    alert(`Error: ${result.error || 'Failed to calculate distances'}`);
+                }
+            } catch (error) {
+                alert('Connection error: Could not connect to the server.');
+            } finally {
+                loader.style.display = 'none';
+                document.querySelector('#loader p').textContent = 'Generating Optimized Routes...';
             }
         });
 

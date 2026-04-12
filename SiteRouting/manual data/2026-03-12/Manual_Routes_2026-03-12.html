@@ -1,0 +1,76 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manual Routes: 2026-03-12</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 100vh; width: 100%; border-radius: 12px; }
+        .legend { 
+            position: fixed; top: 20px; right: 20px; background: white; 
+            padding: 15px; border-radius: 12px; z-index: 1000; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            font-family: 'Outfit', sans-serif;
+            min-width: 200px;
+        }
+        .route-entry { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .color-box { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+        h3 { margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="legend" id="legend">
+        <h3>Manual Routes (2026-03-12)</h3>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map');
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        const routesArray = [{"name": "A", "origin": {"lat": 26.148422, "lng": 73.061378}, "legs": [{"id": "I-RJ-UNRA-ENB-6004", "lat": 25.95606111111111, "lng": 76.21470527777778, "seq": 1}]}, {"name": "B", "origin": {"lat": 26.810486, "lng": 75.496696}, "legs": [{"id": "I-RJ-NSRB-ENB-I001", "lat": 26.319932777777776, "lng": 74.74291027777778, "seq": 1}, {"id": "I-RJ-PISN-ENB-H003", "lat": 26.42048555555556, "lng": 74.4719238888889, "seq": 2}]}, {"name": "C", "origin": {"lat": 26.148422, "lng": 73.061378}, "legs": [{"id": "I-RJ-BKRD-ENB-6000", "lat": 27.04837277777778, "lng": 73.58426138888889, "seq": 1}]}, {"name": "D", "origin": {"lat": 26.810486, "lng": 75.496696}, "legs": [{"id": "I-RJ-BDRA-ENB-6007", "lat": 28.96152, "lng": 74.95805, "seq": 1}, {"id": "I-RJ-RSNG-ENB-I003", "lat": 29.59428, "lng": 73.53026, "seq": 2}]}];
+        const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+        const allBounds = [];
+        const legend = document.getElementById('legend');
+
+        routesArray.forEach((routeData, rIdx) => {
+            const color = colors[rIdx % colors.length];
+            const pathPoints = [];
+
+            // Add Legend Entry
+            const entry = document.createElement('div');
+            entry.className = 'route-entry';
+            entry.innerHTML = `<div class="color-box" style="background: ${color}"></div> <span>Route ${routeData.name} (${routeData.legs.length} sites)</span>`;
+            legend.appendChild(entry);
+
+            // Add Warehouse
+            const origin = routeData.origin;
+            pathPoints.push([origin.lat, origin.lng]);
+            allBounds.push([origin.lat, origin.lng]);
+            
+            L.circleMarker([origin.lat, origin.lng], {
+                radius: 8, fillColor: "#000", color: "#fff", weight: 2, opacity: 1, fillOpacity: 1
+            }).addTo(map).bindPopup(`<strong>Warehouse</strong> (Origin for Route ${routeData.name})`);
+
+            // Add Sites
+            routeData.legs.forEach(leg => {
+                const pos = [leg.lat, leg.lng];
+                pathPoints.push(pos);
+                allBounds.push(pos);
+                L.circleMarker(pos, {
+                    radius: 6, fillColor: color, color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8
+                }).addTo(map).bindPopup(`<strong>Manual Route ${routeData.name}</strong><br>Stop ${leg.seq}<br>Site: ${leg.id}`);
+            });
+
+            // Draw Line
+            L.polyline(pathPoints, { 
+                color: color, weight: 3, opacity: 0.6, dashArray: '10, 5' 
+            }).addTo(map);
+        });
+
+        if (allBounds.length > 0) {
+            map.fitBounds(L.latLngBounds(allBounds), { padding: [50, 50] });
+        }
+    </script>
+</body>
+</html>

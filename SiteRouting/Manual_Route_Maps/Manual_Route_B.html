@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manual Route: B</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 100vh; width: 100%; }
+        .legend { position: fixed; bottom: 20px; right: 20px; background: white; padding: 10px; border-radius: 8px; z-index: 1000; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="legend"><strong>Manual Route: B</strong></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map');
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        const routeData = {"name": "B", "origin": {"lat": 26.810486, "lng": 75.496696}, "legs": [{"id": "I-RJ-BEWR-ENB-I008", "lat": 26.101478333333336, "lng": 74.30754638888888, "seq": 1}]};
+        const pathPoints = [];
+
+        // Add Warehouse
+        const origin = routeData.origin;
+        pathPoints.push([origin.lat, origin.lng]);
+        L.circleMarker([origin.lat, origin.lng], {
+            radius: 10, fillColor: "#000", color: "#fff", weight: 2, opacity: 1, fillOpacity: 1
+        }).addTo(map).bindPopup("<strong>Warehouse</strong>");
+
+        // Add Sites
+        routeData.legs.forEach(leg => {
+            const pos = [leg.lat, leg.lng];
+            pathPoints.push(pos);
+            L.circleMarker(pos, {
+                radius: 8, fillColor: "#ff4757", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8
+            }).addTo(map).bindPopup(`<strong>Stop ${leg.seq}</strong><br>Site: ${leg.id}`);
+        });
+
+        // Draw Line
+        L.polyline(pathPoints, { color: "#ff4757", weight: 4, opacity: 0.7 }).addTo(map);
+
+        const group = new L.featureGroup(pathPoints.map(p => L.marker(p)));
+        map.fitBounds(group.getBounds(), { padding: [50, 50] });
+    </script>
+</body>
+</html>

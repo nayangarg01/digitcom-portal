@@ -173,49 +173,6 @@ def main():
             
         df_processing = pd.DataFrame(processing_sites)
         
-        # Capture Manual Routes before any overwriting
-        manual_route_groups = {}
-        if 'CLUBBING' in df.columns:
-            import re
-            def get_sort_key(s):
-                match = re.search(r'(\d+)$', str(s))
-                return int(match.group(1)) if match else 0
-            
-            for idx, row in df.iterrows():
-                m_val = str(row['CLUBBING']).strip()
-                if not m_val or m_val.lower() in ['nan', 'none', '']: continue
-                
-                # Extract prefix (A, B, C) vs suffix (1, 2, 3)
-                prefix = re.sub(r'\d+$', '', m_val)
-                # Group by Prefix + Warehouse + Band + Date + CMP to match context
-                wh_name = str(row[wh_col]).strip().upper() if wh_col else "DEFAULT"
-                m_key = f"{prefix}_{wh_name}"
-                
-                if m_key not in manual_route_groups: manual_route_groups[m_key] = []
-                # Fetch matching site data
-                s_match = next((ps for ps in processing_sites if ps['df_idx'] == idx), None)
-                if s_match:
-                    manual_route_groups[m_key].append({"site": s_match, "val": m_val, "sort": get_sort_key(m_val)})
-        
-        manual_routes_json = []
-        for m_key, sites in manual_route_groups.items():
-            sorted_sites = sorted(sites, key=lambda x: x['sort'])
-            wh_name = m_key.split('_')[-1]
-            wh_coords = WH_COORDS_FALLBACK.get(wh_name, WH_COORDS_FALLBACK.get('DEFAULT'))
-            
-            m_route_obj = {
-                "label": m_key.split('_')[0],
-                "origin_coords": {"lat": wh_coords[0], "lng": wh_coords[1]},
-                "legs": []
-            }
-            for s_idx, s_info in enumerate(sorted_sites):
-                s_dict = s_info['site']
-                m_route_obj["legs"].append({
-                    "stopSequence": s_idx + 1,
-                    "site": {"id": s_dict['id'], "lat": s_dict['coords'][0], "lng": s_dict['coords'][1]}
-                })
-            manual_routes_json.append(m_route_obj)
-
         final_output = {}
         routes_json = []
         route_global_counter = 0
@@ -356,12 +313,7 @@ def main():
                 max_len = min(max(len(str(col_name)), max(len(str(v)) for v in df[col_name].astype(str))), 40)
                 ws.set_column(c_idx, c_idx, max_len + 2)
 
-        print(json.dumps({
-            "success": True, 
-            "num_routes": len(routes_json), 
-            "routes": routes_json,
-            "manual_routes": manual_routes_json
-        }))
+        print(json.dumps({"success": True, "num_routes": len(routes_json), "routes": routes_json}))
 
     except Exception as e:
         print(json.dumps({"error": str(e)}))

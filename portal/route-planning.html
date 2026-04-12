@@ -119,12 +119,6 @@
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label class="checkbox-container">
-                            <input type="checkbox" id="show-manual-routes" checked>
-                            Show Manual Routes (Comparison)
-                        </label>
-                    </div>
 
                     <button class="btn" id="generate-btn" style="width: 100%; padding: 12px; font-weight: 600;">Generate Dispatch Plan</button>
 
@@ -155,7 +149,6 @@
         
         let selectedFile = null;
         let generatedRoutes = null;
-        let manualRoutes = null;
         let lastFilename = null;
         let map = L.map('map').setView([26.8139, 75.5450], 7);
         let routeLayers = [];
@@ -192,7 +185,6 @@
                 const result = await response.json();
                 if (result.success) {
                     generatedRoutes = result.routes;
-                    manualRoutes = result.manual_routes;
                     lastFilename = result.filename;
                     displayRoutes(result);
                     exportBtn.style.display = 'block';
@@ -313,53 +305,12 @@
                 routeLayers.push(polyline);
             });
 
-            // Render Manual Routes if checked
-            const showManual = document.getElementById('show-manual-routes').checked;
-            if (showManual && data.manual_routes) {
-                data.manual_routes.forEach((route, idx) => {
-                    const mColor = '#888';
-                    const origin = route.origin_coords;
-                    const pathPoints = [[origin.lat, origin.lng]];
-                    
-                    route.legs.forEach(leg => {
-                        pathPoints.push([leg.site.lat, leg.site.lng]);
-                        const marker = L.circleMarker([leg.site.lat, leg.site.lng], {
-                            radius: 4,
-                            fillColor: "rgba(0,0,0,0)",
-                            color: mColor,
-                            weight: 2,
-                            opacity: 0.5,
-                            dashArray: '3, 3'
-                        }).addTo(map).bindPopup(`<strong>Manual Route ${route.label}</strong> Stop ${leg.stopSequence}`);
-                        routeLayers.push(marker);
-                    });
-
-                    const polyline = L.polyline(pathPoints, {
-                        color: mColor,
-                        weight: 2,
-                        opacity: 0.5,
-                        dashArray: '10, 10',
-                        smoothFactor: 1
-                    }).addTo(map).bindPopup(`<strong>Manual Route:</strong> ${route.label}`);
-                    routeLayers.push(polyline);
-                });
-            }
-
             if (routeLayers.length > 0) {
                 const group = new L.featureGroup(routeLayers);
                 map.fitBounds(group.getBounds());
             }
         }
 
-        document.getElementById('show-manual-routes').addEventListener('change', () => {
-            if (generatedRoutes) {
-                displayRoutes({
-                    routes: generatedRoutes,
-                    manual_routes: manualRoutes,
-                    success: true
-                });
-            }
-        });
     </script>
 </body>
 </html>

@@ -50,6 +50,7 @@ def segment_to_legs(warehouse_coords, segment):
     return route_legs
 
 def run_routing(warehouse_coords, cluster):
+    # Group sites by JC for prioritization
     jc_groups = {}
     for s in cluster:
         row = s.get('row_data', {})
@@ -57,6 +58,7 @@ def run_routing(warehouse_coords, cluster):
         if jc not in jc_groups: jc_groups[jc] = []
         jc_groups[jc].append(s)
     
+    # Pre-calculate distances to nearest neighbors outside own JC to find 'frontier' sites
     for s in cluster:
         my_jc = str(s.get('row_data', {}).get('INJECTED_JC', '')).strip().upper()
         others = [o for o in cluster if str(o.get('row_data', {}).get('INJECTED_JC', '')).strip().upper() != my_jc]
@@ -65,10 +67,11 @@ def run_routing(warehouse_coords, cluster):
             
     final_routes = []; mixer_pool = []
     
+    # Phase 1: Perfect Triplets within JC
     for jc, sites in jc_groups.items():
         unvisited = sorted(sites, key=lambda x: x['trans_dist'], reverse=True)
         while len(unvisited) >= 3:
-            seed = unvisited.pop(0)
+            seed = unvisited.pop(0) # Start with frontier site
             clump = [seed]
             for _ in range(2):
                 nearest = min(unvisited, key=lambda s: haversine(seed['coords'], s['coords']))
@@ -78,8 +81,10 @@ def run_routing(warehouse_coords, cluster):
             final_routes.append(segment_to_legs(warehouse_coords, best_p))
         mixer_pool.extend(unvisited)
     
+    # Phase 2: Geographical Mixer for leftovers
     unvisited_mixer = list(mixer_pool)
     while unvisited_mixer:
+        # Pick site furthest from warehouse as seed for efficiency
         seed = max(unvisited_mixer, key=lambda s: haversine(warehouse_coords, s['coords']))
         unvisited_mixer.remove(seed)
         clump = [seed]

@@ -67,11 +67,14 @@ def run_routing(warehouse_coords, cluster):
             
     final_routes = []; mixer_pool = []
     
-    # Phase 1: Perfect Triplets within JC
+    # Phase 1: JC Integrity (Clustering 2 or 3 sites within the same JC)
     for jc, sites in jc_groups.items():
+        # Sort by proximity to other districts to keep inner JC sites grouped together
         unvisited = sorted(sites, key=lambda x: x['trans_dist'], reverse=True)
+        
+        # 1. Take Triplets
         while len(unvisited) >= 3:
-            seed = unvisited.pop(0) # Start with frontier site
+            seed = unvisited.pop(0)
             clump = [seed]
             for _ in range(2):
                 nearest = min(unvisited, key=lambda s: haversine(seed['coords'], s['coords']))
@@ -79,20 +82,36 @@ def run_routing(warehouse_coords, cluster):
                 unvisited.remove(nearest)
             best_p = optimize_segment(warehouse_coords, clump)
             final_routes.append(segment_to_legs(warehouse_coords, best_p))
+            
+        # 2. Take Pairs (New Logic: Prioritize local pairing over global mixing)
+        while len(unvisited) >= 2:
+            seed = unvisited.pop(0)
+            nearest = min(unvisited, key=lambda s: haversine(seed['coords'], s['coords']))
+            clump = [seed, nearest]
+            unvisited.remove(nearest)
+            best_p = optimize_segment(warehouse_coords, clump)
+            final_routes.append(segment_to_legs(warehouse_coords, best_p))
+            
         mixer_pool.extend(unvisited)
     
     # Phase 2: Geographical Mixer for leftovers
+    # Only mix if sites are genuinely close (e.g., < 40km), else keep them isolated
+    MAX_MIX_DIST = 40.0 
     unvisited_mixer = list(mixer_pool)
     while unvisited_mixer:
-        # Pick site furthest from warehouse as seed for efficiency
         seed = max(unvisited_mixer, key=lambda s: haversine(warehouse_coords, s['coords']))
         unvisited_mixer.remove(seed)
         clump = [seed]
+        
         for _ in range(2):
             if not unvisited_mixer: break
             nearest = min(unvisited_mixer, key=lambda s: haversine(seed['coords'], s['coords']))
+            # IF nearest is too far, stop clustering this route
+            if haversine(seed['coords'], nearest['coords']) > MAX_MIX_DIST:
+                break
             clump.append(nearest)
             unvisited_mixer.remove(nearest)
+            
         best_p = optimize_segment(warehouse_coords, clump)
         final_routes.append(segment_to_legs(warehouse_coords, best_p))
         
@@ -105,7 +124,10 @@ def main():
         return
 
     file_path, origin_lat, origin_lng, api_key, output_path = sys.argv[1:6]
-    gmaps = googlemaps.Client(key=api_key, timeout=10)
+    try:
+        gmaps = googlemaps.Client(key=api_key, timeout=10)
+    except:
+        gmaps = None
 
     # Warehouse Fallbacks
     WH_COORDS_FALLBACK = {
@@ -190,12 +212,12 @@ def main():
             
             for _, s_row in group_df.iterrows():
                 s_dict = s_row.to_dict()
-                dist_wh = haversine(wh_coords, s_dict['coords'])
                 if is_b6:
                     sites_isolated.append(s_dict)
                 else:
-                    if dist_wh < 50: sites_isolated.append(s_dict)
-                    else: sites_triplet.append(s_dict)
+                    # Intelligence over hard-rules: Pass ALL normal sites to the clusterer
+                    # The clusterer will naturally isolate a site if no neighbor is within 40km
+                    sites_triplet.append(s_dict)
                     
             routes = []
             for s in sites_isolated:

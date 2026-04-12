@@ -62,9 +62,9 @@
                 }).addTo(map).bindPopup(`<strong>Manual Route ${routeData.name}</strong><br>Stop ${leg.seq}<br>Site: ${leg.id}`);
             });
 
-            // Draw Line
+            // Draw Line (Darker and Thicker for better visibility)
             L.polyline(pathPoints, { 
-                color: color, weight: 3, opacity: 0.6, dashArray: '10, 5' 
+                color: color, weight: 5, opacity: 0.9, dashArray: '10, 10' 
             }).addTo(map);
         });
 

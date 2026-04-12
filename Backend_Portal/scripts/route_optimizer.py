@@ -95,19 +95,24 @@ def run_routing(warehouse_coords, cluster):
         mixer_pool.extend(unvisited)
     
     # Phase 2: Geographical Mixer for leftovers
-    # Only mix if sites are genuinely close (e.g., < 40km), else keep them isolated
-    MAX_MIX_DIST = 40.0 
+    # Only mix if sites are genuinely close, else keep them isolated
+    # ADATIVE REACH: If sites are very far from WH, allow a larger pairing radius
     unvisited_mixer = list(mixer_pool)
     while unvisited_mixer:
         seed = max(unvisited_mixer, key=lambda s: haversine(warehouse_coords, s['coords']))
         unvisited_mixer.remove(seed)
         clump = [seed]
         
+        # Determine clustering threshold based on distance from base
+        dist_from_wh = haversine(warehouse_coords, seed['coords'])
+        # If site is > 120km out, we allow a very large pairing radius (200km) to capture distant neighbors
+        current_max_dist = 40.0 if dist_from_wh < 120 else 200.0
+        
         for _ in range(2):
             if not unvisited_mixer: break
             nearest = min(unvisited_mixer, key=lambda s: haversine(seed['coords'], s['coords']))
-            # IF nearest is too far, stop clustering this route
-            if haversine(seed['coords'], nearest['coords']) > MAX_MIX_DIST:
+            # IF nearest is too far (Adaptive), stop clustering this route
+            if haversine(seed['coords'], nearest['coords']) > current_max_dist:
                 break
             clump.append(nearest)
             unvisited_mixer.remove(nearest)
@@ -172,8 +177,10 @@ def main():
                 elif date_obj is not pd.NaT:
                     date_raw = date_obj.strftime("%Y-%m-%d")
                     
-                wh_name = str(row[wh_col]).strip().upper() if wh_col else "DEFAULT"
-                if wh_name == 'JLJH' or wh_name == 'JOD': wh_name = 'JODHPUR'
+                wh_raw = str(row[wh_col]).strip().upper() if wh_col else "DEFAULT"
+                if 'JLJH' in wh_raw or 'JOD' in wh_raw: wh_name = 'JODHPUR'
+                elif 'JLKD' in wh_raw or 'JAP' in wh_raw: wh_name = 'JAIPUR'
+                else: wh_name = wh_raw
                 
                 site_data = {
                     'df_idx': idx,
@@ -199,11 +206,10 @@ def main():
         routes_json = []
         route_global_counter = 0
 
-        groups = df_processing.groupby(['BAND', 'DATE', 'CMP'])
+        groups = df_processing.groupby(['BAND', 'DATE', 'CMP', 'WH_NAME'])
         
-        for (band, date_val, cmp_name), group_df in groups:
+        for (band, date_val, cmp_name, wh_name_for_group), group_df in groups:
             # 1. Fetch exact Warehouse Coordinates purely based on what is MENTIONED
-            wh_name_for_group = group_df.iloc[0]['WH_NAME']
             wh_coords = WH_COORDS_FALLBACK.get(wh_name_for_group, WH_COORDS_FALLBACK.get('DEFAULT'))
 
             is_b6 = "B6" in band.upper()

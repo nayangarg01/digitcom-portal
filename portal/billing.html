@@ -185,13 +185,38 @@
 
                 if (response.ok && data.success) {
                     statusMsg.className = 'status-success';
-                    // Ensure API_URL and downloadUrl join correctly
                     const fullDownloadUrl = `${API_URL}${data.downloadUrl}`;
-                    statusMsg.innerHTML = `${data.message} <br><a href="${fullDownloadUrl}" target="_blank" style="color:#28a745; font-weight:700; text-decoration:underline;">Click here to download your file</a>`;
-                    statusMsg.style.display = 'block';
                     
-                    // Reverting to the proven working auto-trigger method
-                    window.location.href = fullDownloadUrl;
+                    // The primary robust download trigger
+                    statusMsg.innerHTML = `${data.message} <br><button id="downloadLinkBtn" class="btn-generate" style="background:#28a745; margin-top:10px; padding: 8px 15px; font-size: 14px;">Download Billing File</button>`;
+                    statusMsg.style.display = 'block';
+
+                    const downloadFile = async (url, filename) => {
+                        try {
+                            const resp = await fetch(url, {
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                            });
+                            const blob = await resp.blob();
+                            const blobUrl = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = blobUrl;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(blobUrl);
+                            document.body.removeChild(a);
+                        } catch (err) {
+                            console.error('Download failed:', err);
+                            alert('Download failed. Please try again.');
+                        }
+                    };
+
+                    // Auto-trigger the download
+                    await downloadFile(fullDownloadUrl, data.filename || 'Billing_File.xlsx');
+
+                    // Setup the button for manual re-download
+                    document.getElementById('downloadLinkBtn').onclick = () => downloadFile(fullDownloadUrl, data.filename || 'Billing_File.xlsx');
                 } else {
                     statusMsg.className = 'status-error';
                     statusMsg.textContent = data.error || 'Failed to generate billing file. Please check your data.';

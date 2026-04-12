@@ -96,7 +96,8 @@ export const generateFullBilling = async (req: Request, res: Response) => {
             res.json({
                 success: true,
                 message: `Billing file for ${billingTarget} generated successfully.`,
-                downloadUrl: `/billing/download/${outputFileName}`
+                downloadUrl: `/billing/download/${outputFileName}`,
+                filename: outputFileName
             });
         });
 

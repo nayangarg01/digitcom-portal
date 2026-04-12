@@ -86,8 +86,10 @@ export const generateRoutes = async (req: Request, res: Response) => {
     }
 
     // Prepare paths for Python script
+    const timestamp = Date.now();
+    const outputFilename = `optimized_route_plan_${timestamp}.xlsx`;
     const scriptPath = path.join(__dirname, '../../scripts/route_optimizer.py');
-    const outputPath = path.join(__dirname, '../../uploads/optimized_route_plan.xlsx');
+    const outputPath = path.join(__dirname, `../../uploads/${outputFilename}`);
     
     // Spawn Python process
     const { spawn } = require('child_process');
@@ -127,7 +129,8 @@ export const generateRoutes = async (req: Request, res: Response) => {
                 success: true,
                 num_routes: result.num_routes,
                 routes: result.routes,
-                downloadUrl: '/api/route-planning/download-optimized'
+                downloadUrl: '/api/route-planning/download-optimized',
+                filename: outputFilename
             });
         } catch (e) {
             console.error('JSON Parse Error:', pythonOutput);
@@ -142,7 +145,10 @@ export const generateRoutes = async (req: Request, res: Response) => {
 };
 
 export const downloadOptimized = (req: Request, res: Response) => {
-    const filePath = path.join(__dirname, '../../uploads/optimized_route_plan.xlsx');
+    const { filename } = req.query;
+    const targetFile = filename ? String(filename) : 'optimized_route_plan.xlsx';
+    const filePath = path.join(__dirname, `../../uploads/${targetFile}`);
+    
     if (fs.existsSync(filePath)) {
         res.download(filePath, 'Optimized_Dispatch_Plan.xlsx');
     } else {

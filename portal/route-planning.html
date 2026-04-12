@@ -148,6 +148,7 @@
         
         let selectedFile = null;
         let generatedRoutes = null;
+        let lastFilename = null;
         let map = L.map('map').setView([26.8139, 75.5450], 7);
         let routeLayers = [];
 
@@ -183,6 +184,7 @@
                 const result = await response.json();
                 if (result.success) {
                     generatedRoutes = result.routes;
+                    lastFilename = result.filename;
                     displayRoutes(result);
                     exportBtn.style.display = 'block';
                     exportBtn.textContent = 'Download Dispatch Plan (Excel)';
@@ -198,11 +200,31 @@
             }
         });
 
-        exportBtn.addEventListener('click', () => {
-            if (!generatedRoutes) return;
+        exportBtn.addEventListener('click', async () => {
+            if (!lastFilename) return;
             const token = localStorage.getItem('token');
-            // Simply redirect to the download endpoint which handles the authentication/headers via a temporary link or use fetch with blob
-            window.open(`${API_URL}/route-planning/download-optimized?token=${token}`, '_blank');
+            
+            try {
+                const response = await fetch(`${API_URL}/route-planning/download-optimized?filename=${lastFilename}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) throw new Error('Download failed');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'Optimized_Dispatch_Plan.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Failed to download the file. Please try generating the route again.');
+            }
         });
 
         function displayRoutes(data) {

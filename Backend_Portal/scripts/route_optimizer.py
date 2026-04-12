@@ -10,14 +10,31 @@ import itertools
 # ──────────────────────────────────────────────
 # ROUTING CORE MATH
 # ──────────────────────────────────────────────
-def haversine(p1, p2):
-    R = 6371
-    lat1, lon1 = math.radians(p1[0]), math.radians(p1[1])
-    lat2, lon2 = math.radians(p2[0]), math.radians(p2[1])
+import math
+
+def haversine(coord1, coord2):
+    R = 6371.0
+    lat1, lon1 = math.radians(coord1[0]), math.radians(coord1[1])
+    lat2, lon2 = math.radians(coord2[0]), math.radians(coord2[1])
     dlat, dlon = lat2 - lat1, lon2 - lon1
     a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
-    c = 2 * math.asin(math.sqrt(a))
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
+
+def calculate_bearing(origin, target):
+    """Calculates the bearing from origin (lat, lon) to target (lat, lon) in degrees."""
+    lat1, lon1 = math.radians(origin[0]), math.radians(origin[1])
+    lat2, lon2 = math.radians(target[0]), math.radians(target[1])
+    d_lon = lon2 - lon1
+    y = math.sin(d_lon) * math.cos(lat2)
+    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(d_lon)
+    bearing = math.atan2(y, x)
+    return (math.degrees(bearing) + 360) % 360
+
+def angular_diff(a, b):
+    """Calculates shortest angular difference between two bearings."""
+    diff = abs(a - b) % 360
+    return min(diff, 360 - diff)
 
 def get_api_driving_distance(gmaps, origin, dest):
     try:
@@ -95,13 +112,18 @@ def run_routing(warehouse_coords, cluster):
         mixer_pool.extend(unvisited)
     
     # Phase 2: Geographical Mixer for leftovers
-    # Only mix if sites are genuinely close, else keep them isolated
     # ADATIVE REACH: If sites are very far from WH, allow a larger pairing radius
+    # DIRECTIONAL BIAS: Prefer sites along the same bearing from WH to create "corridors"
+    ANGULAR_SENSITIVITY = 1.2 # Weight for bearing mismatch (km per degree)
+    
     unvisited_mixer = list(mixer_pool)
     while unvisited_mixer:
         seed = max(unvisited_mixer, key=lambda s: haversine(warehouse_coords, s['coords']))
         unvisited_mixer.remove(seed)
         clump = [seed]
+        
+        # Calculate seed bearing
+        seed_bearing = calculate_bearing(warehouse_coords, seed['coords'])
         
         # Determine clustering threshold based on distance from base
         dist_from_wh = haversine(warehouse_coords, seed['coords'])
@@ -110,7 +132,17 @@ def run_routing(warehouse_coords, cluster):
         
         for _ in range(2):
             if not unvisited_mixer: break
-            nearest = min(unvisited_mixer, key=lambda s: haversine(seed['coords'], s['coords']))
+            
+            # Find nearest with angular penalty
+            # Metric = PhysicsDistance + (AngleDiff * Penalty)
+            def selection_score(candidate):
+                dist = haversine(seed['coords'], candidate['coords'])
+                bearing = calculate_bearing(warehouse_coords, candidate['coords'])
+                angle_mismatch = angular_diff(seed_bearing, bearing)
+                return dist + (angle_mismatch * ANGULAR_SENSITIVITY)
+                
+            nearest = min(unvisited_mixer, key=selection_score)
+            
             # IF nearest is too far (Adaptive), stop clustering this route
             if haversine(seed['coords'], nearest['coords']) > current_max_dist:
                 break

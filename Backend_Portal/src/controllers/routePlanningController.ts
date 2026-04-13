@@ -85,10 +85,10 @@ export const generateRoutes = async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Maps API key not configured' });
     }
 
-    // Prepare paths for Python script
+    // Prepare paths for Unified Routing Engine
     const timestamp = Date.now();
-    const outputFilename = `optimized_route_plan_${timestamp}.xlsx`;
-    const scriptPath = path.join(__dirname, '../../scripts/route_optimizer.py');
+    const outputFilename = `Routing_Result_Auto_${timestamp}.xlsx`;
+    const scriptPath = path.join(__dirname, '../../scripts/unified_routing_engine.py');
     const outputPath = path.join(__dirname, `../../uploads/${outputFilename}`);
     
     // Spawn Python process
@@ -96,8 +96,6 @@ export const generateRoutes = async (req: Request, res: Response) => {
     const pythonProcess = spawn('python3', [
         scriptPath,
         file.path,
-        warehouse.lat.toString(),
-        warehouse.lng.toString(),
         apiKey,
         outputPath
     ]);
@@ -165,12 +163,12 @@ export const calculateManualDistances = async (req: Request, res: Response) => {
     if (!apiKey) return res.status(500).json({ error: 'Maps API key not configured' });
 
     const timestamp = Date.now();
-    const outputFilename = `Manual_Distance_Result_${timestamp}.xlsx`;
-    const scriptPath = path.join(__dirname, '../../scripts/calculate_manual_distances.py');
+    const outputFilename = `Routing_Result_Manual_${timestamp}.xlsx`;
+    const scriptPath = path.join(__dirname, '../../scripts/unified_routing_engine.py');
     const outputPath = path.join(__dirname, `../../uploads/${outputFilename}`);
     
     const { spawn } = require('child_process');
-    const pythonProcess = spawn('python3', [scriptPath, file.path, apiKey]);
+    const pythonProcess = spawn('python3', [scriptPath, file.path, apiKey, outputPath]);
 
     let pythonOutput = '';
     let pythonError = '';

@@ -29,12 +29,49 @@ def get_road_distance(gmaps, origin, destination):
     if gmaps is None:
         return round(haversine(origin, destination), 2)
     try:
-        res = gmaps.distance_matrix(origin, destination, mode='driving')
-        if res['status'] == 'OK' and res['rows'][0]['elements'][0]['status'] == 'OK':
-            return round(res['rows'][0]['elements'][0]['distance']['value'] / 1000.0, 2)
+        # We use Directions API with alternatives=True to find the SHORTEST route (least km)
+        # instead of the fastest route (least time).
+        routes = gmaps.directions(origin, destination, mode='driving', alternatives=True)
+        if routes:
+            def total_dist(r):
+                return sum(leg['distance']['value'] for leg in r['legs'])
+            shortest_route = min(routes, key=total_dist)
+            dist_m = total_dist(shortest_route)
+            return round(dist_m / 1000.0, 2)
         return round(haversine(origin, destination), 2)
     except Exception as e:
         return round(haversine(origin, destination), 2)
+
+def calculate_bearing(origin, target):
+    """Calculates the bearing from origin (lat, lon) to target (lat, lon) in degrees."""
+    lat1, lon1 = math.radians(origin[0]), math.radians(origin[1])
+    lat2, lon2 = math.radians(target[0]), math.radians(target[1])
+    d_lon = lon2 - lon1
+    y = math.sin(d_lon) * math.cos(lat2)
+    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(d_lon)
+    bearing = math.atan2(y, x)
+    return (math.degrees(bearing) + 360) % 360
+
+def angular_diff(a, b):
+    """Calculates shortest angular difference between two bearings."""
+    diff = abs(a - b) % 360
+    return min(diff, 360 - diff)
+
+def parse_clubbing(val):
+    val = str(val).strip()
+    if not val or val.lower() == 'nan': return None, 0
+    match = re.search(r'([A-Za-z]+)(\d*)', val)
+    if match:
+        prefix = match.group(1)
+        num = int(match.group(2)) if match.group(2) else 1
+        return prefix, num
+    return val, 1
+
+def get_wh_coords(wh_val):
+    wh_val = str(wh_val).upper().strip()
+    if 'JLJH' in wh_val or 'JOD' in wh_val: return WH_COORDS['JODHPUR']
+    if 'JLKD' in wh_val or 'JAP' in wh_val: return WH_COORDS['JAIPUR']
+    return WH_COORDS['DEFAULT']
 
 def main():
     if len(sys.argv) < 3:
@@ -72,24 +109,6 @@ def main():
     for c in [col1, col2, col3]:
         df[c] = np.nan
 
-    # Process by Route
-    # We group by the prefix of the clubbing value (e.g., A, B, C)
-    def parse_clubbing(val):
-        val = str(val).strip()
-        if not val or val.lower() == 'nan': return None, 0
-        match = re.search(r'([A-Za-z]+)(\d*)', val)
-        if match:
-            prefix = match.group(1)
-            num = int(match.group(2)) if match.group(2) else 1
-            return prefix, num
-        return val, 1
-
-    # 1. Map Hub Coordinates
-    def get_wh_coords(wh_val):
-        wh_val = str(wh_val).upper().strip()
-        if 'JLJH' in wh_val or 'JOD' in wh_val: return WH_COORDS['JODHPUR']
-        if 'JLKD' in wh_val or 'JAP' in wh_val: return WH_COORDS['JAIPUR']
-        return WH_COORDS['DEFAULT']
 
     # We need to process each site
     for idx, row in df.iterrows():
@@ -106,30 +125,63 @@ def main():
         
         # Column 2: Subtract 50 (A6) or 100 (B6)
         deduction = 100 if 'B6' in str(row.get(act_col, '')).upper() else 50
-        df.at[idx, col2] = max(0, dist_wh - deduction)
+        col2_val = max(0, dist_wh - deduction)
+        df.at[idx, col2] = col2_val
         
         # Column 3: Route distance
-        if seq == 1:
-            # First or single site
-            df.at[idx, col3] = dist_wh
+        if seq <= 1:
+            # First or single site: Use DEDUCTED distance for Seq 1
+            df.at[idx, col3] = col2_val
         else:
-            # Seek previous site in the same group (CMP + Prefix + seq-1)
+            # Multi-stop: RAW shortest road distance from the previous site (no deduction)
             cmp_val = row.get('CMP')
             prev_seq_val = f"{prefix}{seq-1}"
             prev_row = df[(df['CMP'] == cmp_val) & (df[club_col].astype(str).str.strip() == prev_seq_val)]
             
             if not prev_row.empty:
-                prev_coords = (float(prev_row.iloc[0][lat_col]), float(prev_row.iloc[0][lng_col]))
-                dist_prev = get_road_distance(gmaps, prev_coords, site_coords)
+                prev_site_coords = (float(prev_row.iloc[0][lat_col]), float(prev_row.iloc[0][lng_col]))
+                dist_prev = get_road_distance(gmaps, prev_site_coords, site_coords)
                 df.at[idx, col3] = dist_prev
             else:
-                # Fallback to WH if precursor not found
-                df.at[idx, col3] = dist_wh
+                df.at[idx, col3] = col2_val
 
-    # Save output
+    # Save output with Formatting
     output_path = f"Manual_Distance_Result_{os.path.basename(file_path)}"
     output_full_path = os.path.join(os.path.dirname(file_path), output_path)
-    df.to_excel(output_full_path, index=False)
+    
+    writer = pd.ExcelWriter(output_full_path, engine='xlsxwriter')
+    df.to_excel(writer, index=False, sheet_name='Sheet1')
+    
+    workbook  = writer.book
+    worksheet = writer.sheets['Sheet1']
+    
+    # Formats
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'valign': 'top',
+        'fg_color': '#D7E4BC',
+        'border': 1
+    })
+    
+    cell_format = workbook.add_format({'border': 1})
+    
+    # Handle NaN values for XlsxWriter
+    df_clean = df.replace([np.nan, np.inf, -np.inf], '')
+    
+    # Calculate column widths and write data
+    for i, col in enumerate(df.columns):
+        series = df[col].astype(str).map(len)
+        max_len = max(series.max() if not series.empty else 0, len(col)) + 2
+        worksheet.set_column(i, i, min(max_len, 50)) # Cap at 50
+        worksheet.write(0, i, col, header_format)
+        
+        # Apply border to all rows
+        for row_num in range(1, len(df) + 1):
+             val = df_clean.iloc[row_num-1, i]
+             worksheet.write(row_num, i, val, cell_format)
+
+    writer.close()
 
     print(json.dumps({
         "success": True, 

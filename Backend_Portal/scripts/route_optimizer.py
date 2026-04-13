@@ -12,6 +12,20 @@ import itertools
 # ──────────────────────────────────────────────
 import math
 
+WH_COORDS = {
+    "JAIPUR": (26.810486, 75.496696),
+    "JODHPUR": (26.148422, 73.061378),
+    "UP": (26.8993, 81.1041),
+    "DEFAULT": (26.810486, 75.496696)
+}
+
+def get_wh_coords(wh_name):
+    wh_name = str(wh_name).upper().strip()
+    if 'JLJH' in wh_name or 'JOD' in wh_name: return WH_COORDS['JODHPUR']
+    if 'JLKD' in wh_name or 'JAIPUR' in wh_name: return WH_COORDS['JAIPUR']
+    if 'JLJQ' in wh_name or 'UP' in wh_name: return WH_COORDS['UP']
+    return WH_COORDS['DEFAULT']
+
 def haversine(coord1, coord2):
     R = 6371.0
     lat1, lon1 = math.radians(coord1[0]), math.radians(coord1[1])
@@ -38,11 +52,17 @@ def angular_diff(a, b):
 
 def get_api_driving_distance(gmaps, origin, dest):
     try:
-        routes = gmaps.directions(origin, dest, mode='driving', alternatives=True)
-        if routes:
+        # DUAL-PROBE LOGIC: Perform two searches to find hidden shortest paths
+        # 1. Standard search (includes highways)
+        res1 = gmaps.directions(origin, dest, mode='driving', alternatives=True)
+        # 2. Local search (avoids highways to force shorter local roads)
+        res2 = gmaps.directions(origin, dest, mode='driving', avoid='highways', alternatives=True)
+        
+        all_routes = (res1 or []) + (res2 or [])
+        if all_routes:
             def total_dist(r):
                 return sum(leg['distance']['value'] for leg in r['legs'])
-            shortest_route = min(routes, key=total_dist)
+            shortest_route = min(all_routes, key=total_dist)
             dist_m = total_dist(shortest_route)
             return round(dist_m / 1000.0, 2)
     except Exception as e:

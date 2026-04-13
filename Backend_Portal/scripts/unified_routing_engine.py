@@ -20,13 +20,13 @@ from route_optimizer import (
 )
 
 def process_billing(file_path, api_key, output_path):
-    print(f"Starting Unified Billing Engine for: {file_path}")
+    sys.stderr.write(f"Starting Unified Routing Engine for: {file_path}\n")
     
     try:
         gmaps = googlemaps.Client(key=api_key, timeout=10)
     except:
         gmaps = None
-        print("Warning: Running with Haversine fallback (no API key)")
+        sys.stderr.write("Warning: Running with Haversine fallback (no API key)\n")
 
     # 1. Load Data
     try:

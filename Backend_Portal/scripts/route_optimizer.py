@@ -52,10 +52,11 @@ def angular_diff(a, b):
 
 def get_api_driving_distance(gmaps, origin, dest):
     try:
-        # Strictly check standard driving routes
+        # Fetch all standard driving route alternatives
         res = gmaps.directions(origin, dest, mode='driving', alternatives=True)
         
         if res:
+            # Strictly select the route with the least total distance in kilometers
             def total_dist(r):
                 return sum(leg['distance']['value'] for leg in r['legs'])
             shortest_route = min(res, key=total_dist)

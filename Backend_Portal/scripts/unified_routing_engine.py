@@ -34,7 +34,7 @@ def process_billing(file_path, api_key, output_path):
         # Clean MIN DATE column immediately (Remove timestamps 00:00:00)
         date_col = next((c for c in df.columns if 'date' in c.lower()), 'MIN DATE')
         if date_col in df.columns:
-            df[date_col] = pd.to_datetime(df[date_col], errors='coerce').dt.strftime('%Y-%m-%d').fillna('')
+            df[date_col] = pd.to_datetime(df[date_col], errors='coerce').dt.strftime('%-d-%b-%y').fillna('')
     except Exception as e:
         return {"error": f"Failed to load Excel: {str(e)}"}
 

@@ -52,17 +52,13 @@ def angular_diff(a, b):
 
 def get_api_driving_distance(gmaps, origin, dest):
     try:
-        # DUAL-PROBE LOGIC: Perform two searches to find hidden shortest paths
-        # 1. Standard search (includes highways)
-        res1 = gmaps.directions(origin, dest, mode='driving', alternatives=True)
-        # 2. Local search (avoids highways to force shorter local roads)
-        res2 = gmaps.directions(origin, dest, mode='driving', avoid='highways', alternatives=True)
+        # Strictly check standard driving routes
+        res = gmaps.directions(origin, dest, mode='driving', alternatives=True)
         
-        all_routes = (res1 or []) + (res2 or [])
-        if all_routes:
+        if res:
             def total_dist(r):
                 return sum(leg['distance']['value'] for leg in r['legs'])
-            shortest_route = min(all_routes, key=total_dist)
+            shortest_route = min(res, key=total_dist)
             dist_m = total_dist(shortest_route)
             return round(dist_m / 1000.0, 2)
     except Exception as e:

@@ -148,6 +148,9 @@ def process_billing(file_path, api_key, output_path):
             routes = run_routing(wh_coords, sites)
             
             for r_idx, route in enumerate(routes):
+                # Convert index to Letter (0 -> A, 1 -> B, etc.)
+                route_letter = chr(65 + r_idx) if r_idx < 26 else f"A{chr(65 + r_idx - 26)}"
+                
                 prev_coords = wh_coords
                 for s_idx, leg in enumerate(route):
                     s_idx_1based = s_idx + 1
@@ -156,7 +159,8 @@ def process_billing(file_path, api_key, output_path):
                     curr_coords = s_data['coords']
                     cap = s_data['km_cap']
                     
-                    df.at[idx, col_map['club']] = f"{s_data['row_data']['CMP']}-R{r_idx+1}-S{s_idx_1based}"
+                    # New Format: A1, A2, B1...
+                    df.at[idx, col_map['club']] = f"{route_letter}{s_idx_1based}"
                     
                     if s_idx_1based == 1:
                         # First stop: WH to Site - CAP
@@ -235,31 +239,40 @@ def process_billing(file_path, api_key, output_path):
             max_len = max(df[col].astype(str).map(len).max(), len(col)) + 4
             worksheet.set_column(i, i, min(max_len, 40))
 
+    # 2.9 Final Sorting for Excel Order
+    def sorting_key(val):
+        if val in ["", "NR", "NAN", "NONE"]: return ("ZZZ", 0)
+        import re
+        m = re.match(r'([A-Z]+)([0-9]+)', val)
+        if m:
+            return (m.group(1), int(m.group(2)))
+        return (val, 0)
+    
+    df['sort_temp'] = df[col_map['club']].apply(sorting_key)
+    df = df.sort_values('sort_temp').drop('sort_temp', axis=1)
+
     # 3. Final JSON Reconstruction for Website Preview
     routes_json = []
     
-    # Group by the 'CLUBBING' column to extract paths
-    # We only plot routes that follow the naming convention (R# or sequence)
     # Filter out NR and empty strings
     plot_df = df[~df[col_map['club']].isin(["", "NR", "NAN", "NONE"])]
     
     if not plot_df.empty:
-        # Sort by Route Number and Sequence if possible
-        # Logic: SHAHJAHANPUR-R1-S1 -> Group by SHAHJAHANPUR-R1
-        def get_route_key(val):
-            if '-S' in val: return val.split('-S')[0]
-            return val
+        # Sort by Route Letter and Sequence
+        def get_route_letter(val):
+            import re
+            m = re.match(r'([A-Z]+)', val)
+            return m.group(1) if m else val
             
         def get_seq(val):
-            if '-S' in val:
-                try: return int(val.split('-S')[-1])
-                except: return 0
-            return 0
+            import re
+            m = re.search(r'([0-9]+)$', val)
+            return int(m.group(1)) if m else 0
 
-        route_keys = plot_df[col_map['club']].apply(get_route_key).unique()
+        route_letters = plot_df[col_map['club']].apply(get_route_letter).unique()
         
-        for r_idx, r_key in enumerate(route_keys):
-            r_group = plot_df[plot_df[col_map['club']].str.startswith(r_key)].copy()
+        for r_idx, r_letter in enumerate(route_letters):
+            r_group = plot_df[plot_df[col_map['club']].str.startswith(r_letter)].copy()
             r_group['seq_num'] = r_group[col_map['club']].apply(get_seq)
             r_group = r_group.sort_values('seq_num')
             
@@ -268,7 +281,7 @@ def process_billing(file_path, api_key, output_path):
             
             route_obj = {
                 "routeNumber": r_idx + 1,
-                "label": r_key,
+                "label": f"Route {r_letter}",
                 "origin_coords": {"lat": wh_coords[0], "lng": wh_coords[1]},
                 "legs": []
             }

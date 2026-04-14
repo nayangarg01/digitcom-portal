@@ -235,16 +235,58 @@ def process_billing(file_path, api_key, output_path):
             max_len = max(df[col].astype(str).map(len).max(), len(col)) + 4
             worksheet.set_column(i, i, min(max_len, 40))
 
-    # Final Stats
-    total_routes = manual_rows[col_map['club']].nunique() if not manual_rows.empty else 0
-    if auto_cluster_pool:
-        # We don't have a direct count easily without re-scanning, but the frontend just needs the list
-        pass
+    # 3. Final JSON Reconstruction for Website Preview
+    routes_json = []
+    
+    # Group by the 'CLUBBING' column to extract paths
+    # We only plot routes that follow the naming convention (R# or sequence)
+    # Filter out NR and empty strings
+    plot_df = df[~df[col_map['club']].isin(["", "NR", "NAN", "NONE"])]
+    
+    if not plot_df.empty:
+        # Sort by Route Number and Sequence if possible
+        # Logic: SHAHJAHANPUR-R1-S1 -> Group by SHAHJAHANPUR-R1
+        def get_route_key(val):
+            if '-S' in val: return val.split('-S')[0]
+            return val
+            
+        def get_seq(val):
+            if '-S' in val:
+                try: return int(val.split('-S')[-1])
+                except: return 0
+            return 0
 
-    # For Website Preview, we can rebuild the routes_json if needed
-    routes_json = [] # Optional: implementing if the controller needs it for visual preview
+        route_keys = plot_df[col_map['club']].apply(get_route_key).unique()
+        
+        for r_idx, r_key in enumerate(route_keys):
+            r_group = plot_df[plot_df[col_map['club']].str.startswith(r_key)].copy()
+            r_group['seq_num'] = r_group[col_map['club']].apply(get_seq)
+            r_group = r_group.sort_values('seq_num')
+            
+            first_row = r_group.iloc[0]
+            wh_coords = get_wh_coords(first_row[col_map['wh']])
+            
+            route_obj = {
+                "routeNumber": r_idx + 1,
+                "label": r_key,
+                "origin_coords": {"lat": wh_coords[0], "lng": wh_coords[1]},
+                "legs": []
+            }
+            
+            for _, leg_row in r_group.iterrows():
+                route_obj["legs"].append({
+                    "routeLabel": leg_row[col_map['club']],
+                    "stopSequence": int(leg_row['seq_num']),
+                    "distanceKm": int(round(float(leg_row[col_map['chargeable']]))),
+                    "site": {
+                        "id": str(leg_row[col_map['site_id']]),
+                        "lat": float(leg_row[col_map['lat']]),
+                        "lng": float(leg_row[col_map['lng']])
+                    }
+                })
+            routes_json.append(route_obj)
 
-    return {"success": True, "output": output_path, "num_routes": total_routes, "routes": routes_json}
+    return {"success": True, "output": output_path, "num_routes": len(routes_json), "routes": routes_json}
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

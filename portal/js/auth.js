@@ -46,7 +46,8 @@ if (loginForm) {
                 }
             } else {
                 errorMsg.style.display = 'block';
-                errorMsg.textContent = data.error || 'Login failed.';
+                const errorDetail = data.details ? ` (${data.details})` : '';
+                errorMsg.textContent = (data.error || 'Login failed.') + errorDetail;
                 if (loginBtn) {
                     loginBtn.disabled = false;
                     loginBtn.textContent = originalText;

@@ -30,7 +30,7 @@
   "scripts": {
     "dev": "nodemon src/index.ts",
     "start": "ts-node src/index.ts",
-    "build": "npx prisma generate",
+    "build": "npx prisma generate && npx prisma db push",
     "db:push": "npx prisma db push",
     "db:generate": "npx prisma generate",
     "seed": "ts-node src/utils/seed.ts",

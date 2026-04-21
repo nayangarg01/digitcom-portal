@@ -40,9 +40,9 @@ if (loginForm) {
                 
                 // Redirect based on role
                 if (data.user.role === 'ADMIN') {
-                    window.location.href = 'dashboard.html';
+                    window.location.href = 'route-planning.html';
                 } else {
-                    window.location.href = 'warehouse.html';
+                    window.location.href = 'route-planning.html';
                 }
             } else {
                 errorMsg.style.display = 'block';

@@ -4,11 +4,7 @@ dotenv.config();
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import authRoutes from './routes/authRoutes';
-import logisticsRoutes from './routes/logisticsRoutes';
-import teamRoutes from './routes/teamRoutes';
 import routePlanningRoutes from './routes/routePlanningRoutes';
-import financeRoutes from './routes/financeRoutes';
-import documentRoutes from './routes/documentRoutes';
 import contactRoutes from './routes/contactRoutes';
 import billingRoutes from './routes/billingRoutes';
 import path from 'path';
@@ -23,11 +19,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Main API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/logistics', logisticsRoutes);
-app.use('/api/teams', teamRoutes);
 app.use('/api/route-planning', routePlanningRoutes);
-app.use('/api/finance', financeRoutes);
-app.use('/api/documents', documentRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/contact', contactRoutes);
 

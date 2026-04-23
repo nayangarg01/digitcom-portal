@@ -6,6 +6,8 @@ import math
 import googlemaps
 import json
 import re
+import requests
+from route_optimizer import get_api_driving_distance
 
 # ──────────────────────────────────────────────
 # CONFIGURATION
@@ -26,21 +28,20 @@ def haversine(coord1, coord2):
     return R * c
 
 def get_road_distance(gmaps, origin, destination):
+    """
+    STRICT IMPLEMENTATION: Uses the standardized Routes API (v2) mirror logic.
+    """
     if gmaps is None:
-        return round(haversine(origin, destination), 2)
+        # Fallback to haversine ONLY if gmaps client passed as None (safety check)
+        return int(round(haversine(origin, destination)))
+        
     try:
-        # We use Directions API with alternatives=True to find the SHORTEST route (least km)
-        # instead of the fastest route (least time).
-        routes = gmaps.directions(origin, destination, mode='driving', alternatives=True)
-        if routes:
-            def total_dist(r):
-                return sum(leg['distance']['value'] for leg in r['legs'])
-            shortest_route = min(routes, key=total_dist)
-            dist_m = total_dist(shortest_route)
-            return round(dist_m / 1000.0, 2)
-        return round(haversine(origin, destination), 2)
+        # Calls the unified shortest-visible-path logic
+        return get_api_driving_distance(gmaps, origin, destination)
     except Exception as e:
-        return round(haversine(origin, destination), 2)
+        sys.stderr.write(f"Manual Distance Error: {str(e)}\n")
+        # In strict mode, we propagate or return 0, user wants parity.
+        return 0
 
 def calculate_bearing(origin, target):
     """Calculates the bearing from origin (lat, lon) to target (lat, lon) in degrees."""

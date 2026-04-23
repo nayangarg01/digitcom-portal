@@ -53,8 +53,8 @@ def angular_diff(a, b):
 
 def get_api_driving_distance(gmaps, origin, dest):
     """
-    STRICT IMPLEMENTATION: Uses Google Routes API (v2) to calculate the absolute shortest driving distance.
-    If the API fails, it raises an exception instead of falling back to Haversine.
+    STRICT IMPLEMENTATION: Mirrors Google Maps UI by selecting the shortest among visible routes.
+    Returns: Rounded Integer KM to match billing requirements.
     """
     if not gmaps or not gmaps.key:
         raise Exception("Maps API key is missing. Strict API mode is enabled.")
@@ -65,7 +65,7 @@ def get_api_driving_distance(gmaps, origin, dest):
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": api_key,
-        "X-Goog-FieldMask": "routes.distanceMeters,routes.routeLabels"
+        "X-Goog-FieldMask": "routes.distanceMeters"
     }
 
     body = {
@@ -73,8 +73,8 @@ def get_api_driving_distance(gmaps, origin, dest):
         "destination": { "location": { "latLng": { "latitude": dest[0], "longitude": dest[1] } } },
         "travelMode": "DRIVE",
         "routingPreference": "TRAFFIC_UNAWARE",
-        "requestedReferenceRoutes": ["SHORTER_DISTANCE"],
-        "computeAlternativeRoutes": False
+        "computeAlternativeRoutes": True,
+        "requestedReferenceRoutes": []
     }
 
     try:
@@ -83,17 +83,12 @@ def get_api_driving_distance(gmaps, origin, dest):
         if response.status_code == 200:
             data = response.json()
             if 'routes' in data and len(data['routes']) > 0:
-                # Find the route labeled SHORTER_DISTANCE if provided, otherwise default to first
-                selected_route = data['routes'][0]
-                for r in data['routes']:
-                    if 'routeLabels' in r and 'SHORTER_DISTANCE' in r['routeLabels']:
-                        selected_route = r
-                        break
-                
-                dist_m = selected_route['distanceMeters']
-                return round(dist_m / 1000.0, 2)
+                # Mirror Logic: Pick the shortest distance among standard visible routes
+                min_m = min(r.get('distanceMeters', float('inf')) for r in data['routes'])
+                # Return as rounded integer KM
+                return int(round(min_m / 1000.0))
             else:
-                raise Exception(f"Routes API: No routes found between {origin} and {dest}")
+                raise Exception(f"Routes API: No visible routes found between {origin} and {dest}")
         else:
             raise Exception(f"Routes API Error {response.status_code}: {response.text}")
     except Exception as e:

@@ -65,7 +65,7 @@ def get_api_driving_distance(gmaps, origin, dest):
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": api_key,
-        "X-Goog-FieldMask": "routes.distanceMeters"
+        "X-Goog-FieldMask": "routes.distanceMeters,routes.routeLabels"
     }
 
     body = {
@@ -73,6 +73,7 @@ def get_api_driving_distance(gmaps, origin, dest):
         "destination": { "location": { "latLng": { "latitude": dest[0], "longitude": dest[1] } } },
         "travelMode": "DRIVE",
         "routingPreference": "TRAFFIC_UNAWARE",
+        "requestedReferenceRoutes": ["SHORTER_DISTANCE"],
         "computeAlternativeRoutes": False
     }
 
@@ -82,7 +83,14 @@ def get_api_driving_distance(gmaps, origin, dest):
         if response.status_code == 200:
             data = response.json()
             if 'routes' in data and len(data['routes']) > 0:
-                dist_m = data['routes'][0]['distanceMeters']
+                # Find the route labeled SHORTER_DISTANCE if provided, otherwise default to first
+                selected_route = data['routes'][0]
+                for r in data['routes']:
+                    if 'routeLabels' in r and 'SHORTER_DISTANCE' in r['routeLabels']:
+                        selected_route = r
+                        break
+                
+                dist_m = selected_route['distanceMeters']
                 return round(dist_m / 1000.0, 2)
             else:
                 raise Exception(f"Routes API: No routes found between {origin} and {dest}")

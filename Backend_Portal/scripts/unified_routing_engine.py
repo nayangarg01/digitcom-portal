@@ -22,11 +22,10 @@ from route_optimizer import (
 def process_billing(file_path, api_key, output_path):
     sys.stderr.write(f"Starting Unified Routing Engine for: {file_path}\n")
     
-    try:
-        gmaps = googlemaps.Client(key=api_key, timeout=10)
-    except:
-        gmaps = None
-        sys.stderr.write("Warning: Running with Haversine fallback (no API key)\n")
+    if not api_key:
+        raise Exception("Maps API key is missing. Strict API mode is enabled.")
+    
+    gmaps = googlemaps.Client(key=api_key, timeout=10)
 
     # 1. Load Data
     try:

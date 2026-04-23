@@ -6,6 +6,7 @@ import googlemaps
 import json
 import math
 import itertools
+import requests
 
 # ──────────────────────────────────────────────
 # ROUTING CORE MATH
@@ -51,20 +52,45 @@ def angular_diff(a, b):
     return min(diff, 360 - diff)
 
 def get_api_driving_distance(gmaps, origin, dest):
+    """
+    STRICT IMPLEMENTATION: Uses Google Routes API (v2) to calculate the absolute shortest driving distance.
+    If the API fails, it raises an exception instead of falling back to Haversine.
+    """
+    if not gmaps or not gmaps.key:
+        raise Exception("Maps API key is missing. Strict API mode is enabled.")
+
+    api_key = gmaps.key
+    url = "https://routes.googleapis.com/directions/v2:computeRoutes"
+    
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": api_key,
+        "X-Goog-FieldMask": "routes.distanceMeters"
+    }
+
+    body = {
+        "origin": { "location": { "latLng": { "latitude": origin[0], "longitude": origin[1] } } },
+        "destination": { "location": { "latLng": { "latitude": dest[0], "longitude": dest[1] } } },
+        "travelMode": "DRIVE",
+        "routingPreference": "TRAFFIC_UNAWARE",
+        "computeAlternativeRoutes": False
+    }
+
     try:
-        # Fetch all standard driving route alternatives
-        res = gmaps.directions(origin, dest, mode='driving', alternatives=True)
+        response = requests.post(url, headers=headers, json=body, timeout=15)
         
-        if res:
-            # Strictly select the route with the least total distance in kilometers
-            def total_dist(r):
-                return sum(leg['distance']['value'] for leg in r['legs'])
-            shortest_route = min(res, key=total_dist)
-            dist_m = total_dist(shortest_route)
-            return round(dist_m / 1000.0, 2)
+        if response.status_code == 200:
+            data = response.json()
+            if 'routes' in data and len(data['routes']) > 0:
+                dist_m = data['routes'][0]['distanceMeters']
+                return round(dist_m / 1000.0, 2)
+            else:
+                raise Exception(f"Routes API: No routes found between {origin} and {dest}")
+        else:
+            raise Exception(f"Routes API Error {response.status_code}: {response.text}")
     except Exception as e:
-        pass
-    return round(haversine(origin, dest), 2)
+        sys.stderr.write(f"ERROR: Distance Calculation Failed: {str(e)}\n")
+        raise e
 
 def optimize_segment(warehouse_coords, cluster):
     best_p = None; min_d = float('inf')
@@ -298,8 +324,7 @@ def main():
                     s_dict = leg['site']
                     dest = s_dict['coords']
                     
-                    try: api_dist = get_api_driving_distance(gmaps, current_origin, dest)
-                    except: api_dist = leg['haversine_dist']
+                    api_dist = get_api_driving_distance(gmaps, current_origin, dest)
                     
                     base_api_dist = api_dist
                     
@@ -308,8 +333,7 @@ def main():
                         if is_b6: api_dist = max(0.0, api_dist - 100.0)
                         else: api_dist = max(0.0, api_dist - 50.0)
                     else:
-                        try: true_wh_dist = get_api_driving_distance(gmaps, wh_coords, dest)
-                        except: true_wh_dist = haversine(wh_coords, dest)
+                        true_wh_dist = get_api_driving_distance(gmaps, wh_coords, dest)
                             
                     club_str = f"{s_dict['CMP']}-R{route_global_counter}-S{s_idx+1}"
                     aktbc_val = max(0.0, api_dist)

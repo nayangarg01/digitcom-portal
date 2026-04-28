@@ -201,7 +201,7 @@ export const calculateManualDistances = async (req: Request, res: Response) => {
                 success: true,
                 downloadUrl: '/api/route-planning/download-optimized',
                 filename: outputFilename,
-                message: result.message
+                message: result.message || "File generated successfully."
             });
         } catch (e) {
             res.status(500).json({ error: 'Failed to parse distance results' });

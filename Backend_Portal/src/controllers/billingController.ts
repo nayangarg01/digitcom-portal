@@ -27,9 +27,9 @@ export const generateFullBilling = async (req: Request, res: Response) => {
 
         // Robust absolute path resolution
         const backendRoot = path.resolve(__dirname, '../..');
-        const scriptPath = path.join(backendRoot, 'scripts/generate_billing_FULL.py');
+        const scriptPath = path.join(backendRoot, 'scripts/generate_clean_billing.py');
         const templatePath = path.join(backendRoot, 'scripts/MASTER_JMS_TEMPLATE.xlsx');
-        const outputFileName = `${billingTarget.toUpperCase()}_Unified_Billing_${Date.now()}.xlsx`;
+        const outputFileName = `${billingTarget.toUpperCase()}_Clean_Billing_${Date.now()}.xlsx`;
         const outputPath = path.join(outputDir, outputFileName);
         
         const absoluteMasterPath = path.resolve(backendRoot, files['masterFile'][0].path);

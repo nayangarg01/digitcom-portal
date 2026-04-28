@@ -12,6 +12,15 @@ def safe_float(val):
     except:
         return 0.0
 
+def format_date(val):
+    if pd.isna(val) or str(val).strip() == "":
+        return ""
+    try:
+        dt = pd.to_datetime(val)
+        return dt.strftime('%d-%b-%y')
+    except:
+        return str(val)
+
 def load_master_data(master_path, dc_number):
     try:
         df_full = pd.read_excel(master_path, header=None)
@@ -57,8 +66,8 @@ TEMPLATE_ITEMS = [
   {"sap": "3317347", "desc": "SITC 1CX6 SQMM CU CBL YY FRLSH", "uom": "M", "rate": 68},
   {"sap": "3383067", "desc": "CHRG APPLY PUFF SEALENT AT CABLE ENTRY", "uom": "EA", "rate": 330},
   {"sap": "3269867", "desc": "TERMINATION OF CABLE 1CX6 SQMM Y", "uom": "M", "rate": 40},
-  {"sap": "EXTRA VISIT", "desc": "EXTRA VISIT", "uom": "EA", "rate": 1000},
-  {"sap": "POLE MOUNT", "desc": "POLE MOUNT", "uom": "EA", "rate": 500}
+  {"sap": "3397248", "desc": "EXTRA VISIT", "uom": "EA", "rate": 1000},
+  {"sap": "3268025", "desc": "INSTALLATION OF POLE MOUNT ON TOWER", "uom": "EA", "rate": 500}
 ]
 
 def write_main_wcc(wb, df_sites, dc_number, formats):
@@ -164,39 +173,192 @@ def write_main_wcc(wb, df_sites, dc_number, formats):
 
     # Row 28
     ws.merge_range('B30:H30', 'Remarks, if any:', f_bold)
+    
+    # Row 30 (Note)
+    ws.write('B32', 'Note :', f_bold)
+    ws.merge_range('C32:H32', 'In case of Multiple sites, please attach applicable site details with this certificate', f_norm)
 
 def write_wcc(wb, df_sites, dc_number, formats):
     ws = wb.add_worksheet('WCC')
+    
+    headers_1 = [
+        'Sr. No', 'ENB SITE ID', 'PMP SAP ID', 'GIS SECTOR_ID', 'No of Sectors', 
+        'Tower type', 'JC', 'WH', 'VEHICLE NO', 'MIN NO', 'MIN Date', 
+        'Completion Date', 'REMARKS'
+    ]
+    headers_2 = [
+        'ACTUAL KM', 'KM IN WO', 'GAP', 'USED KM IN WCC'
+    ]
+    
+    # 1. Main Title
+    ws.merge_range('C3:O4', 'Work Completion Certificate', formats['title'])
+    
+    # 2. Certification Text
+    cert_text = "This is to certify that below sites pertaining to WO/WCO No.P14/630330726 Dated in 03-10-2025 respect of Digitcom India Technologies  has  been successfully completed in all respect."
+    ws.merge_range('C6:O6', cert_text, formats['cert_text'])
+    
+    # 3. Write Headers
+    r_head = 8
+    col_idx = 2  # Start at column C (index 2)
+    for h in headers_1:
+        ws.write(r_head, col_idx, h, formats['header_blue'])
+        if 'ID' in h or 'SECTOR' in h:
+            ws.set_column(col_idx, col_idx, 22)
+        elif 'Date' in h or 'REMARKS' in h or 'VEHICLE' in h:
+            ws.set_column(col_idx, col_idx, 15)
+        else:
+            ws.set_column(col_idx, col_idx, 10)
+        col_idx += 1
+        
+    col_idx = 16  # Start yellow table at column Q (index 16)
+    for h in headers_2:
+        ws.write(r_head, col_idx, h, formats['header_yellow'])
+        ws.set_column(col_idx, col_idx, 12)
+        col_idx += 1
+
+    def get_val(row, matcher):
+        c_name = next((c for c in df_sites.columns if matcher.upper() in c.upper()), None)
+        return row[c_name] if c_name else ""
+    
+    aktbc_col = next((c for c in df_sites.columns if 'CHRG EXTRA TRANSPORT' in c.upper() or 'AKTBC' == c.upper()), None)
+
+    r_idx = 9
+    total_act = 0
+    total_used = 0
+
+    for i, (_, row) in enumerate(df_sites.iterrows()):
+        act_km = safe_float(row[aktbc_col]) if aktbc_col else 0.0
+        wo_km = safe_float(get_val(row, 'KM IN WO'))
+        used_km = act_km if act_km <= wo_km else wo_km
+        
+        total_act += act_km
+        total_used += used_km
+        
+        vals_1 = [
+            i + 1, get_val(row, 'ENBSITEID'), get_val(row, 'PMP ID'), get_val(row, 'GIS SECTOR'),
+            safe_float(get_val(row, 'NO OF SECTOR')), get_val(row, 'Tower type'), get_val(row, 'JC'),
+            get_val(row, 'WH'), get_val(row, 'VEHICLE NO'), get_val(row, 'MIN NO'),
+            format_date(get_val(row, 'MIN DATE')), format_date(get_val(row, 'Completion Date')), 
+            "RFS DONE" if pd.notna(get_val(row, 'Completion Date')) and str(get_val(row, 'Completion Date')) != "" else ""
+        ]
+        
+        vals_2 = [
+            act_km, wo_km, act_km - wo_km, used_km
+        ]
+        
+        for c, val in enumerate(vals_1):
+            c_pos = 2 + c
+            if isinstance(val, pd.Timestamp):
+                ws.write_datetime(r_idx, c_pos, val, formats['date'])
+            elif isinstance(val, (int, float)):
+                ws.write_number(r_idx, c_pos, val, formats['number'])
+            else:
+                ws.write(r_idx, c_pos, str(val), formats['cell'])
+                
+        for c, val in enumerate(vals_2):
+            c_pos = 16 + c
+            ws.write_number(r_idx, c_pos, val, formats['number'])
+            
+        r_idx += 1
+
+    # Totals Row for Yellow Table
+    ws.write(r_idx, 16, total_act, formats['header_yellow'])
+    ws.write(r_idx, 17, "", formats['header_yellow'])
+    ws.write(r_idx, 18, "", formats['header_yellow'])
+    ws.write(r_idx, 19, total_used, formats['header_yellow'])
+
+    r_sig = r_idx + 2
+    ws.write(r_sig, 3, "SIGN:", formats['bold_left'])
+    ws.write(r_sig+1, 3, "PROJECT-IN-CHARGE", formats['bold_left'])
+    ws.write(r_sig+2, 3, "MR. YUNUS KHAN", formats['bold_left'])
+    ws.write(r_sig+3, 3, "DATE:", formats['bold_left'])
+    
+    ws.write(r_sig, 12, "SIGN:", formats['bold_left'])
+    ws.write(r_sig+1, 12, "DEPLOYMENT HEAD", formats['bold_left'])
+    ws.write(r_sig+2, 12, "MR. MANISH NAHAR", formats['bold_left'])
+    ws.write(r_sig+3, 12, "DATE:", formats['bold_left'])
 
 def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, formats, include_amounts=True):
     ws = wb.add_worksheet(sheet_name)
     num_sites = len(df_sites)
     
-    ws.merge_range(0, 0, 0, num_sites + 6, f"{sheet_name} - {dc_number}", formats['title'])
+    # Calculate dates
+    date_col = 'Completion Date ' if 'Completion Date ' in df_sites.columns else 'Completion Date'
+    min_date_str = "N/A"
+    max_date_str = "N/A"
+    if date_col in df_sites.columns:
+        dates = pd.to_datetime(df_sites[date_col], errors='coerce')
+        min_date_str = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+        max_date_str = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+
+    tot_col = 3 + num_sites
+    last_col = tot_col + 2 if include_amounts else tot_col
     
-    ws.write(2, 0, "SAP Code", formats['header'])
-    ws.write(2, 1, "Material Description", formats['header'])
-    ws.write(2, 2, "UOM", formats['header'])
     ws.set_column(0, 0, 15)
     ws.set_column(1, 1, 40)
     ws.set_column(2, 2, 8)
+    for col in range(3, tot_col):
+        ws.set_column(col, col, 5)
+    ws.set_column(tot_col, tot_col, 15)
+    if include_amounts:
+        ws.set_column(tot_col + 1, tot_col + 1, 15)
+        ws.set_column(tot_col + 2, tot_col + 2, 15)
+
+    f_title = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#D9D9D9', 'border': 1})
+    f_center = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter'})
+    f_head = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'bg_color': '#DCE6F1', 'border': 1})
+    f_head_vert = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'rotation': 90, 'bg_color': '#DCE6F1', 'border': 1})
     
-    # Write Site Headers
+    # Title Block
+    ws.merge_range(0, 0, 0, last_col, sheet_name, f_title)
+    ws.merge_range(1, 0, 1, last_col, 'Work Order No P14/630330726', f_center)
+    ws.merge_range(2, 0, 2, last_col, 'Contractor Name: DIGITCOM INDIA TECHNOLOGIES       Work Order Dated: 03-10-2025', f_center)
+    ws.merge_range(3, 0, 3, last_col, 'WO for Airspan A6 and C6 Radios for Airfiber', f_center)
+    ws.merge_range(4, 0, 4, last_col, f'Service Done From Date: {min_date_str}', f_center)
+    ws.merge_range(5, 0, 5, last_col, f'Service Done To Date: {max_date_str}', f_center)
+    
+    # Site Headers
+    ws.write(7, 1, 'Count -', formats['bold_right'])
+    ws.write(7, 2, '', formats['bold_right'])
+    ws.write(8, 0, 'Code', f_head)
+    ws.write(8, 1, 'Site ID --', f_head)
+    ws.write(8, 2, '', f_head)
+    
+    ws.set_row(8, 150)  # Increase row height for rotated text
+    
     for i, (_, row) in enumerate(df_sites.iterrows()):
         col = 3 + i
-        ws.write(2, col, str(row.get('PMP ID', '')).strip(), formats['header_vertical'])
-        ws.set_column(col, col, 8)
+        ws.write(7, col, i + 1, formats['number_bold'])
+        pmp_id = str(row.get('PMP ID', '')).strip()
+        ws.write(8, col, pmp_id, f_head_vert)
         
-    tot_col = 3 + num_sites
-    ws.write(2, tot_col, "Total Qty", formats['header'])
-    ws.set_column(tot_col, tot_col, 12)
-    
+    ws.write(8, tot_col, 'Total Quantity', f_head)
     if include_amounts:
-        ws.write(2, tot_col + 1, "Rate", formats['header'])
-        ws.write(2, tot_col + 2, "Amount", formats['header'])
-        ws.set_column(tot_col + 1, tot_col + 2, 12)
-
-    r_idx = 3
+        ws.write(8, tot_col + 1, 'RATE AS PER SOW', f_head)
+        ws.write(8, tot_col + 2, 'AMOUNT', f_head)
+        
+    # Site Type & Sectors
+    ws.write(10, 1, 'Site Type', formats['bold_right'])
+    ws.write(10, 2, '', formats['bold_right'])
+    for i, (_, row) in enumerate(df_sites.iterrows()):
+        tt = str(row.get('Tower type', '')).strip()
+        ws.write(10, 3 + i, tt, formats['number'])
+        
+    ws.write(12, 1, 'Sectors', formats['bold_right'])
+    ws.write(12, 2, '', formats['bold_right'])
+    total_sectors = 0
+    for i, (_, row) in enumerate(df_sites.iterrows()):
+        sec = safe_float(row.get('NO OF SECTOR'))
+        total_sectors += sec
+        ws.write(12, 3 + i, sec, formats['number'])
+    ws.write(12, tot_col, total_sectors, formats['number_bold'])
+    
+    # Data Table Headers
+    ws.write(13, 0, 'Item code', f_head)
+    ws.write(13, 1, 'Description of Item', f_head)
+    ws.write(13, 2, 'UOM', f_head)
+    
+    r_idx = 14
     for item in TEMPLATE_ITEMS:
         ws.write(r_idx, 0, item['sap'], formats['cell'])
         ws.write(r_idx, 1, item['desc'], formats['cell_left'])
@@ -208,10 +370,9 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
             sap_code = item['sap']
             val = site_row.iloc[code_to_col_idx[sap_code]] if sap_code in code_to_col_idx else 0.0
             
-            # Use raw extraction or 0.0. Exception for Extra Visit / Pole Mount
-            if sap_code == "EXTRA VISIT":
+            if sap_code == "3397248":
                 val = safe_float(site_row.get('EXTRA VISIT IN WO', 0.0))
-            elif sap_code == "POLE MOUNT":
+            elif sap_code == "3268025":
                 val = safe_float(site_row.get('Polemount in wo', 0.0))
             else:
                 val = safe_float(val)
@@ -219,7 +380,7 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
             ws.write(r_idx, col, val, formats['number'])
             row_sum += val
             
-        ws.write_formula(r_idx, tot_col, f"=SUM({xlsxwriter.utility.xl_col_to_name(3)}{r_idx+1}:{xlsxwriter.utility.xl_col_to_name(tot_col-1)}{r_idx+1})", formats['number_bold'], row_sum)
+        ws.write_formula(r_idx, tot_col, f"=SUM({xlsxwriter.utility.xl_col_to_name(3)}{r_idx+1}:{xlsxwriter.utility.xl_col_to_name(tot_col-1)}{r_idx+1})", formats['number_bold'])
         
         if include_amounts:
             rate = safe_float(item['rate'])
@@ -229,8 +390,19 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
         r_idx += 1
         
     if include_amounts:
-        ws.write(r_idx, tot_col + 1, "GRAND TOTAL", formats['bold_right'])
-        ws.write_formula(r_idx, tot_col + 2, f"=SUM({xlsxwriter.utility.xl_col_to_name(tot_col+2)}4:{xlsxwriter.utility.xl_col_to_name(tot_col+2)}{r_idx})", formats['number_bold'])
+        ws.merge_range(r_idx, 0, r_idx, tot_col + 1, "TOTAL", formats['bold_right'])
+        ws.write_formula(r_idx, tot_col + 2, f"=SUM({xlsxwriter.utility.xl_col_to_name(tot_col+2)}15:{xlsxwriter.utility.xl_col_to_name(tot_col+2)}{r_idx})", formats['number_bold'])
+
+    r_sig = r_idx + 2
+    ws.write(r_sig, 1, "SIGN:", formats['bold_left'])
+    ws.write(r_sig+1, 1, "PROJECT-IN-CHARGE", formats['bold_left'])
+    ws.write(r_sig+2, 1, "MR. YUNUS KHAN", formats['bold_left'])
+    ws.write(r_sig+3, 1, "DATE:", formats['bold_left'])
+    
+    ws.write(r_sig, tot_col, "SIGN:", formats['bold_left'])
+    ws.write(r_sig+1, tot_col, "DEPLOYMENT HEAD", formats['bold_left'])
+    ws.write(r_sig+2, tot_col, "MR. MANISH NAHAR", formats['bold_left'])
+    ws.write(r_sig+3, tot_col, "DATE:", formats['bold_left'])
 
 def write_declaration(wb, df_sites, dc_number, formats):
     ws = wb.add_worksheet('Declaration')

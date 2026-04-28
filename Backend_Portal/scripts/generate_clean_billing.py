@@ -61,90 +61,112 @@ TEMPLATE_ITEMS = [
   {"sap": "POLE MOUNT", "desc": "POLE MOUNT", "uom": "EA", "rate": 500}
 ]
 
-def write_wcc_shared(wb, sheet_name, df_sites, dc_number, formats, is_main=False):
-    ws = wb.add_worksheet(sheet_name)
-    
-    headers_1 = [
-        'Sr. No', 'ENB SITE ID', 'PMP SAP ID', 'GIS SECTOR_ID', 'No of Sectors', 
-        'Tower type', 'JC', 'WH', 'VEHICLE NO', 'MIN NO', 'MIN Date', 
-        'Completion Date', 'REMARKS'
-    ]
-    headers_2 = [
-        'ACTUAL KM', 'KM-50', 'KM IN WO', 'A6 in wo', 'cpri in wo', 
-        'power in wo', 'puff sealant in wo', 'termination in wo', 
-        'EXTRA VISIT IN WO', 'Polemount in wo', 'GAP', 'USED KM IN WCC'
-    ]
-    
-    # 1. Main Title
-    ws.merge_range('C3:O4', 'Work Completion Certificate', formats['title'])
-    
-    # 2. Certification Text
-    cert_text = "This is to certify that below sites pertaining to WO/WCO No.P14/630330726 Dated in 03-10-2025 respect of Digitcom India Technologies  has  been successfully completed in all respect."
-    ws.merge_range('C6:O6', cert_text, formats['cert_text'])
-    
-    # 3. Write Headers
-    r_head = 8
-    col_idx = 2  # Start at column C (index 2)
-    for h in headers_1:
-        ws.write(r_head, col_idx, h, formats['header_blue'])
-        ws.set_column(col_idx, col_idx, 12 if 'ID' in h or 'Date' in h or 'REMARKS' in h else 8)
-        col_idx += 1
-        
-    for h in headers_2:
-        ws.write(r_head, col_idx, h, formats['header_yellow'])
-        ws.set_column(col_idx, col_idx, 9)
-        col_idx += 1
+def write_main_wcc(wb, df_sites, dc_number, formats):
+    ws = wb.add_worksheet('Main WCC')
+    ws.set_column('A:A', 5)
+    ws.set_column('B:B', 20)
+    ws.set_column('C:G', 15)
+    ws.set_column('H:H', 30)
 
-    def get_val(row, matcher):
-        c_name = next((c for c in df_sites.columns if matcher.upper() in c.upper()), None)
-        return row[c_name] if c_name else ""
-    
-    aktbc_col = next((c for c in df_sites.columns if 'CHRG EXTRA TRANSPORT' in c.upper() or 'AKTBC' == c.upper()), None)
+    # Calculate dates and sites
+    num_sites = len(df_sites)
+    date_col = 'Completion Date ' if 'Completion Date ' in df_sites.columns else 'Completion Date'
+    date_range = "N/A"
+    if date_col in df_sites.columns:
+        dates = pd.to_datetime(df_sites[date_col], errors='coerce')
+        min_date = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+        max_date = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+        date_range = f"{min_date} TO {max_date}"
 
-    r_idx = 9
-    for i, (_, row) in enumerate(df_sites.iterrows()):
-        act_km = safe_float(row[aktbc_col]) if aktbc_col else 0.0
-        wo_km = safe_float(get_val(row, 'KM IN WO'))
-        
-        vals_1 = [
-            i + 1, get_val(row, 'ENBSITEID'), get_val(row, 'PMP ID'), get_val(row, 'GIS SECTOR'),
-            safe_float(get_val(row, 'NO OF SECTOR')), get_val(row, 'Tower type'), get_val(row, 'JC'),
-            get_val(row, 'WH'), get_val(row, 'VEHICLE NO'), get_val(row, 'MIN NO'),
-            get_val(row, 'MIN DATE'), get_val(row, 'Completion Date'), 
-            "RFS DONE" if pd.notna(get_val(row, 'Completion Date')) and str(get_val(row, 'Completion Date')) != "" else ""
-        ]
-        
-        vals_2 = [
-            act_km, safe_float(get_val(row, 'KM-50(for a6+b6-100)')), wo_km,
-            safe_float(get_val(row, 'A6 in wo')), safe_float(get_val(row, 'cpri in wo')),
-            safe_float(get_val(row, 'power in wo')), safe_float(get_val(row, 'puff sealant in wo')),
-            safe_float(get_val(row, 'termination in wo')), safe_float(get_val(row, 'EXTRA VISIT IN WO')),
-            safe_float(get_val(row, 'Polemount in wo')), act_km - wo_km, act_km if act_km <= wo_km else wo_km
-        ]
-        
-        all_vals = vals_1 + vals_2
-        
-        for c, val in enumerate(all_vals):
-            c_pos = 2 + c
-            if isinstance(val, pd.Timestamp):
-                ws.write_datetime(r_idx, c_pos, val, formats['date'])
-            elif isinstance(val, (int, float)):
-                ws.write_number(r_idx, c_pos, val, formats['number'])
-            else:
-                ws.write(r_idx, c_pos, str(val), formats['cell'])
-        r_idx += 1
+    # Draw the static form (Row 1 to 28, Col B to H)
+    f_title = wb.add_format({'bold': True, 'font_size': 16, 'align': 'center', 'valign': 'vcenter', 'border': 2})
+    f_bold = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1})
+    f_norm = wb.add_format({'align': 'left', 'valign': 'vcenter', 'border': 1})
+    f_center = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
 
-    if is_main:
-        r_sig = r_idx + 2
-        ws.write(r_sig, 3, "SIGN:", formats['bold_left'])
-        ws.write(r_sig+1, 3, "PROJECT-IN-CHARGE", formats['bold_left'])
-        ws.write(r_sig+2, 3, "MR. YUNUS KHAN", formats['bold_left'])
-        ws.write(r_sig+3, 3, "DATE:", formats['bold_left'])
-        
-        ws.write(r_sig, 12, "SIGN:", formats['bold_left'])
-        ws.write(r_sig+1, 12, "DEPLOYMENT HEAD", formats['bold_left'])
-        ws.write(r_sig+2, 12, "MR. MANISH NAHAR", formats['bold_left'])
-        ws.write(r_sig+3, 12, "DATE:", formats['bold_left'])
+    ws.merge_range('B2:H3', 'Work Completion Certificate', f_title)
+
+    # Row 4
+    ws.write('B5', 'State', f_bold)
+    ws.merge_range('C5:D5', 'RAJASTHAN', f_center)
+    ws.merge_range('E5:G5', 'Maintenance Point', f_bold)
+    ws.write('H5', 'Jaipur', f_center)
+
+    # Row 5 (Project Type)
+    ws.write('B7', 'Project Type', f_bold)
+    ws.write('C7', '93 K', f_center)
+    ws.write('D7', 'Infill', f_center)
+    ws.write('E7', 'Growth', f_center)
+    ws.merge_range('F7:G7', 'Other (Specify) _________________', f_bold)
+    ws.write('H7', 'Air Fiber Installation', f_center)
+
+    # Row 7 (Site Type)
+    ws.write('B9', 'Site Type', f_bold)
+    ws.write('C9', 'Own Built', f_center)
+    ws.write('D9', 'IP Colo', f_center)
+    ws.write('E9', 'RP1', f_center)
+    ws.write('F9', 'BSNL', f_center)
+    ws.write('G9', 'MAG1 NLD AG1', f_center)
+    ws.write('H9', 'ZXZ', f_center)
+
+    # Row 9 (Tower type)
+    ws.write('B11', 'Tower type', f_bold)
+    ws.write('C11', 'GBT', f_center)
+    ws.write('D11', 'RTT', f_center)
+    ws.write('E11', 'RTP', f_center)
+    ws.write('F11', 'GBM', f_center)
+    ws.write('G11', 'NBT Other(Specify) ____________', f_bold)
+    ws.write('H11', 'Air Fiber Installation', f_center)
+
+    # Row 11 & 12 (Cert text)
+    ws.merge_range('B13:H13', 'This is to certify that work has been completed as per specification given in workorder on the sites mentioned', f_center)
+    ws.merge_range('B14:H14', 'The required ITP / Checklists are available and verified in system', f_bold)
+
+    # Row 14
+    ws.write('B16', 'Site Name', f_bold)
+    ws.merge_range('C16:E16', 'As per Annexture', f_center)
+    ws.merge_range('F16:G16', 'SAP ID', f_bold)
+    ws.write('H16', 'As per Annexture', f_center)
+
+    # Row 16
+    ws.write('B18', 'W.O.Number', f_bold)
+    ws.merge_range('C18:E18', 'P14/630330726', f_center)
+    ws.merge_range('F18:G18', 'Vendor Name  M/S.', f_bold)
+    ws.write('H18', 'DIGITCOM INDIA TECHNOLOGIES', f_center)
+
+    # Row 18
+    ws.write('B20', 'No of Sites', f_bold)
+    ws.merge_range('C20:E20', f'{num_sites} SITES', f_center)
+    ws.merge_range('F20:G20', 'Completion Date', f_bold)
+    ws.write('H20', date_range, f_center)
+
+    # Row 20
+    ws.merge_range('B22:E22', 'Vendor Representative', f_bold)
+    ws.merge_range('F22:H22', 'RJIL Representative', f_bold)
+
+    # Row 22
+    ws.write('B24', 'Name', f_bold)
+    ws.merge_range('C24:E24', 'ANKUSH SRIVASTAVA', f_center)
+    ws.merge_range('F24:G24', 'Name', f_bold)
+    ws.write('H24', 'MR. Manish Nahar', f_center)
+
+    # Row 24
+    ws.write('B26', 'Sign', f_bold)
+    ws.merge_range('C26:E26', '', f_norm)
+    ws.merge_range('F26:G26', 'Sign', f_bold)
+    ws.write('H26', '', f_norm)
+
+    # Row 26
+    ws.write('B28', 'Date', f_bold)
+    ws.merge_range('C28:E28', '', f_norm)
+    ws.merge_range('F28:G28', 'Date', f_bold)
+    ws.write('H28', '', f_norm)
+
+    # Row 28
+    ws.merge_range('B30:H30', 'Remarks, if any:', f_bold)
+
+def write_wcc(wb, df_sites, dc_number, formats):
+    ws = wb.add_worksheet('WCC')
 
 def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, formats, include_amounts=True):
     ws = wb.add_worksheet(sheet_name)
@@ -335,8 +357,8 @@ def main():
                 'date': wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': 'dd-mmm-yy'})
             }
             
-            write_wcc_shared(wb, 'Main WCC', df_sites, dc_number, formats, is_main=True)
-            write_wcc_shared(wb, 'WCC', df_sites, dc_number, formats, is_main=False)
+            write_main_wcc(wb, df_sites, dc_number, formats)
+            write_wcc(wb, df_sites, dc_number, formats)
             write_matrix_sheet(wb, 'JMS', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True)
             write_matrix_sheet(wb, 'Abstract', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True)
             write_matrix_sheet(wb, 'BOQ', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True)

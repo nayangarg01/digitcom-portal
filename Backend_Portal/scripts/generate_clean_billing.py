@@ -61,43 +61,39 @@ TEMPLATE_ITEMS = [
   {"sap": "POLE MOUNT", "desc": "POLE MOUNT", "uom": "EA", "rate": 500}
 ]
 
-def write_main_wcc(wb, df_sites, dc_number, formats):
-    ws = wb.add_worksheet('Main WCC')
-    ws.set_column('A:Z', 15)
+def write_wcc_shared(wb, sheet_name, df_sites, dc_number, formats, is_main=False):
+    ws = wb.add_worksheet(sheet_name)
     
-    ws.merge_range('C4:G6', 'Work Completion Certificate', formats['title'])
-    ws.write('D10', 'DC Number:', formats['bold_right'])
-    ws.write('E10', dc_number, formats['bold_left'])
-    
-    num_sites = len(df_sites)
-    date_col = 'Completion Date ' if 'Completion Date ' in df_sites.columns else 'Completion Date'
-    date_range = "N/A"
-    if date_col in df_sites.columns:
-        dates = pd.to_datetime(df_sites[date_col], errors='coerce')
-        min_date = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
-        max_date = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
-        date_range = f"{min_date} TO {max_date}"
-
-    ws.write('D12', 'No of Sites:', formats['bold_right'])
-    ws.write('E12', f"{num_sites} SITES", formats['bold_left'])
-    
-    ws.write('D14', 'Date Range:', formats['bold_right'])
-    ws.write('E14', date_range, formats['bold_left'])
-
-def write_wcc(wb, df_sites, dc_number, formats):
-    ws = wb.add_worksheet('WCC')
-    headers = [
+    headers_1 = [
         'Sr. No', 'ENB SITE ID', 'PMP SAP ID', 'GIS SECTOR_ID', 'No of Sectors', 
         'Tower type', 'JC', 'WH', 'VEHICLE NO', 'MIN NO', 'MIN Date', 
-        'Completion Date', 'REMARKS', 'ACTUAL KM', 'KM-50', 'KM IN WO', 
-        'A6 in wo', 'cpri in wo', 'power in wo', 'puff sealant in wo', 
-        'termination in wo', 'EXTRA VISIT IN WO', 'Polemount in wo', 'GAP', 'USED KM IN WCC'
+        'Completion Date', 'REMARKS'
+    ]
+    headers_2 = [
+        'ACTUAL KM', 'KM-50', 'KM IN WO', 'A6 in wo', 'cpri in wo', 
+        'power in wo', 'puff sealant in wo', 'termination in wo', 
+        'EXTRA VISIT IN WO', 'Polemount in wo', 'GAP', 'USED KM IN WCC'
     ]
     
-    ws.merge_range(0, 0, 0, len(headers)-1, f"WCC - {dc_number}", formats['title'])
-    for col_num, header in enumerate(headers):
-        ws.write(1, col_num, header, formats['header'])
-        ws.set_column(col_num, col_num, 15)
+    # 1. Main Title
+    ws.merge_range('C3:O4', 'Work Completion Certificate', formats['title'])
+    
+    # 2. Certification Text
+    cert_text = "This is to certify that below sites pertaining to WO/WCO No.P14/630330726 Dated in 03-10-2025 respect of Digitcom India Technologies  has  been successfully completed in all respect."
+    ws.merge_range('C6:O6', cert_text, formats['cert_text'])
+    
+    # 3. Write Headers
+    r_head = 8
+    col_idx = 2  # Start at column C (index 2)
+    for h in headers_1:
+        ws.write(r_head, col_idx, h, formats['header_blue'])
+        ws.set_column(col_idx, col_idx, 12 if 'ID' in h or 'Date' in h or 'REMARKS' in h else 8)
+        col_idx += 1
+        
+    for h in headers_2:
+        ws.write(r_head, col_idx, h, formats['header_yellow'])
+        ws.set_column(col_idx, col_idx, 9)
+        col_idx += 1
 
     def get_val(row, matcher):
         c_name = next((c for c in df_sites.columns if matcher.upper() in c.upper()), None)
@@ -105,17 +101,20 @@ def write_wcc(wb, df_sites, dc_number, formats):
     
     aktbc_col = next((c for c in df_sites.columns if 'CHRG EXTRA TRANSPORT' in c.upper() or 'AKTBC' == c.upper()), None)
 
+    r_idx = 9
     for i, (_, row) in enumerate(df_sites.iterrows()):
-        r_idx = i + 2
         act_km = safe_float(row[aktbc_col]) if aktbc_col else 0.0
         wo_km = safe_float(get_val(row, 'KM IN WO'))
         
-        vals = [
+        vals_1 = [
             i + 1, get_val(row, 'ENBSITEID'), get_val(row, 'PMP ID'), get_val(row, 'GIS SECTOR'),
-            get_val(row, 'NO OF SECTOR'), get_val(row, 'Tower type'), get_val(row, 'JC'),
+            safe_float(get_val(row, 'NO OF SECTOR')), get_val(row, 'Tower type'), get_val(row, 'JC'),
             get_val(row, 'WH'), get_val(row, 'VEHICLE NO'), get_val(row, 'MIN NO'),
             get_val(row, 'MIN DATE'), get_val(row, 'Completion Date'), 
-            "RFS DONE" if pd.notna(get_val(row, 'Completion Date')) and str(get_val(row, 'Completion Date')) != "" else "",
+            "RFS DONE" if pd.notna(get_val(row, 'Completion Date')) and str(get_val(row, 'Completion Date')) != "" else ""
+        ]
+        
+        vals_2 = [
             act_km, safe_float(get_val(row, 'KM-50(for a6+b6-100)')), wo_km,
             safe_float(get_val(row, 'A6 in wo')), safe_float(get_val(row, 'cpri in wo')),
             safe_float(get_val(row, 'power in wo')), safe_float(get_val(row, 'puff sealant in wo')),
@@ -123,14 +122,29 @@ def write_wcc(wb, df_sites, dc_number, formats):
             safe_float(get_val(row, 'Polemount in wo')), act_km - wo_km, act_km if act_km <= wo_km else wo_km
         ]
         
-        for col_num, val in enumerate(vals):
-            # Special formatting for dates
+        all_vals = vals_1 + vals_2
+        
+        for c, val in enumerate(all_vals):
+            c_pos = 2 + c
             if isinstance(val, pd.Timestamp):
-                ws.write_datetime(r_idx, col_num, val, formats['date'])
+                ws.write_datetime(r_idx, c_pos, val, formats['date'])
             elif isinstance(val, (int, float)):
-                ws.write_number(r_idx, col_num, val, formats['number'])
+                ws.write_number(r_idx, c_pos, val, formats['number'])
             else:
-                ws.write(r_idx, col_num, str(val), formats['cell'])
+                ws.write(r_idx, c_pos, str(val), formats['cell'])
+        r_idx += 1
+
+    if is_main:
+        r_sig = r_idx + 2
+        ws.write(r_sig, 3, "SIGN:", formats['bold_left'])
+        ws.write(r_sig+1, 3, "PROJECT-IN-CHARGE", formats['bold_left'])
+        ws.write(r_sig+2, 3, "MR. YUNUS KHAN", formats['bold_left'])
+        ws.write(r_sig+3, 3, "DATE:", formats['bold_left'])
+        
+        ws.write(r_sig, 12, "SIGN:", formats['bold_left'])
+        ws.write(r_sig+1, 12, "DEPLOYMENT HEAD", formats['bold_left'])
+        ws.write(r_sig+2, 12, "MR. MANISH NAHAR", formats['bold_left'])
+        ws.write(r_sig+3, 12, "DATE:", formats['bold_left'])
 
 def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, formats, include_amounts=True):
     ws = wb.add_worksheet(sheet_name)
@@ -306,20 +320,23 @@ def main():
         
         with xlsxwriter.Workbook(output_path, {'nan_inf_to_errors': True}) as wb:
             formats = {
-                'title': wb.add_format({'bold': True, 'font_size': 16, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#2F5597', 'font_color': 'white', 'border': 1}),
-                'header': wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#D9E1F2', 'border': 1}),
-                'header_vertical': wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'rotation': 90, 'bg_color': '#D9E1F2', 'border': 1}),
-                'cell': wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1}),
-                'cell_left': wb.add_format({'align': 'left', 'valign': 'vcenter', 'border': 1}),
-                'number': wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '#,##0.00'}),
-                'number_bold': wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '#,##0.00', 'bg_color': '#F2F2F2'}),
-                'bold_right': wb.add_format({'bold': True, 'align': 'right', 'valign': 'vcenter'}),
-                'bold_left': wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter'}),
-                'date': wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': 'dd-mmm-yy'})
+                'title': wb.add_format({'bold': True, 'font_size': 12, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#DCE6F1', 'border': 1}),
+                'cert_text': wb.add_format({'bold': True, 'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'border': 1}),
+                'header': wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#DCE6F1', 'border': 1, 'text_wrap': True}),
+                'header_blue': wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#DCE6F1', 'border': 1, 'text_wrap': True}),
+                'header_yellow': wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#FFFF00', 'border': 1, 'text_wrap': True}),
+                'header_vertical': wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'rotation': 90, 'bg_color': '#DCE6F1', 'border': 1}),
+                'cell': wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1}),
+                'cell_left': wb.add_format({'font_size': 9, 'align': 'left', 'valign': 'vcenter', 'border': 1}),
+                'number': wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0'}),
+                'number_bold': wb.add_format({'font_size': 9, 'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0', 'bg_color': '#F2F2F2'}),
+                'bold_right': wb.add_format({'font_size': 9, 'bold': True, 'align': 'right', 'valign': 'vcenter'}),
+                'bold_left': wb.add_format({'font_size': 9, 'bold': True, 'align': 'left', 'valign': 'vcenter'}),
+                'date': wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': 'dd-mmm-yy'})
             }
             
-            write_main_wcc(wb, df_sites, dc_number, formats)
-            write_wcc(wb, df_sites, dc_number, formats)
+            write_wcc_shared(wb, 'Main WCC', df_sites, dc_number, formats, is_main=True)
+            write_wcc_shared(wb, 'WCC', df_sites, dc_number, formats, is_main=False)
             write_matrix_sheet(wb, 'JMS', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True)
             write_matrix_sheet(wb, 'Abstract', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True)
             write_matrix_sheet(wb, 'BOQ', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True)

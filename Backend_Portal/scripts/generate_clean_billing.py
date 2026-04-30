@@ -394,104 +394,375 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
         ws.write_formula(r_idx, tot_col + 2, f"=SUM({xlsxwriter.utility.xl_col_to_name(tot_col+2)}15:{xlsxwriter.utility.xl_col_to_name(tot_col+2)}{r_idx})", formats['number_bold'])
 
     r_sig = r_idx + 2
-    ws.write(r_sig, 1, "SIGN:", formats['bold_left'])
-    ws.write(r_sig+1, 1, "PROJECT-IN-CHARGE", formats['bold_left'])
-    ws.write(r_sig+2, 1, "MR. YUNUS KHAN", formats['bold_left'])
-    ws.write(r_sig+3, 1, "DATE:", formats['bold_left'])
+    left_col = 1
+    right_col = tot_col + 2 if include_amounts else tot_col
     
-    ws.write(r_sig, tot_col, "SIGN:", formats['bold_left'])
-    ws.write(r_sig+1, tot_col, "DEPLOYMENT HEAD", formats['bold_left'])
-    ws.write(r_sig+2, tot_col, "MR. MANISH NAHAR", formats['bold_left'])
-    ws.write(r_sig+3, tot_col, "DATE:", formats['bold_left'])
+    ws.write(r_sig, left_col, "SIGN:", formats['bold_left'])
+    ws.write(r_sig+1, left_col, "PROJECT-IN-CHARGE", formats['bold_left'])
+    ws.write(r_sig+2, left_col, "MR. YUNUS KHAN", formats['bold_left'])
+    ws.write(r_sig+3, left_col, "DATE:", formats['bold_left'])
+    
+    if sheet_name == 'BOQ':
+        mid_col = (left_col + right_col) // 2
+        ws.write(r_sig, mid_col, "SIGN:", formats['bold_left'])
+        ws.write(r_sig+1, mid_col, "DEPLOYMENT HEAD", formats['bold_left'])
+        ws.write(r_sig+2, mid_col, "MR. MANISH NAHAR", formats['bold_left'])
+        ws.write(r_sig+3, mid_col, "DATE:", formats['bold_left'])
+        
+        ws.write(r_sig, right_col, "SIGN:", formats['bold_left'])
+        ws.write(r_sig+1, right_col, "RJIO CTO", formats['bold_left'])
+        ws.write(r_sig+2, right_col, "MR.RAJEEV KUMAR GUPTA", formats['bold_left'])
+        ws.write(r_sig+3, right_col, "DATE:", formats['bold_left'])
+    else:
+        ws.write(r_sig, right_col, "SIGN:", formats['bold_left'])
+        ws.write(r_sig+1, right_col, "DEPLOYMENT HEAD", formats['bold_left'])
+        ws.write(r_sig+2, right_col, "MR. MANISH NAHAR", formats['bold_left'])
+        ws.write(r_sig+3, right_col, "DATE:", formats['bold_left'])
 
 def write_declaration(wb, df_sites, dc_number, formats):
     ws = wb.add_worksheet('Declaration')
-    ws.set_column('B:E', 25)
-    ws.write('B4', f"DECLARATION FOR {len(df_sites)} SITES", formats['title'])
-    ws.write('B6', f"DC NUMBER: {dc_number}", formats['bold_left'])
+    # Increased widths to prevent Apple Numbers from visually stretching the merged cells
+    ws.set_column('A:A', 35)
+    ws.set_column('B:C', 30)
+    ws.set_column('D:D', 40)
+    
+    f_title = wb.add_format({'bold': True, 'font_size': 14, 'align': 'center', 'valign': 'vcenter', 'border': 2})
+    f_bold = wb.add_format({'bold': True, 'font_size': 10, 'align': 'left', 'valign': 'vcenter', 'border': 1})
+    f_bold_center = wb.add_format({'bold': True, 'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_center = wb.add_format({'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_text = wb.add_format({'font_size': 10, 'align': 'left', 'valign': 'top', 'text_wrap': True, 'border': 1})
+    f_empty = wb.add_format({'border': 1})
+    
+    # Row 1
+    ws.merge_range('A1:D1', 'DECLARATION STATEMENT', f_title)
+    
+    # Row 2
+    ws.write('A2', 'Name of Contractor', f_bold)
+    ws.merge_range('B2:C2', 'DIGITCOM INDIA TECHNOLOGIES', f_bold_center)
+    ws.merge_range('D2:D6', '', f_empty) # Logo placeholder
+    
+    # Row 3 & 4
+    ws.merge_range('A3:A4', 'Authorised Signatory', f_bold)
+    ws.merge_range('B3:C4', '', f_empty)
+    
+    # Row 5
+    ws.write('A5', 'Vendor Code', f_bold)
+    ws.merge_range('B5:C5', '3267708', f_bold_center)
+    
+    # Row 6
+    ws.write('A6', 'Work Order No:', f_bold)
+    ws.merge_range('B6:C6', 'P14/630330726', f_bold_center)
+    
+    # Row 7
+    ws.write('A7', 'SAP ID/WBS :', f_bold)
+    ws.merge_range('B7:D7', 'As per Annexture', f_bold_center)
+    
+    # Row 8
+    ws.write('A8', 'Warehouse Location', f_bold)
+    ws.merge_range('B8:D8', 'JODHPUR', f_bold_center)
+    
+    # Row 9
+    ws.merge_range('A9:D9', 'Declaration', f_bold_center)
+    
+    # Get max date
+    date_col = 'Completion Date ' if 'Completion Date ' in df_sites.columns else 'Completion Date'
+    max_date_str = "30.03.2026"
+    if date_col in df_sites.columns:
+        dates = pd.to_datetime(df_sites[date_col], errors='coerce')
+        if not dates.isna().all():
+            max_date_str = dates.max().strftime('%d.%m.%Y')
+            
+    cert_text = f"We hereby certify that this Material Reconcilation Statement as on {max_date_str} attached herein is certified and justified by Bills submited by Contractor for given Work Done on given site as per Work Order Issued."
+    
+    # Row 10-12
+    ws.merge_range('A10:D12', cert_text, f_text)
+    ws.set_row(9, 30)
+    ws.set_row(10, 30)
+    ws.set_row(11, 30)
+    
+    # Row 13
+    ws.merge_range('A13:D13', f'{len(df_sites)} SITES(A6)', f_bold_center)
+    
+    # Row 14 (blank narrow with vertical split)
+    ws.write('A14', '', f_empty)
+    ws.merge_range('B14:D14', '', f_empty)
+    ws.set_row(13, 8)
+    
+    # Row 15 (Headers)
+    ws.write('A15', 'Warehouse Incharge', f_bold_center)
+    ws.write('B15', 'Circle Project Head', f_bold_center)
+    ws.write('C15', 'Contractor', f_bold_center)
+    ws.write('D15', 'Remark', f_bold_center)
+    
+    # Row 16-19 (Signatures row 1)
+    ws.merge_range('A16:A19', '', f_empty)
+    ws.merge_range('B16:B19', '', f_empty)
+    ws.merge_range('C16:C19', '', f_empty)
+    ws.merge_range('D16:D23', '', f_empty) # Remarks spans down
+    
+    # Row 20
+    ws.write('A20', 'Checked By Material Coordinator', f_bold)
+    ws.merge_range('B20:C20', 'Through FC&A', f_bold_center)
+    
+    # Row 21-23 (Signatures row 2)
+    ws.merge_range('A21:A23', '', f_empty)
+    ws.merge_range('B21:C23', '', f_empty)
+    
+    # Give signature rows height
+    ws.set_row(15, 20)
+    ws.set_row(16, 20)
+    ws.set_row(17, 20)
+    ws.set_row(18, 20)
+    ws.set_row(20, 20)
+    ws.set_row(21, 20)
+    ws.set_row(22, 20)
 
 def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path):
     ws_ann = wb.add_worksheet('Annexture')
     ws_rec = wb.add_worksheet('Reco')
     
     pmp_ids = df_sites['PMP ID'].astype(str).str.strip().tolist()
+    num_sites = len(pmp_ids)
+    tot_col = num_sites + 1
+    desc_col = tot_col + 1
     
-    try:
-        if mindump_path and os.path.exists(mindump_path):
-            df_dump = pd.read_excel(mindump_path)
-        else:
-            df_dump = pd.DataFrame()
-            
-        if not df_dump.empty:
-            df_dump['Site ID'] = df_dump['Site ID'].astype(str).str.strip()
-            df_all_snapshots = []
-            for pid in pmp_ids:
-                df_site = df_dump[df_dump['Site ID'] == pid]
-                if not df_site.empty:
-                    latest_date = df_site['Date'].max()
-                    df_all_snapshots.append(df_site[df_site['Date'] == latest_date])
-            
-            if df_all_snapshots:
-                df_filtered = pd.concat(df_all_snapshots)
-            else:
-                df_filtered = pd.DataFrame()
-        else:
-            df_filtered = pd.DataFrame()
-    except Exception as e:
-        print(f"MINDUMP Error: {e}")
-        df_filtered = pd.DataFrame()
-
-    if df_filtered.empty:
-        pivot = pd.DataFrame(columns=pmp_ids)
-    else:
-        pivot = df_filtered.pivot_table(index=['SAP Code', 'Material Description'], 
-                                       columns='Site ID', values='No. Of Qty', aggfunc='sum').fillna(0)
-                                       
-    # ANNEXURE
-    ws_ann.merge_range(0, 0, 0, len(pmp_ids) + 2, f"Annexture - {dc_number}", formats['title'])
-    ws_ann.write(2, 0, "SAP Code", formats['header'])
-    ws_ann.write(2, 1, "Material Description", formats['header'])
     ws_ann.set_column(0, 0, 15)
-    ws_ann.set_column(1, 1, 50)
+    for col in range(1, tot_col):
+        ws_ann.set_column(col, col, 5)
+    ws_ann.set_column(tot_col, tot_col, 10)
+    ws_ann.set_column(desc_col, desc_col, 40)
     
-    for i, pmp_id in enumerate(pmp_ids):
-        col = 2 + i
-        ws_ann.write(2, col, pmp_id, formats['header_vertical'])
-        ws_ann.set_column(col, col, 8)
-        
-    tot_col = 2 + len(pmp_ids)
-    ws_ann.write(2, tot_col, "GRAND TOTAL", formats['header'])
-    ws_ann.set_column(tot_col, tot_col, 15)
+    f_title = wb.add_format({'bold': True, 'font_size': 14, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_head = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'border': 1, 'bg_color': '#DCE6F1'})
+    f_head_vert = wb.add_format({'bold': True, 'font_size': 8, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'rotation': 90, 'border': 1, 'bg_color': '#DCE6F1'})
+    f_cell = wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_cell_bold = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_sum_row = wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#DCE6F1'})
+    f_sum_row_bold = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#DCE6F1'})
+    f_empty = wb.add_format({'border': 1})
     
-    r_idx = 3
-    reco_items = []
-    for (sap_code, mat_desc), row_vals in pivot.iterrows():
-        ws_ann.write(r_idx, 0, str(sap_code), formats['cell'])
-        ws_ann.write(r_idx, 1, str(mat_desc), formats['cell_left'])
+    ws_ann.merge_range(0, 0, 0, tot_col, 'Annexture', f_title)
+    ws_ann.write(0, desc_col, '', f_empty)
+    
+    ws_ann.set_row(1, 120)
+    ws_ann.write(1, 0, 'Row Labels', f_head)
+    for i, pid in enumerate(pmp_ids):
+        ws_ann.write(1, i + 1, pid, f_head_vert)
+    ws_ann.write(1, tot_col, 'Grand Total', f_head)
+    ws_ann.write(1, desc_col, '', f_empty)
+    
+    # Process mindump
+    try:
+        df_mindump = pd.read_excel(mindump_path)
         
-        for i, pmp_id in enumerate(pmp_ids):
-            col = 2 + i
-            q = float(row_vals.get(pmp_id, 0))
-            ws_ann.write(r_idx, col, q, formats['number'])
+        def match_site(row):
+            wbs = str(row.get('WBS ID', ''))
+            site_id = str(row.get('Site ID', ''))
+            for pid in pmp_ids:
+                if pid in wbs or pid in site_id:
+                    return pid
+            return None
             
-        ws_ann.write_formula(r_idx, tot_col, f"=SUM({xlsxwriter.utility.xl_col_to_name(2)}{r_idx+1}:{xlsxwriter.utility.xl_col_to_name(tot_col-1)}{r_idx+1})", formats['number_bold'])
-        reco_items.append({"sap": str(sap_code), "desc": str(mat_desc), "annexure_row": r_idx + 1})
+        df_mindump['Matched_PMP'] = df_mindump.apply(match_site, axis=1)
+        df_filtered = df_mindump[df_mindump['Matched_PMP'].notna()]
+        
+        if not df_filtered.empty:
+            pt = pd.pivot_table(df_filtered, values='No. Of Qty', index=['SAP Code', 'Material Description'], columns='Matched_PMP', aggfunc='sum', fill_value=0)
+            for pid in pmp_ids:
+                if pid not in pt.columns:
+                    pt[pid] = 0
+            pt = pt[pmp_ids]
+            pt = pt.sort_index()
+        else:
+            pt = pd.DataFrame(columns=pmp_ids)
+            
+    except Exception as e:
+        print(f"Warning: Could not process MINDUMP for Annexture: {e}")
+        pt = pd.DataFrame(columns=pmp_ids)
+        
+    r_idx = 2
+    col_sums = {pid: 0 for pid in pmp_ids}
+    grand_total_sum = 0
+    reco_items = []
+    
+    for (sap_code, desc), row in pt.iterrows():
+        ws_ann.write(r_idx, 0, str(sap_code), f_cell_bold)
+        row_total = 0
+        for i, pid in enumerate(pmp_ids):
+            val = safe_float(row[pid])
+            ws_ann.write(r_idx, i + 1, val, f_cell)
+            col_sums[pid] += val
+            row_total += val
+            
+        ws_ann.write(r_idx, tot_col, row_total, f_cell)
+        grand_total_sum += row_total
+        ws_ann.write(r_idx, desc_col, str(desc), f_cell_bold)
+        reco_items.append({"sap": str(sap_code), "desc": str(desc), "annexure_row": r_idx + 1})
         r_idx += 1
+        
+    # Bottom Grand Total Row
+    ws_ann.write(r_idx, 0, 'Grand Total', f_sum_row_bold)
+    for i, pid in enumerate(pmp_ids):
+        ws_ann.write(r_idx, i + 1, col_sums[pid], f_sum_row)
+    ws_ann.write(r_idx, tot_col, grand_total_sum, f_sum_row)
+    ws_ann.write(r_idx, desc_col, '', f_empty)
+    
+    # --- RECO SHEET ---
+    # Calculate dates
+    date_col = 'Completion Date ' if 'Completion Date ' in df_sites.columns else 'Completion Date'
+    min_date_str = "N/A"
+    max_date_str = "N/A"
+    if date_col in df_sites.columns:
+        dates = pd.to_datetime(df_sites[date_col], errors='coerce')
+        min_date_str = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+        max_date_str = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
 
-    # RECO
-    ws_rec.merge_range('A1:D2', f"Reconciliation Sheet - {dc_number}", formats['title'])
-    ws_rec.write(4, 0, "Material Description", formats['bold_left'])
-    ws_rec.write(5, 0, "SAP Code", formats['bold_left'])
-    ws_rec.write(6, 0, "Consumption as per Annexure", formats['bold_left'])
-    ws_rec.set_column(0, 0, 40)
+    num_items = len(reco_items)
+    last_col = 1 + num_items
+    
+    # Setup columns
+    ws_rec.set_column(0, 0, 5)   # Col A: Index
+    ws_rec.set_column(1, 1, 45)  # Col B: Description Label
+    for i in range(num_items):
+        ws_rec.set_column(2 + i, 2 + i, 12)
+        
+    f_reco_header_label = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1})
+    f_reco_header_val = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_r4g_box = wb.add_format({'bold': True, 'font_size': 16, 'align': 'center', 'valign': 'vcenter', 'border': 2})
+    f_reco_title = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1, 'bg_color': '#DCE6F1'})
+    
+    # Standard Table Formats
+    f_reco_item_head = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True, 'font_size': 9, 'bg_color': '#D9D9D9'})
+    f_reco_cell = wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0'})
+    f_reco_cell_bold = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0'})
+    f_reco_label = wb.add_format({'align': 'left', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+    f_reco_label_bold = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+    f_reco_index = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    
+    # Specific Color Formats
+    f_blue_head = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1, 'bg_color': '#BDD7EE', 'text_wrap': True})
+    f_blue_index = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#BDD7EE'})
+    
+    f_yellow_label = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1, 'bg_color': '#FFFF00', 'text_wrap': True})
+    f_yellow_cell = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#FFFF00', 'num_format': '0'})
+    f_yellow_index = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#FFFF00'})
+    
+    f_empty = wb.add_format({'border': 1})
+    
+    # Metadata Header Block (Rows 0-6)
+    meta_labels = [
+        ('Name of Contractor', 'DIGITCOM INDIA TECHNOLOGIES'),
+        ('WO No', 'P14/630330726'),
+        ('Site ID', 'As per attached Detail'),
+        ('WBS Code', 'As per attached Detail'),
+        ('Site Name', 'As per attached Detail'),
+        ('Warehouse Location', 'JODHPUR'),
+        ('Time Period', f'{min_date_str} TO {max_date_str}')
+    ]
+    
+    for r, (label, val) in enumerate(meta_labels):
+        ws_rec.write(r, 0, label, f_reco_header_label)
+        ws_rec.merge_range(r, 1, r, 5, val, f_reco_header_label)
+        
+    # R4G Project Box (Merged Rows 0-6, starting from Col 6 to last_col)
+    if last_col >= 6:
+        ws_rec.merge_range(0, 6, 6, last_col, 'R4G Project', f_r4g_box)
+    else:
+        ws_rec.write(0, last_col + 1, 'R4G Project', f_r4g_box)
+        
+    # Main Title Row (Row 8)
+    ws_rec.merge_range(8, 0, 8, last_col, 'Material Reconciliation Statement', f_reco_title)
+    
+    # Items Headers (Rows 10-11)
+    ws_rec.set_row(10, 60)
+    ws_rec.write(10, 1, 'Material Description', f_reco_item_head)
+    ws_rec.write(11, 1, 'Material Code', f_reco_item_head)
+    ws_rec.write(10, 0, '', f_reco_item_head)
+    ws_rec.write(11, 0, '', f_reco_item_head)
     
     for i, item in enumerate(reco_items):
-        col = 1 + i
-        cl = xlsxwriter.utility.xl_col_to_name(col)
-        ws_rec.write(4, col, item['desc'], formats['cell'])
-        ws_rec.write(5, col, item['sap'], formats['cell'])
-        ws_rec.write_formula(6, col, f"=Annexture!{xlsxwriter.utility.xl_col_to_name(tot_col)}{item['annexure_row']}", formats['number'])
-        ws_rec.set_column(col, col, 15)
+        col = 2 + i
+        # Keep numeric item headers standard (White) instead of Gray/Blue
+        ws_rec.write(10, col, item['desc'], f_reco_cell_bold)
+        ws_rec.write(11, col, item['sap'], f_reco_cell_bold)
+        
+    # Section A
+    ws_rec.write(12, 0, 'A.', f_blue_index)
+    ws_rec.write(12, 1, 'Receipt details as confirmed by Contractor:', f_blue_head)
+    for i in range(num_items): ws_rec.write(12, 2 + i, '', f_empty)
+    
+    ws_rec.write(14, 0, '1', f_reco_index)
+    ws_rec.write(14, 1, 'Received directly from Warehouse', f_yellow_label)
+    for i, item in enumerate(reco_items):
+        col = 2 + i
+        annex_col_str = xlsxwriter.utility.xl_col_to_name(tot_col)
+        ws_rec.write_formula(14, col, f"=Annexture!{annex_col_str}{item['annexure_row']}", f_reco_cell)
+        
+    ws_rec.write(16, 0, '2', f_reco_index)
+    ws_rec.write(16, 1, 'Material received from other contractors', f_reco_label)
+    for i in range(num_items): ws_rec.write(16, 2 + i, 0, f_reco_cell)
+        
+    ws_rec.write(18, 0, '', f_reco_index)
+    ws_rec.write(18, 1, 'Total (1+2)', f_yellow_label)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        ws_rec.write_formula(18, 2 + i, f"={col_str}15+{col_str}17", f_reco_cell_bold)
+        
+    # Section B
+    ws_rec.write(20, 0, 'B.', f_blue_index)
+    ws_rec.write(20, 1, 'Material Transferred to other contractors / returned to Warehouse', f_blue_head)
+    for i in range(num_items): ws_rec.write(20, 2 + i, '', f_empty)
+    
+    ws_rec.write(21, 0, '1', f_reco_index)
+    ws_rec.write(21, 1, 'Material Transferred to other contractors', f_reco_label)
+    for i in range(num_items): ws_rec.write(21, 2 + i, 0, f_reco_cell)
+        
+    ws_rec.write(22, 0, '2', f_reco_index)
+    ws_rec.write(22, 1, 'Material Returned to Warehouse (in line with MRN Guidelines)', f_reco_label)
+    for i in range(num_items): ws_rec.write(22, 2 + i, 0, f_reco_cell)
+        
+    ws_rec.write(23, 0, '', f_reco_index)
+    ws_rec.write(23, 1, 'Total', f_reco_label_bold)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        ws_rec.write_formula(23, 2 + i, f"={col_str}22+{col_str}23", f_reco_cell_bold)
+        
+    # Section C
+    ws_rec.write(25, 0, 'C', f_yellow_index)
+    ws_rec.write(25, 1, 'Balance ( A  -  B )', f_yellow_label)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        ws_rec.write_formula(25, 2 + i, f"={col_str}19-{col_str}24", f_reco_cell_bold)
+        
+    # Section D
+    ws_rec.write(27, 0, 'D', f_reco_index)
+    ws_rec.write(27, 1, 'CONSUMPTION', f_reco_label_bold)
+    for i in range(num_items): ws_rec.write(27, 2 + i, '', f_empty)
+    
+    ws_rec.write(28, 0, '1', f_reco_index)
+    ws_rec.write(28, 1, 'Material Consumed', f_yellow_label)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        annex_col_str = xlsxwriter.utility.xl_col_to_name(tot_col)
+        ws_rec.write_formula(28, 2 + i, f"=Annexture!{annex_col_str}{reco_items[i]['annexure_row']}", f_reco_cell)
+        
+    ws_rec.write(29, 0, '2', f_reco_index)
+    ws_rec.write(29, 1, 'Wastage (max as per WO norms)', f_reco_label)
+    for i in range(num_items): ws_rec.write(29, 2 + i, 0, f_reco_cell)
+        
+    ws_rec.write(31, 0, '', f_reco_index)
+    ws_rec.write(31, 1, 'Total -Actual consumption (1+2)', f_yellow_label)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        ws_rec.write_formula(31, 2 + i, f"={col_str}29+{col_str}30", f_reco_cell_bold)
+        
+    # Section E
+    ws_rec.set_row(33, 40)
+    ws_rec.write(33, 0, 'E.', f_yellow_index)
+    ws_rec.write(33, 1, 'Excess consumption for which cost to be recovered from the Contractor (C-D)', f_yellow_label)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        ws_rec.write_formula(33, 2 + i, f"={col_str}26-{col_str}32", f_reco_cell_bold)
 
 def main():
     parser = argparse.ArgumentParser()

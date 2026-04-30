@@ -95,7 +95,7 @@ export const extractWorkOrder = async (req: Request, res: Response) => {
  * Endpoint to poll for job status
  */
 export const getJobStatus = (req: Request, res: Response) => {
-    const { jobId } = req.params;
+    const jobId = req.params.jobId as string;
     const job = jobs.get(jobId);
 
     if (!job) {
@@ -106,7 +106,7 @@ export const getJobStatus = (req: Request, res: Response) => {
 };
 
 export const downloadWorkOrderFile = (req: Request, res: Response) => {
-    const fileName = req.params.fileName;
+    const fileName = req.params.fileName as string;
     const filePath = path.join(__dirname, '../../uploads/wo_outputs', fileName);
     
     if (fs.existsSync(filePath)) {

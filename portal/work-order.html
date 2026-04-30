@@ -161,7 +161,7 @@
 
             // UI state
             extractBtn.disabled = true;
-            btnText.textContent = 'Processing PDF...';
+            btnText.textContent = 'Uploading PDF...';
             loader.style.display = 'block';
             statusMsg.style.display = 'none';
 
@@ -169,6 +169,7 @@
             formData.append('woFile', woInput.files[0]);
 
             try {
+                // 1. Initial Request to start background job
                 const response = await fetch(`${API_URL}/work-order/extract`, {
                     method: 'POST',
                     headers: {
@@ -179,55 +180,106 @@
 
                 const data = await response.json();
 
-                if (response.ok && data.success) {
-                    statusMsg.className = 'status-success';
-                    statusMsg.innerHTML = `
-                        <strong>Success!</strong> ${data.message}<br>
-                        <button id="downloadBtn" class="btn-extract" style="background:#28a745; margin-top:15px; padding: 10px 20px; font-size: 15px;">
-                            Download Excel Report
-                        </button>
-                    `;
-                    statusMsg.style.display = 'block';
-
-                    const fullDownloadUrl = `${API_URL}${data.downloadUrl}`;
-                    
-                    const downloadFile = async (url, filename) => {
-                        try {
-                            const resp = await fetch(url, {
-                                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                            });
-                            const blob = await resp.blob();
-                            const blobUrl = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = blobUrl;
-                            a.download = filename;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            window.URL.revokeObjectURL(blobUrl);
-                        } catch (err) {
-                            alert('Download failed. Please try again.');
-                        }
-                    };
-
-                    document.getElementById('downloadBtn').onclick = () => downloadFile(fullDownloadUrl, data.filename);
-                    
-                    // Trigger download automatically
-                    downloadFile(fullDownloadUrl, data.filename);
-
-                } else {
-                    statusMsg.className = 'status-error';
-                    statusMsg.textContent = data.error || 'Failed to extract data. Please ensure the PDF is a valid Work Order.';
-                    statusMsg.style.display = 'block';
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to start extraction.');
                 }
+
+                const jobId = data.jobId;
+                btnText.textContent = 'Processing PDF (this may take a few minutes)...';
+                
+                // 2. Start Polling
+                pollJobStatus(jobId);
+
             } catch (err) {
                 statusMsg.className = 'status-error';
-                statusMsg.textContent = 'Network error or server timeout. Large PDFs may take longer to process.';
+                statusMsg.textContent = err.message || 'Network error or server timeout.';
                 statusMsg.style.display = 'block';
-            } finally {
-                extractBtn.disabled = false;
-                btnText.textContent = 'Extract & Generate Report';
-                loader.style.display = 'none';
+                resetUI();
+            }
+        }
+
+        async function pollJobStatus(jobId) {
+            const statusMsg = document.getElementById('status-message');
+            const btnText = document.querySelector('#extractBtn .btn-text');
+
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_URL}/work-order/status/${jobId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
+                    const job = await response.json();
+
+                    if (job.status === 'completed') {
+                        clearInterval(interval);
+                        showSuccess(job);
+                        resetUI();
+                    } else if (job.status === 'failed') {
+                        clearInterval(interval);
+                        showError(job.error || 'Extraction failed.');
+                        resetUI();
+                    } else {
+                        // Still processing
+                        btnText.textContent = 'Still processing... Please wait.';
+                    }
+                } catch (err) {
+                    console.error('Polling error:', err);
+                }
+            }, 3000); // Poll every 3 seconds
+        }
+
+        function showSuccess(data) {
+            const statusMsg = document.getElementById('status-message');
+            statusMsg.className = 'status-success';
+            statusMsg.innerHTML = `
+                <strong>Success!</strong> Work Order extracted successfully.<br>
+                <button id="downloadBtn" class="btn-extract" style="background:#28a745; margin-top:15px; padding: 10px 20px; font-size: 15px;">
+                    Download Excel Report
+                </button>
+            `;
+            statusMsg.style.display = 'block';
+
+            const fullDownloadUrl = `${API_URL}${data.downloadUrl}`;
+            document.getElementById('downloadBtn').onclick = () => downloadFile(fullDownloadUrl, data.filename);
+            
+            // Automatic download
+            downloadFile(fullDownloadUrl, data.filename);
+        }
+
+        function showError(msg) {
+            const statusMsg = document.getElementById('status-message');
+            statusMsg.className = 'status-error';
+            statusMsg.textContent = msg;
+            statusMsg.style.display = 'block';
+        }
+
+        function resetUI() {
+            const extractBtn = document.getElementById('extractBtn');
+            const btnText = extractBtn.querySelector('.btn-text');
+            const loader = document.getElementById('loader');
+            
+            extractBtn.disabled = false;
+            btnText.textContent = 'Extract & Generate Report';
+            loader.style.display = 'none';
+        }
+
+        async function downloadFile(url, filename) {
+            try {
+                const resp = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const blob = await resp.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (err) {
+                alert('Download failed. Please try again.');
             }
         }
     </script>

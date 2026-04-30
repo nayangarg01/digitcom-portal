@@ -2,9 +2,22 @@ import { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
+import { v4 as uuidv4 } from 'uuid';
+
+// In-memory job store
+interface JobStatus {
+    id: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    error?: string;
+    downloadUrl?: string;
+    filename?: string;
+}
+
+const jobs = new Map<string, JobStatus>();
 
 /**
- * Controller for handling Work Order Extraction from PDF.
+ * Controller for initiating Work Order Extraction.
+ * Returns a jobId immediately.
  */
 export const extractWorkOrder = async (req: Request, res: Response) => {
     try {
@@ -14,39 +27,26 @@ export const extractWorkOrder = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'No Work Order PDF file uploaded' });
         }
 
-        // Ensure temporary work order outputs directory exists
+        const jobId = uuidv4();
         const outputDir = path.join(__dirname, '../../uploads/wo_outputs');
         if (!fs.existsSync(outputDir)) {
             fs.mkdirSync(outputDir, { recursive: true });
         }
 
-        // Absolute path resolution
         const backendRoot = path.resolve(__dirname, '../..');
         const scriptPath = path.join(backendRoot, 'scripts/parse_work_order.py');
         const outputFileName = `WorkOrder_Extract_${Date.now()}.xlsx`;
         const outputPath = path.join(outputDir, outputFileName);
-        
         const absolutePdfPath = path.resolve(backendRoot, files['woFile'][0].path);
-        
-        // Construct arguments for Python
-        const pythonArgs = [
-            scriptPath,
-            absolutePdfPath,
-            '--output', outputPath
-        ];
 
-        console.log(`WorkOrder: Starting Extraction for ${files['woFile'][0].originalname}`);
+        // Initialize Job
+        jobs.set(jobId, { id: jobId, status: 'processing' });
 
-        // Spawn Python process
-        // Note: Using 'python3' as per the user's environment
+        // Start background process
+        const pythonArgs = [scriptPath, absolutePdfPath, '--output', outputPath];
         const pythonProcess = spawn('python3', pythonArgs);
 
-        let pythonOutput = '';
         let pythonError = '';
-
-        pythonProcess.stdout.on('data', (data: any) => {
-            pythonOutput += data.toString();
-        });
 
         pythonProcess.stderr.on('data', (data: any) => {
             pythonError += data.toString();
@@ -57,43 +57,56 @@ export const extractWorkOrder = async (req: Request, res: Response) => {
             try {
                 if (fs.existsSync(absolutePdfPath)) fs.unlinkSync(absolutePdfPath);
             } catch (err) {
-                console.warn('WorkOrder: Temp file cleanup failed', err);
+                console.warn(`Job ${jobId}: Temp file cleanup failed`, err);
             }
+
+            const job = jobs.get(jobId);
+            if (!job) return;
 
             if (code !== 0) {
-                console.error('WorkOrder Python Error:', pythonError);
-                return res.status(500).json({ 
-                    error: 'Work Order extraction engine failed.',
-                    details: pythonError
-                });
+                console.error(`Job ${jobId} failed:`, pythonError);
+                job.status = 'failed';
+                job.error = pythonError;
+            } else if (!fs.existsSync(outputPath)) {
+                job.status = 'failed';
+                job.error = 'Output file not generated.';
+            } else {
+                job.status = 'completed';
+                job.downloadUrl = `/work-order/download/${outputFileName}`;
+                job.filename = outputFileName;
             }
+            jobs.set(jobId, job);
+        });
 
-            if (!fs.existsSync(outputPath)) {
-                console.error('WorkOrder Output Error: File not generated at', outputPath);
-                return res.status(500).json({ error: 'Failed to generate output file' });
-            }
-
-            console.log(`WorkOrder: Successfully generated Excel for ${files['woFile'][0].originalname}`);
-            
-            res.json({
-                success: true,
-                message: `Work Order extracted successfully.`,
-                downloadUrl: `/work-order/download/${outputFileName}`,
-                filename: outputFileName
-            });
+        // Return jobId immediately
+        res.json({
+            success: true,
+            jobId: jobId,
+            message: 'Extraction started in the background.'
         });
 
     } catch (error: any) {
-        console.error('WorkOrder Extraction Route Error:', error);
+        console.error('WorkOrder Extraction Error:', error);
         res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 };
 
+/**
+ * Endpoint to poll for job status
+ */
+export const getJobStatus = (req: Request, res: Response) => {
+    const { jobId } = req.params;
+    const job = jobs.get(jobId);
+
+    if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+    }
+
+    res.json(job);
+};
+
 export const downloadWorkOrderFile = (req: Request, res: Response) => {
     const fileName = req.params.fileName;
-    if (typeof fileName !== 'string') {
-        return res.status(400).json({ error: 'Invalid file name' });
-    }
     const filePath = path.join(__dirname, '../../uploads/wo_outputs', fileName);
     
     if (fs.existsSync(filePath)) {

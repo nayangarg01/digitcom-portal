@@ -1,0 +1,34 @@
+,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
+0,Name of Contractor,,DIGITCOM INDIA TECHNOLOGIES,,,,,,,,R4G Project,,,,
+1,WO No,,P14/630330726,,,,,,,,,,,,
+2,Site ID,,As per attached Detail,,,,,,,,,,,,
+3,WBS Code,,As per attached Detail,,,,,,,,,,,,
+4,Site Name,,As per attached Detail,,,,,,,,,,,,
+5,Warehouse Location,,JODHPUR,,,,,,,,,,,,
+6,Time Period,,30-JAN-26 TO 04-FEB-26,,,,,,,,,,,,
+7,Material Reconciliation Statement,,,,,,,,,,,,,,
+8,,,,,,,,,,,,,,,
+9,,Material Description,A6 FIXED WIRELESS WI-FI ACCESS POINT, Fiber Patchcord MM 5M,CPRI CABLE 50 MTR - (MULTIMODE),EARTHING CLAMP,SFP MULTIMODE 1G 10 KM,SFP MULTIMODE 1G 10 KM,SFP MULTIMODE 1G 10 KM,SFP MULTIMODE 10G ,MOUNTING BRACKET,MOUNTING BRACKET,INSTALLATION IRM KIT,INSTALLATION IRM KIT,POWR CABLE 50 MTR
+10,,Material Code,2002495907,2002503216,2002334231,2002269100,2002668786,2001649259,9500172828,2002668758,2002677184,2002669131,2002456956,2002475640,2002462695
+11,A.,Receipt details as confirmed by Contractor:,,,,,,,,,,,,,
+12,,,,,,,,,,,,,,,
+13,1,Received directly from Warehouse,26,18,8,1,8,2,2,40,25,1,2,24,26
+14,,,,,,,,,,,,,,,
+15,2,Material received from other contractors,0,0,0,0,0,0,0,0,0,0,0,0,0
+16,,,,,,,,,,,,,,,
+17,,Total   (1+2),26,18,8,1,8,2,2,40,25,1,2,24,26
+18,,,,,,,,,,,,,,,
+19,B.,Material Transferred to other contractors / returned to Warehouse,0,0,0,0,0,0,0,0,0,0,0,0,0
+20,1,Material Transferred to other contractors,0,0,0,0,0,0,0,0,0,0,0,0,0
+21,2,Material Returned to Warehouse (in line with MRN Guidelines),0,0,0,0,0,0,0,0,0,0,0,0,0
+22,,Total,0,0,0,0,0,0,0,0,0,0,0,0,0
+23,,,,,,,,,,,,,,,
+24,C,Balance ( A  -  B ),26,18,8,1,8,2,2,40,25,1,2,24,26
+25,,,,,,,,,,,,,,,
+26,D,CONSUMPTION,,,,,,,,,,,,,
+27,1,Material Consumed,26,18,8,5,8,2,2,40,25,1,2,24,26
+28,2,Wastage (max as per WO norms),0,0,0,0,0,0,0,0,0,0,0,0,0
+29,,,,,,,,,,,,,,,
+30,,Total -Actual consumption (1+2),26,18,8,5,8,2,2,40,25,1,2,24,26
+31,,,,,,,,,,,,,,,
+32,E.,Excess consumption for which cost to be recovered from the Contractor (C-D) ,0,0,0,0,0,0,0,0,0,0,0,0,0

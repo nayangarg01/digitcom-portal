@@ -51,8 +51,17 @@ def parse_work_order(pdf_path, output_excel):
     
     try:
         with pdfplumber.open(pdf_path) as pdf:
-            for i, page in enumerate(pdf.pages):
+            total_pages = len(pdf.pages)
+            print(f"Total Pages to process: {total_pages}")
+            
+            for i in range(total_pages):
+                page = pdf.pages[i]
                 text = page.extract_text()
+                
+                # Progress logging
+                if (i + 1) % 10 == 0 or (i + 1) == total_pages:
+                    print(f"Processing Page {i + 1}/{total_pages}...")
+
                 if not text:
                     continue
                 
@@ -147,6 +156,9 @@ def parse_work_order(pdf_path, output_excel):
                             current_line_item["Total Amount"] = float(item_val_match.group(2).replace(',', ''))
                             records.append(current_line_item)
                             current_line_item = None
+                
+                # Memory optimization: flush page after processing
+                page.flush_cache()
                             
     except Exception as e:
         print(f"Error reading PDF: {e}")

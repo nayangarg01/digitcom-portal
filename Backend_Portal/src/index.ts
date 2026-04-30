@@ -7,6 +7,7 @@ import authRoutes from './routes/authRoutes';
 import routePlanningRoutes from './routes/routePlanningRoutes';
 import contactRoutes from './routes/contactRoutes';
 import billingRoutes from './routes/billingRoutes';
+import workOrderRoutes from './routes/workOrderRoutes';
 import path from 'path';
 import { seedAdmin } from './utils/seed';
 
@@ -21,6 +22,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/route-planning', routePlanningRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/work-order', workOrderRoutes);
 app.use('/api/contact', contactRoutes);
 
 // Basic health check route

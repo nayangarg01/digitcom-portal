@@ -8,7 +8,7 @@ import { spawn } from 'child_process';
  */
 export const generatePerformaInvoice = async (req: Request, res: Response) => {
     try {
-        const { ivNumber } = req.body;
+        const { ivNumber, activity } = req.body;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
         if (!files || !files['dcFiles'] || files['dcFiles'].length === 0) {
@@ -43,6 +43,7 @@ export const generatePerformaInvoice = async (req: Request, res: Response) => {
             '--files', ...dcFilePaths,
             '--mindump', absoluteMindumpPath,
             '--iv_number', ivNumber,
+            '--activity', activity || 'A6',
             '--output', outputPath
         ];
 

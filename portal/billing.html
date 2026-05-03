@@ -125,6 +125,20 @@
                     <input type="text" id="billingTarget" class="form-control" placeholder="e.g. DC0115">
                 </div>
 
+                <div class="form-group" style="margin-top: 25px;">
+                    <label>Activity Type</label>
+                    <div style="display: flex; gap: 30px; margin-top: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="activityType" value="A6" checked style="width: 18px; height: 18px;">
+                            <span style="color: #fff; font-size: 15px;">A6 Billing</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="activityType" value="A6_B6" style="width: 18px; height: 18px;">
+                            <span style="color: #fff; font-size: 15px;">A6+B6 Billing</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div style="display: flex; gap: 15px; align-items: center; margin-top: 30px;">
                     <button class="btn-generate" onclick="handleGenerate()">
                         Generate Full Billing File
@@ -163,12 +177,15 @@
             loader.style.display = 'block';
             statusMsg.style.display = 'none';
 
+            const activity = document.querySelector('input[name="activityType"]:checked').value;
+
             const formData = new FormData();
             formData.append('masterFile', masterInput.files[0]);
             if (mindumpInput.files[0]) {
                 formData.append('mindumpFile', mindumpInput.files[0]);
             }
             formData.append('billingTarget', targetInput.value.trim());
+            formData.append('activity', activity);
 
             try {
                 // Pointing to the new unified endpoint /generate-file

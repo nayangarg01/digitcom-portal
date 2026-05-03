@@ -19,16 +19,29 @@ def format_date(val):
         dt = pd.to_datetime(val)
         return dt.strftime('%d-%b-%y')
     except:
-        return str(val)
+        return val
 
-def load_master_data(master_path, dc_number):
+def get_warehouse_name(code):
+    code = str(code).strip().upper()
+    mapping = {
+        'JLKD': 'JAIPUR',
+        'JLJH': 'JODHPUR',
+        'JLJQ': 'SAFEDABAD'
+    }
+    return mapping.get(code, code if code else 'JODHPUR')
+
+def load_master_data(master_path, dc_number, activity='A6'):
     try:
-        df_full = pd.read_excel(master_path, header=None)
+        sheet_name = 'A6+B6 Billings' if activity == 'A6_B6' else 0
+        df_full = pd.read_excel(master_path, sheet_name=sheet_name, header=None)
         if df_full.empty: return None, None
             
         dc_col_idx = 0
-        raw_row1 = df_full.iloc[1].tolist() if len(df_full) > 1 else []
-        for i, h in enumerate(raw_row1):
+        # For A6+B6, headers are usually in row 0, but for safety we check row 1 as well
+        header_row = 1 if activity == 'A6' else 0
+        raw_headers_list = df_full.iloc[header_row].tolist() if len(df_full) > header_row else []
+        
+        for i, h in enumerate(raw_headers_list):
             h_str = str(h).upper().strip()
             if "BILLING FILE" in h_str or "DC NUMBER" in h_str:
                 dc_col_idx = i
@@ -37,10 +50,11 @@ def load_master_data(master_path, dc_number):
         df_sites = df_full[df_full.iloc[:, dc_col_idx].astype(str).str.strip().str.upper() == dc_number.upper()].copy()
         if df_sites.empty: return None, None
             
-        raw_headers = df_full.iloc[1].tolist()
+        raw_headers = df_full.iloc[header_row].tolist()
         df_sites.columns = [str(h).strip() for h in raw_headers]
         
         code_to_col_idx = {}
+        # Matrix mapping (only relevant for A6 for now, or if A6+B6 uses same item codes)
         row0 = df_full.iloc[0].tolist()
         row1 = df_full.iloc[1].tolist()
         for i in range(len(row0)):
@@ -70,6 +84,13 @@ TEMPLATE_ITEMS = [
   {"sap": "3268025", "desc": "INSTALLATION OF POLE MOUNT ON TOWER", "uom": "EA", "rate": 500}
 ]
 
+TEMPLATE_ITEMS_A6_B6 = [
+  {"sap": "3398758", "desc": "ITC A6 & B6 - ONE-SECTOR SITE", "uom": "EA", "rate": 13015},
+  {"sap": "3398834", "desc": "ITC A6 & B6 - TWO-SECTOR SITE", "uom": "EA", "rate": 14915},
+  {"sap": "3398764", "desc": "ITC A6 & B6 - THREE-SECTOR SITE", "uom": "EA", "rate": 16815},
+  {"sap": "3339581", "desc": "CHRG TRANSPORTATION-BEYOND 100 KM-SCV", "uom": "KM", "rate": 20}
+]
+
 def write_main_wcc(wb, df_sites, dc_number, formats):
     ws = wb.add_worksheet('Main WCC')
     ws.set_column('A:A', 5)
@@ -79,9 +100,14 @@ def write_main_wcc(wb, df_sites, dc_number, formats):
 
     # Calculate dates and sites
     num_sites = len(df_sites)
-    date_col = 'Completion Date ' if 'Completion Date ' in df_sites.columns else 'Completion Date'
+    date_col = None
+    for c in ['Completion Date ', 'Completion Date', 'RFS DATE']:
+        if c in df_sites.columns:
+            date_col = c
+            break
+            
     date_range = "N/A"
-    if date_col in df_sites.columns:
+    if date_col:
         dates = pd.to_datetime(df_sites[date_col], errors='coerce')
         min_date = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
         max_date = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
@@ -178,24 +204,34 @@ def write_main_wcc(wb, df_sites, dc_number, formats):
     ws.write('B32', 'Note :', f_bold)
     ws.merge_range('C32:H32', 'In case of Multiple sites, please attach applicable site details with this certificate', f_norm)
 
-def write_wcc(wb, df_sites, dc_number, formats):
+def write_wcc(wb, df_sites, dc_number, formats, activity='A6'):
     ws = wb.add_worksheet('WCC')
     
-    headers_1 = [
-        'Sr. No', 'ENB SITE ID', 'PMP SAP ID', 'GIS SECTOR_ID', 'No of Sectors', 
-        'Tower type', 'JC', 'WH', 'VEHICLE NO', 'MIN NO', 'MIN Date', 
-        'Completion Date', 'REMARKS'
-    ]
-    headers_2 = [
-        'ACTUAL KM', 'KM IN WO', 'GAP', 'USED KM IN WCC'
-    ]
+    if activity == 'A6_B6':
+        headers_1 = [
+            'Sr. No', 'FT ENB SAP ID', 'FT PMP SAP ID', 'FT GIS SECTOR_ID', 'FB-FT HOP ID', 'No of Sectors', 
+            'Tower type ', 'JC', 'WH', 'VEHICLE NO', 'MIN  NO', 'MIN Date', 
+            'Completion Date ', 'REMARKS'
+        ]
+        headers_2 = [
+            'ACTUAL KM', 'KM IN WO', 'GAP', 'USED KM IN WCC'
+        ]
+    else:
+        headers_1 = [
+            'Sr. No', 'ENB SITE ID', 'PMP SAP ID', 'GIS SECTOR_ID', 'No of Sectors', 
+            'Tower type', 'JC', 'WH', 'VEHICLE NO', 'MIN NO', 'MIN Date', 
+            'Completion Date', 'REMARKS'
+        ]
+        headers_2 = [
+            'ACTUAL KM', 'KM IN WO', 'GAP', 'USED KM IN WCC'
+        ]
     
     # 1. Main Title
-    ws.merge_range('C3:O4', 'Work Completion Certificate', formats['title'])
+    ws.merge_range('C3:P4' if activity == 'A6_B6' else 'C3:O4', 'Work Completion Certificate', formats['title'])
     
     # 2. Certification Text
     cert_text = "This is to certify that below sites pertaining to WO/WCO No.P14/630330726 Dated in 03-10-2025 respect of Digitcom India Technologies  has  been successfully completed in all respect."
-    ws.merge_range('C6:O6', cert_text, formats['cert_text'])
+    ws.merge_range('C6:P6' if activity == 'A6_B6' else 'C6:O6', cert_text, formats['cert_text'])
     
     # 3. Write Headers
     r_head = 8
@@ -204,13 +240,16 @@ def write_wcc(wb, df_sites, dc_number, formats):
         ws.write(r_head, col_idx, h, formats['header_blue'])
         if 'ID' in h or 'SECTOR' in h:
             ws.set_column(col_idx, col_idx, 22)
+        elif 'HOP' in h:
+            ws.set_column(col_idx, col_idx, 40)
         elif 'Date' in h or 'REMARKS' in h or 'VEHICLE' in h:
             ws.set_column(col_idx, col_idx, 15)
         else:
             ws.set_column(col_idx, col_idx, 10)
         col_idx += 1
         
-    col_idx = 16  # Start yellow table at column Q (index 16)
+    col_idx = 2 + len(headers_1) + 2 # Add some padding columns (Column Q or R)
+    start_yellow_col = col_idx
     for h in headers_2:
         ws.write(r_head, col_idx, h, formats['header_yellow'])
         ws.set_column(col_idx, col_idx, 12)
@@ -220,7 +259,10 @@ def write_wcc(wb, df_sites, dc_number, formats):
         c_name = next((c for c in df_sites.columns if matcher.upper() in c.upper()), None)
         return row[c_name] if c_name else ""
     
-    aktbc_col = next((c for c in df_sites.columns if 'CHRG EXTRA TRANSPORT' in c.upper() or 'AKTBC' == c.upper()), None)
+    if activity == 'A6_B6':
+        aktbc_col = next((c for c in df_sites.columns if 'AKTBC(FT)' in c.upper()), None)
+    else:
+        aktbc_col = next((c for c in df_sites.columns if 'CHRG EXTRA TRANSPORT' in c.upper() or 'AKTBC' == c.upper()), None)
 
     r_idx = 9
     total_act = 0
@@ -229,21 +271,32 @@ def write_wcc(wb, df_sites, dc_number, formats):
     for i, (_, row) in enumerate(df_sites.iterrows()):
         act_km = safe_float(row[aktbc_col]) if aktbc_col else 0.0
         wo_km = safe_float(get_val(row, 'KM IN WO'))
-        used_km = act_km if act_km <= wo_km else wo_km
+        gap = act_km - wo_km
+        # Logic: ACTUAL KM if GAP is negative (ACTUAL < WO), else KM IN WO
+        used_km = act_km if gap < 0 else wo_km
         
         total_act += act_km
         total_used += used_km
         
-        vals_1 = [
-            i + 1, get_val(row, 'ENBSITEID'), get_val(row, 'PMP ID'), get_val(row, 'GIS SECTOR'),
-            safe_float(get_val(row, 'NO OF SECTOR')), get_val(row, 'Tower type'), get_val(row, 'JC'),
-            get_val(row, 'WH'), get_val(row, 'VEHICLE NO'), get_val(row, 'MIN NO'),
-            format_date(get_val(row, 'MIN DATE')), format_date(get_val(row, 'Completion Date')), 
-            "RFS DONE" if pd.notna(get_val(row, 'Completion Date')) and str(get_val(row, 'Completion Date')) != "" else ""
-        ]
+        if activity == 'A6_B6':
+            vals_1 = [
+                i + 1, get_val(row, 'eNBsiteID'), get_val(row, 'PMP ID'), get_val(row, 'SEC ID'),
+                get_val(row, 'FB-FT HOP ID'), safe_float(get_val(row, 'NO OF SECTOR')), get_val(row, 'TOWER'), 
+                get_val(row, 'JC'), get_val(row, 'WAREHOUSE'), get_val(row, 'VEHICLE NO'), get_val(row, 'MIN NO'),
+                format_date(get_val(row, 'MIN DATE')), format_date(get_val(row, 'RFS DATE')), 
+                "RFS DONE" if pd.notna(get_val(row, 'RFS DATE')) and str(get_val(row, 'RFS DATE')) != "" else ""
+            ]
+        else:
+            vals_1 = [
+                i + 1, get_val(row, 'ENBSITEID'), get_val(row, 'PMP ID'), get_val(row, 'GIS SECTOR'),
+                safe_float(get_val(row, 'NO OF SECTOR')), get_val(row, 'Tower type'), get_val(row, 'JC'),
+                get_val(row, 'WH'), get_val(row, 'VEHICLE NO'), get_val(row, 'MIN NO'),
+                format_date(get_val(row, 'MIN DATE')), format_date(get_val(row, 'Completion Date')), 
+                "RFS DONE" if pd.notna(get_val(row, 'Completion Date')) and str(get_val(row, 'Completion Date')) != "" else ""
+            ]
         
         vals_2 = [
-            act_km, wo_km, act_km - wo_km, used_km
+            act_km, wo_km, gap, used_km
         ]
         
         for c, val in enumerate(vals_1):
@@ -256,16 +309,16 @@ def write_wcc(wb, df_sites, dc_number, formats):
                 ws.write(r_idx, c_pos, str(val), formats['cell'])
                 
         for c, val in enumerate(vals_2):
-            c_pos = 16 + c
+            c_pos = start_yellow_col + c
             ws.write_number(r_idx, c_pos, val, formats['number'])
             
         r_idx += 1
 
     # Totals Row for Yellow Table
-    ws.write(r_idx, 16, total_act, formats['header_yellow'])
-    ws.write(r_idx, 17, "", formats['header_yellow'])
-    ws.write(r_idx, 18, "", formats['header_yellow'])
-    ws.write(r_idx, 19, total_used, formats['header_yellow'])
+    ws.write(r_idx, start_yellow_col, total_act, formats['header_yellow'])
+    ws.write(r_idx, start_yellow_col + 1, "", formats['header_yellow'])
+    ws.write(r_idx, start_yellow_col + 2, "", formats['header_yellow'])
+    ws.write(r_idx, start_yellow_col + 3, total_used, formats['header_yellow'])
 
     r_sig = r_idx + 2
     ws.write(r_sig, 3, "SIGN:", formats['bold_left'])
@@ -273,20 +326,25 @@ def write_wcc(wb, df_sites, dc_number, formats):
     ws.write(r_sig+2, 3, "MR. YUNUS KHAN", formats['bold_left'])
     ws.write(r_sig+3, 3, "DATE:", formats['bold_left'])
     
-    ws.write(r_sig, 12, "SIGN:", formats['bold_left'])
-    ws.write(r_sig+1, 12, "DEPLOYMENT HEAD", formats['bold_left'])
-    ws.write(r_sig+2, 12, "MR. MANISH NAHAR", formats['bold_left'])
-    ws.write(r_sig+3, 12, "DATE:", formats['bold_left'])
+    ws.write(r_sig, 12 if activity == 'A6' else 13, "SIGN:", formats['bold_left'])
+    ws.write(r_sig+1, 12 if activity == 'A6' else 13, "DEPLOYMENT HEAD", formats['bold_left'])
+    ws.write(r_sig+2, 12 if activity == 'A6' else 13, "MR. MANISH NAHAR", formats['bold_left'])
+    ws.write(r_sig+3, 12 if activity == 'A6' else 13, "DATE:", formats['bold_left'])
 
-def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, formats, include_amounts=True):
+def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity='A6'):
     ws = wb.add_worksheet(sheet_name)
     num_sites = len(df_sites)
     
     # Calculate dates
-    date_col = 'Completion Date ' if 'Completion Date ' in df_sites.columns else 'Completion Date'
+    date_col = None
+    for c in ['Completion Date ', 'Completion Date', 'RFS DATE']:
+        if c in df_sites.columns:
+            date_col = c
+            break
+            
     min_date_str = "N/A"
     max_date_str = "N/A"
-    if date_col in df_sites.columns:
+    if date_col:
         dates = pd.to_datetime(df_sites[date_col], errors='coerce')
         min_date_str = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
         max_date_str = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
@@ -313,7 +371,7 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
     ws.merge_range(0, 0, 0, last_col, sheet_name, f_title)
     ws.merge_range(1, 0, 1, last_col, 'Work Order No P14/630330726', f_center)
     ws.merge_range(2, 0, 2, last_col, 'Contractor Name: DIGITCOM INDIA TECHNOLOGIES       Work Order Dated: 03-10-2025', f_center)
-    ws.merge_range(3, 0, 3, last_col, 'WO for Airspan A6 and C6 Radios for Airfiber', f_center)
+    ws.merge_range(3, 0, 3, last_col, 'WO for Airspan A6 +B6 Radios for Airfiber' if activity == 'A6_B6' else 'WO for Airspan A6 and C6 Radios for Airfiber', f_center)
     ws.merge_range(4, 0, 4, last_col, f'Service Done From Date: {min_date_str}', f_center)
     ws.merge_range(5, 0, 5, last_col, f'Service Done To Date: {max_date_str}', f_center)
     
@@ -341,14 +399,16 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
     ws.write(10, 1, 'Site Type', formats['bold_right'])
     ws.write(10, 2, '', formats['bold_right'])
     for i, (_, row) in enumerate(df_sites.iterrows()):
-        tt = str(row.get('Tower type', '')).strip()
+        tt_col = 'TOWER' if activity == 'A6_B6' else 'Tower type'
+        tt = str(row.get(tt_col, '')).strip()
         ws.write(10, 3 + i, tt, formats['number'])
         
     ws.write(12, 1, 'Sectors', formats['bold_right'])
     ws.write(12, 2, '', formats['bold_right'])
     total_sectors = 0
     for i, (_, row) in enumerate(df_sites.iterrows()):
-        sec = safe_float(row.get('NO OF SECTOR'))
+        sec_col = 'NO OF SECTOR' if activity == 'A6_B6' else 'NO OF SECTOR' # Same key actually
+        sec = safe_float(row.get(sec_col))
         total_sectors += sec
         ws.write(12, 3 + i, sec, formats['number'])
     ws.write(12, tot_col, total_sectors, formats['number_bold'])
@@ -359,7 +419,8 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
     ws.write(13, 2, 'UOM', f_head)
     
     r_idx = 14
-    for item in TEMPLATE_ITEMS:
+    items = TEMPLATE_ITEMS_A6_B6 if activity == 'A6_B6' else TEMPLATE_ITEMS
+    for item in items:
         ws.write(r_idx, 0, item['sap'], formats['cell'])
         ws.write(r_idx, 1, item['desc'], formats['cell_left'])
         ws.write(r_idx, 2, item['uom'], formats['cell'])
@@ -368,14 +429,23 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
         for i, (_, site_row) in enumerate(df_sites.iterrows()):
             col = 3 + i
             sap_code = item['sap']
-            val = site_row.iloc[code_to_col_idx[sap_code]] if sap_code in code_to_col_idx else 0.0
             
-            if sap_code == "3397248":
-                val = safe_float(site_row.get('EXTRA VISIT IN WO', 0.0))
-            elif sap_code == "3268025":
-                val = safe_float(site_row.get('Polemount in wo', 0.0))
+            # Special Mapping Logic
+            if activity == 'A6_B6':
+                if sap_code == "3339581":
+                    val = safe_float(site_row.get('AKTBC(FT)', 0.0))
+                else:
+                    # For SAP codes like '3398758(ITC A6 & B6 - ONE-SECTOR SITE)', we check for the prefix in columns
+                    found_col = next((c for c in df_sites.columns if sap_code in c), None)
+                    val = safe_float(site_row[found_col]) if found_col else 0.0
             else:
-                val = safe_float(val)
+                val = site_row.iloc[code_to_col_idx[sap_code]] if sap_code in code_to_col_idx else 0.0
+                if sap_code == "3397248":
+                    val = safe_float(site_row.get('EXTRA VISIT IN WO', 0.0))
+                elif sap_code == "3268025":
+                    val = safe_float(site_row.get('Polemount in wo', 0.0))
+                else:
+                    val = safe_float(val)
                 
             ws.write(r_idx, col, val, formats['number'])
             row_sum += val
@@ -419,8 +489,12 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
         ws.write(r_sig+2, right_col, "MR. MANISH NAHAR", formats['bold_left'])
         ws.write(r_sig+3, right_col, "DATE:", formats['bold_left'])
 
-def write_declaration(wb, df_sites, dc_number, formats):
+def write_declaration(wb, df_sites, dc_number, formats, activity='A6'):
     ws = wb.add_worksheet('Declaration')
+    
+    # Get warehouse name
+    wh_code = df_sites['WAREHOUSE'].iloc[0] if 'WAREHOUSE' in df_sites.columns and not df_sites.empty else 'JLJH'
+    wh_name = get_warehouse_name(wh_code)
     # Increased widths to prevent Apple Numbers from visually stretching the merged cells
     ws.set_column('A:A', 35)
     ws.set_column('B:C', 30)
@@ -459,7 +533,7 @@ def write_declaration(wb, df_sites, dc_number, formats):
     
     # Row 8
     ws.write('A8', 'Warehouse Location', f_bold)
-    ws.merge_range('B8:D8', 'JODHPUR', f_bold_center)
+    ws.merge_range('B8:D8', wh_name, f_bold_center)
     
     # Row 9
     ws.merge_range('A9:D9', 'Declaration', f_bold_center)
@@ -481,7 +555,8 @@ def write_declaration(wb, df_sites, dc_number, formats):
     ws.set_row(11, 30)
     
     # Row 13
-    ws.merge_range('A13:D13', f'{len(df_sites)} SITES(A6)', f_bold_center)
+    activity_label = "A6+B6" if activity == "A6_B6" else "A6"
+    ws.merge_range('A13:D13', f'{len(df_sites)} SITES({activity_label})', f_bold_center)
     
     # Row 14 (blank narrow with vertical split)
     ws.write('A14', '', f_empty)
@@ -517,13 +592,124 @@ def write_declaration(wb, df_sites, dc_number, formats):
     ws.set_row(21, 20)
     ws.set_row(22, 20)
 
-def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path):
-    ws_ann = wb.add_worksheet('Annexture')
-    ws_rec = wb.add_worksheet('Reco')
+def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path, activity='A6'):
+    if activity == 'A6_B6':
+        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "A6", "Annexture-A6", "Reco-A6")
+        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "B6", "Annexture-B6", "Reco-B6")
+    else:
+        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "A6", "Annexture", "Reco")
+
+def create_annexure_reco_pair(wb, df_sites, formats, mindump_path, sub_activity, ann_name, rec_name):
+    ws_ann = wb.add_worksheet(ann_name)
+    ws_rec = wb.add_worksheet(rec_name)
     
-    pmp_ids = df_sites['PMP ID'].astype(str).str.strip().tolist()
-    num_sites = len(pmp_ids)
-    tot_col = num_sites + 1
+def create_annexure_reco_pair(wb, df_sites, formats, mindump_path, sub_activity, ann_name, rec_name):
+    ws_ann = wb.add_worksheet(ann_name)
+    ws_rec = wb.add_worksheet(rec_name)
+    
+    # Get warehouse name
+    wh_code = df_sites['WAREHOUSE'].iloc[0] if 'WAREHOUSE' in df_sites.columns and not df_sites.empty else 'JLJH'
+    wh_name = get_warehouse_name(wh_code)
+    
+    # Base Site List
+    billing_pmp_ids = df_sites['PMP ID'].astype(str).str.strip().tolist()
+    
+    # If B6, we need a different set of column headers (Far End + Near End PMPs)
+    ann_pmp_ids = []
+    
+    # Process mindump early to build headers if B6
+    try:
+        sheet_to_read = f"{sub_activity} DUMP"
+        try:
+            df_mindump = pd.read_excel(mindump_path, sheet_name=sheet_to_read)
+        except:
+            df_mindump = pd.read_excel(mindump_path)
+            
+        if sub_activity == 'B6':
+            # Logic for B6: Split HOP ID and find matching PMP IDs in dump
+            for _, site_row in df_sites.iterrows():
+                hop_id = str(site_row.get('FB-FT HOP ID', '')).strip()
+                if not hop_id or hop_id.upper() == 'NONE': continue
+                
+                # Remove _A6 suffix
+                clean_hop = hop_id.replace('_A6', '')
+                
+                # Split logic: Standard pattern is ID1-ID2 where each starts with I-RJ-
+                # We split by '-I-RJ-' to keep it safe
+                ends = []
+                if '-I-RJ-' in clean_hop:
+                    parts = clean_hop.split('-I-RJ-')
+                    ends = [parts[0], 'I-RJ-' + parts[1]]
+                else:
+                    ends = [clean_hop]
+                
+                matched_pmp_for_this_site = []
+                for end in ends:
+                    if not end: continue
+                    # Search in ENB ID, Site ID, or DWG columns
+                    mask = (
+                        df_mindump['ENB ID'].astype(str).str.contains(end, na=False) |
+                        df_mindump['Site ID'].astype(str).str.contains(end, na=False) |
+                        df_mindump['DWG'].astype(str).str.contains(end, na=False)
+                    )
+                    matched_rows = df_mindump[mask]
+                    for _, m_row in matched_rows.iterrows():
+                        # Try COMMON ID first, then Site ID as fallback for PMP ID
+                        pmp = str(m_row.get('COMMON ID', '')).strip()
+                        if not pmp or pmp.lower() in ['nan', 'none']:
+                            pmp = str(m_row.get('Site ID', '')).strip()
+                        
+                        if pmp and pmp.lower() not in ['nan', 'none']:
+                            if pmp not in matched_pmp_for_this_site:
+                                matched_pmp_for_this_site.append(pmp)
+                
+                # Add to headers in order
+                for p in matched_pmp_for_this_site:
+                    if p not in ann_pmp_ids:
+                        ann_pmp_ids.append(p)
+        else:
+            # A6 Case: Headers are just the PMP IDs from the billing tracker
+            ann_pmp_ids = billing_pmp_ids
+            
+        # Match Site Logic for Pivot
+        def match_site(row):
+            if sub_activity == 'B6':
+                cid = str(row.get('COMMON ID', '')).strip()
+                if not cid or cid.lower() in ['nan', 'none']:
+                    cid = str(row.get('Site ID', '')).strip()
+                if cid in ann_pmp_ids:
+                    return cid
+            else:
+                wbs = str(row.get('WBS ID', ''))
+                site_id = str(row.get('Site ID', ''))
+                for pid in ann_pmp_ids:
+                    if pid in wbs or pid in site_id:
+                        return pid
+            return None
+            
+        df_mindump['Matched_PMP'] = df_mindump.apply(match_site, axis=1)
+        df_filtered = df_mindump[df_mindump['Matched_PMP'].notna()]
+        
+        if not df_filtered.empty:
+            pt = pd.pivot_table(df_filtered, values='No. Of Qty', index=['SAP Code', 'Material Description'], columns='Matched_PMP', aggfunc='sum', fill_value=0)
+            for pid in ann_pmp_ids:
+                if pid not in pt.columns:
+                    pt[pid] = 0
+            pt = pt[ann_pmp_ids]
+            pt = pt.sort_index()
+        else:
+            pt = pd.DataFrame(columns=ann_pmp_ids)
+            
+    except Exception as e:
+        print(f"Warning: Could not process MINDUMP for {ann_name}: {e}")
+        import traceback
+        traceback.print_exc()
+        ann_pmp_ids = billing_pmp_ids if not ann_pmp_ids else ann_pmp_ids
+        pt = pd.DataFrame(columns=ann_pmp_ids)
+
+    # Setup Annexure Sheet with ann_pmp_ids
+    num_cols = len(ann_pmp_ids)
+    tot_col = num_cols + 1
     desc_col = tot_col + 1
     
     ws_ann.set_column(0, 0, 15)
@@ -541,54 +727,25 @@ def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path):
     f_sum_row_bold = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#DCE6F1'})
     f_empty = wb.add_format({'border': 1})
     
-    ws_ann.merge_range(0, 0, 0, tot_col, 'Annexture', f_title)
+    ws_ann.merge_range(0, 0, 0, tot_col, f'Annexture-{sub_activity}', f_title)
     ws_ann.write(0, desc_col, '', f_empty)
     
     ws_ann.set_row(1, 120)
     ws_ann.write(1, 0, 'Row Labels', f_head)
-    for i, pid in enumerate(pmp_ids):
+    for i, pid in enumerate(ann_pmp_ids):
         ws_ann.write(1, i + 1, pid, f_head_vert)
     ws_ann.write(1, tot_col, 'Grand Total', f_head)
     ws_ann.write(1, desc_col, '', f_empty)
     
-    # Process mindump
-    try:
-        df_mindump = pd.read_excel(mindump_path)
-        
-        def match_site(row):
-            wbs = str(row.get('WBS ID', ''))
-            site_id = str(row.get('Site ID', ''))
-            for pid in pmp_ids:
-                if pid in wbs or pid in site_id:
-                    return pid
-            return None
-            
-        df_mindump['Matched_PMP'] = df_mindump.apply(match_site, axis=1)
-        df_filtered = df_mindump[df_mindump['Matched_PMP'].notna()]
-        
-        if not df_filtered.empty:
-            pt = pd.pivot_table(df_filtered, values='No. Of Qty', index=['SAP Code', 'Material Description'], columns='Matched_PMP', aggfunc='sum', fill_value=0)
-            for pid in pmp_ids:
-                if pid not in pt.columns:
-                    pt[pid] = 0
-            pt = pt[pmp_ids]
-            pt = pt.sort_index()
-        else:
-            pt = pd.DataFrame(columns=pmp_ids)
-            
-    except Exception as e:
-        print(f"Warning: Could not process MINDUMP for Annexture: {e}")
-        pt = pd.DataFrame(columns=pmp_ids)
-        
     r_idx = 2
-    col_sums = {pid: 0 for pid in pmp_ids}
+    col_sums = {pid: 0 for pid in ann_pmp_ids}
     grand_total_sum = 0
     reco_items = []
     
     for (sap_code, desc), row in pt.iterrows():
         ws_ann.write(r_idx, 0, str(sap_code), f_cell_bold)
         row_total = 0
-        for i, pid in enumerate(pmp_ids):
+        for i, pid in enumerate(ann_pmp_ids):
             val = safe_float(row[pid])
             ws_ann.write(r_idx, i + 1, val, f_cell)
             col_sums[pid] += val
@@ -602,17 +759,22 @@ def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path):
         
     # Bottom Grand Total Row
     ws_ann.write(r_idx, 0, 'Grand Total', f_sum_row_bold)
-    for i, pid in enumerate(pmp_ids):
+    for i, pid in enumerate(ann_pmp_ids):
         ws_ann.write(r_idx, i + 1, col_sums[pid], f_sum_row)
     ws_ann.write(r_idx, tot_col, grand_total_sum, f_sum_row)
     ws_ann.write(r_idx, desc_col, '', f_empty)
     
     # --- RECO SHEET ---
     # Calculate dates
-    date_col = 'Completion Date ' if 'Completion Date ' in df_sites.columns else 'Completion Date'
+    date_col = None
+    for c in ['Completion Date ', 'Completion Date', 'RFS DATE']:
+        if c in df_sites.columns:
+            date_col = c
+            break
+            
     min_date_str = "N/A"
     max_date_str = "N/A"
-    if date_col in df_sites.columns:
+    if date_col:
         dates = pd.to_datetime(df_sites[date_col], errors='coerce')
         min_date_str = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
         max_date_str = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
@@ -656,7 +818,7 @@ def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path):
         ('Site ID', 'As per attached Detail'),
         ('WBS Code', 'As per attached Detail'),
         ('Site Name', 'As per attached Detail'),
-        ('Warehouse Location', 'JODHPUR'),
+        ('Warehouse Location', wh_name),
         ('Time Period', f'{min_date_str} TO {max_date_str}')
     ]
     
@@ -696,7 +858,7 @@ def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path):
     for i, item in enumerate(reco_items):
         col = 2 + i
         annex_col_str = xlsxwriter.utility.xl_col_to_name(tot_col)
-        ws_rec.write_formula(14, col, f"=Annexture!{annex_col_str}{item['annexure_row']}", f_reco_cell)
+        ws_rec.write_formula(14, col, f"='{ann_name}'!{annex_col_str}{item['annexure_row']}", f_reco_cell)
         
     ws_rec.write(16, 0, '2', f_reco_index)
     ws_rec.write(16, 1, 'Material received from other contractors', f_reco_label)
@@ -744,7 +906,7 @@ def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path):
     for i in range(num_items):
         col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
         annex_col_str = xlsxwriter.utility.xl_col_to_name(tot_col)
-        ws_rec.write_formula(28, 2 + i, f"=Annexture!{annex_col_str}{reco_items[i]['annexure_row']}", f_reco_cell)
+        ws_rec.write_formula(28, 2 + i, f"='{ann_name}'!{annex_col_str}{reco_items[i]['annexure_row']}", f_reco_cell)
         
     ws_rec.write(29, 0, '2', f_reco_index)
     ws_rec.write(29, 1, 'Wastage (max as per WO norms)', f_reco_label)
@@ -770,15 +932,17 @@ def main():
     parser.add_argument("dc_number")
     parser.add_argument("--output", default=None)
     parser.add_argument("--mindump", default=None)
+    parser.add_argument("--activity", default='A6', choices=['A6', 'A6_B6'])
     # Ignored legacy flags
     parser.add_argument("--template", default=None) 
     args = parser.parse_args()
 
     dc_number = args.dc_number
     output_path = args.output if args.output else f"Billing/{dc_number}_Unified_Billing.xlsx"
+    activity = args.activity
     
-    print(f"--- Generating Clean Billing Workbook for {dc_number} ---")
-    df_sites, code_to_col_idx = load_master_data(args.master_path, dc_number)
+    print(f"--- Generating Clean Billing Workbook for {dc_number} ({activity}) ---")
+    df_sites, code_to_col_idx = load_master_data(args.master_path, dc_number, activity=activity)
     
     if df_sites is not None and not df_sites.empty:
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
@@ -801,12 +965,12 @@ def main():
             }
             
             write_main_wcc(wb, df_sites, dc_number, formats)
-            write_wcc(wb, df_sites, dc_number, formats)
-            write_matrix_sheet(wb, 'JMS', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True)
-            write_matrix_sheet(wb, 'Abstract', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True)
-            write_matrix_sheet(wb, 'BOQ', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True)
-            write_declaration(wb, df_sites, dc_number, formats)
-            write_annexure_and_reco(wb, df_sites, dc_number, formats, args.mindump)
+            write_wcc(wb, df_sites, dc_number, formats, activity=activity)
+            write_matrix_sheet(wb, 'JMS', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity)
+            write_matrix_sheet(wb, 'Abstract', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity)
+            write_matrix_sheet(wb, 'BOQ', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity)
+            write_declaration(wb, df_sites, dc_number, formats, activity=activity)
+            write_annexure_and_reco(wb, df_sites, dc_number, formats, args.mindump, activity=activity)
 
         print(f"COMPLETE: {output_path}")
     else:

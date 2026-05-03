@@ -8,7 +8,7 @@ import { spawn } from 'child_process';
  */
 export const generateFullBilling = async (req: Request, res: Response) => {
     try {
-        const { billingTarget } = req.body;
+        const { billingTarget, activity } = req.body;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
         if (!files || !files['masterFile'] || files['masterFile'].length === 0) {
@@ -40,7 +40,8 @@ export const generateFullBilling = async (req: Request, res: Response) => {
             absoluteMasterPath,
             billingTarget,
             '--template', templatePath,
-            '--output', outputPath
+            '--output', outputPath,
+            '--activity', activity || 'A6'
         ];
 
         // Add mindump if provided

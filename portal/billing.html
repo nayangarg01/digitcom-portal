@@ -56,7 +56,7 @@
             cursor: not-allowed;
             transform: none;
         }
-        #status-message {
+        .status-msg {
             margin-top: 20px;
             padding: 15px;
             border-radius: 6px;
@@ -104,7 +104,12 @@
                 <div class="user-info">Admin User</div>
             </header>
 
-            <section class="billing-card">
+            <div class="tab-container" style="display: flex; gap: 20px; margin-bottom: 20px;">
+                <button class="tab-btn active" onclick="switchTab('unified')" id="tab-unified" style="background: none; border: none; color: #fff; border-bottom: 2px solid #28a745; padding: 10px 20px; cursor: pointer; font-weight: 600;">Unified Billing</button>
+                <button class="tab-btn" onclick="switchTab('performa')" id="tab-performa" style="background: none; border: none; color: #888; padding: 10px 20px; cursor: pointer; font-weight: 600;">Performa Invoice</button>
+            </div>
+
+            <section class="billing-card" id="unified-section">
                 <h3>Unified Billing Engine</h3>
                 <p style="color: #888; margin-bottom: 25px;">Upload the required tracking files to generate a complete, multi-sheet billing file (WCC, JMS, Abstract, BOQ, Annexure, and Reco).</p>
                 
@@ -140,13 +145,42 @@
                 </div>
 
                 <div style="display: flex; gap: 15px; align-items: center; margin-top: 30px;">
-                    <button class="btn-generate" onclick="handleGenerate()">
+                    <button class="btn-generate" onclick="handleGenerate('unified')">
                         Generate Full Billing File
                     </button>
-                    <span class="loader" id="loader"></span>
+                    <span class="loader" id="loader-unified"></span>
+                </div>
+                <div id="status-unified" class="status-msg"></div>
+            </section>
+
+            <section class="billing-card" id="performa-section" style="display: none;">
+                <h3>Performa Invoice Generator</h3>
+                <p style="color: #888; margin-bottom: 25px;">Club multiple DC billing files into a single Performa Invoice for submission.</p>
+                
+                <div class="form-group">
+                    <label for="dcFiles">DC Billing Files (.xlsx)</label>
+                    <input type="file" id="dcFiles" class="form-control" accept=".xlsx" multiple>
+                    <small style="color: #666; display: block; margin-top: 5px;">Select 1 or more DC billing files to club together.</small>
                 </div>
 
-                <div id="status-message"></div>
+                <div class="form-group">
+                    <label for="mindumpFilePerforma">MINDUMP Data (.xlsx)</label>
+                    <input type="file" id="mindumpFilePerforma" class="form-control" accept=".xlsx">
+                    <small style="color: #666; display: block; margin-top: 5px;">Required for WBS ID lookup.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="ivNumber">Performa Invoice Number</label>
+                    <input type="text" id="ivNumber" class="form-control" placeholder="e.g. 048">
+                </div>
+
+                <div style="display: flex; gap: 15px; align-items: center; margin-top: 30px;">
+                    <button class="btn-generate" onclick="handleGenerate('performa')">
+                        Generate Performa Invoice
+                    </button>
+                    <span class="loader" id="loader-performa"></span>
+                </div>
+                <div id="status-performa" class="status-msg"></div>
             </section>
         </main>
     </div>
@@ -154,22 +188,67 @@
     <script src="js/auth.js"></script>
     <script>
         checkAuth();
+
+        function switchTab(tab) {
+            const unifiedSec = document.getElementById('unified-section');
+            const performaSec = document.getElementById('performa-section');
+            const tabUnified = document.getElementById('tab-unified');
+            const tabPerforma = document.getElementById('tab-performa');
+
+            if (tab === 'unified') {
+                unifiedSec.style.display = 'block';
+                performaSec.style.display = 'none';
+                tabUnified.style.borderBottom = '2px solid #28a745';
+                tabUnified.style.color = '#fff';
+                tabPerforma.style.borderBottom = 'none';
+                tabPerforma.style.color = '#888';
+            } else {
+                unifiedSec.style.display = 'none';
+                performaSec.style.display = 'block';
+                tabUnified.style.borderBottom = 'none';
+                tabUnified.style.color = '#888';
+                tabPerforma.style.borderBottom = '2px solid #28a745';
+                tabPerforma.style.color = '#fff';
+            }
+        }
         
-        async function handleGenerate() {
-            const masterInput = document.getElementById('masterFile');
-            const mindumpInput = document.getElementById('mindumpFile');
-            const targetInput = document.getElementById('billingTarget');
-            const statusMsg = document.getElementById('status-message');
-            const loader = document.getElementById('loader');
+        async function handleGenerate(type) {
+            const statusMsg = document.getElementById(`status-${type}`);
+            const loader = document.getElementById(`loader-${type}`);
             const buttons = document.querySelectorAll('.btn-generate');
 
-            if (!masterInput.files[0]) {
-                alert('Please upload a Master DPR file');
-                return;
-            }
-            if (!targetInput.value.trim()) {
-                alert('Please enter a DC Number');
-                return;
+            const formData = new FormData();
+            let endpoint = '';
+
+            if (type === 'unified') {
+                const masterInput = document.getElementById('masterFile');
+                const mindumpInput = document.getElementById('mindumpFile');
+                const targetInput = document.getElementById('billingTarget');
+                const activity = document.querySelector('input[name="activityType"]:checked').value;
+
+                if (!masterInput.files[0]) return alert('Please upload a Master DPR file');
+                if (!targetInput.value.trim()) return alert('Please enter a DC Number');
+
+                formData.append('masterFile', masterInput.files[0]);
+                if (mindumpInput.files[0]) formData.append('mindumpFile', mindumpInput.files[0]);
+                formData.append('billingTarget', targetInput.value.trim());
+                formData.append('activity', activity);
+                endpoint = '/billing/generate-file';
+            } else {
+                const dcInput = document.getElementById('dcFiles');
+                const mindumpInput = document.getElementById('mindumpFilePerforma');
+                const ivInput = document.getElementById('ivNumber');
+
+                if (!dcInput.files.length) return alert('Please upload at least one DC file');
+                if (!mindumpInput.files[0]) return alert('Please upload the MINDUMP file');
+                if (!ivInput.value.trim()) return alert('Please enter an Invoice Number');
+
+                for (let i = 0; i < dcInput.files.length; i++) {
+                    formData.append('dcFiles', dcInput.files[i]);
+                }
+                formData.append('mindumpFile', mindumpInput.files[0]);
+                formData.append('ivNumber', ivInput.value.trim());
+                endpoint = '/billing/generate-performa';
             }
 
             // UI state
@@ -177,19 +256,8 @@
             loader.style.display = 'block';
             statusMsg.style.display = 'none';
 
-            const activity = document.querySelector('input[name="activityType"]:checked').value;
-
-            const formData = new FormData();
-            formData.append('masterFile', masterInput.files[0]);
-            if (mindumpInput.files[0]) {
-                formData.append('mindumpFile', mindumpInput.files[0]);
-            }
-            formData.append('billingTarget', targetInput.value.trim());
-            formData.append('activity', activity);
-
             try {
-                // Pointing to the new unified endpoint /generate-file
-                const response = await fetch(`${API_URL}/billing/generate-file`, {
+                const response = await fetch(`${API_URL}${endpoint}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -200,69 +268,36 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    statusMsg.className = 'status-success';
+                    statusMsg.className = 'status-msg status-success';
                     const fullDownloadUrl = `${API_URL}${data.downloadUrl}`;
                     
-                    // The primary robust download trigger
-                    statusMsg.innerHTML = `${data.message} <br><button id="downloadLinkBtn" class="btn-generate" style="background:#28a745; margin-top:10px; padding: 8px 15px; font-size: 14px;">Download Billing File</button>`;
+                    statusMsg.innerHTML = `${data.message} <br><button id="dl-${type}" class="btn-generate" style="background:#28a745; margin-top:10px; padding: 8px 15px; font-size: 14px;">Download Generated File</button>`;
                     statusMsg.style.display = 'block';
 
                     const downloadFile = async (url, filename) => {
                         try {
-                            const resp = await fetch(url, {
-                                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                            });
-                            
-                            if (!resp.ok) throw new Error('Network response was not ok');
-                            
+                            const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
                             const blob = await resp.blob();
-                            // Force Excel MIME type for Chrome compatibility
-                            const excelBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                            const blobUrl = window.URL.createObjectURL(excelBlob);
-                            
+                            const blobUrl = window.URL.createObjectURL(new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
                             const a = document.createElement('a');
-                            a.style.display = 'none';
                             a.href = blobUrl;
                             a.download = filename;
-                            
-                            // Extra assurance for Chrome
-                            a.setAttribute('download', (filename || 'Billing_File.xlsx').replace(/[/\\?%*:|"<>]/g, '-'));
-                            
                             document.body.appendChild(a);
-                            
-                            // Trigger download using a more robust MouseEvent
-                            const clickEvent = new MouseEvent('click', {
-                                view: window,
-                                bubbles: true,
-                                cancelable: true
-                            });
-                            a.dispatchEvent(clickEvent);
-                            
-                            // Revoke after a delay to ensure the browser has triggered the save
-                            setTimeout(() => {
-                                window.URL.revokeObjectURL(blobUrl);
-                                document.body.removeChild(a);
-                            }, 200);
-                        } catch (err) {
-                            console.error('Download failed:', err);
-                            alert('Download failed. Please try again.');
-                        }
+                            a.click();
+                            setTimeout(() => { window.URL.revokeObjectURL(blobUrl); document.body.removeChild(a); }, 200);
+                        } catch (err) { alert('Download failed.'); }
                     };
 
-                    // Auto-trigger the download
-                    await downloadFile(fullDownloadUrl, data.filename || 'Billing_File.xlsx');
-
-                    // Setup the button for manual re-download
-                    document.getElementById('downloadLinkBtn').onclick = () => downloadFile(fullDownloadUrl, data.filename || 'Billing_File.xlsx');
+                    await downloadFile(fullDownloadUrl, data.filename || 'Generated_File.xlsx');
+                    document.getElementById(`dl-${type}`).onclick = () => downloadFile(fullDownloadUrl, data.filename || 'Generated_File.xlsx');
                 } else {
-                    statusMsg.className = 'status-error';
-                    statusMsg.textContent = data.error || 'Failed to generate billing file. Please check your data.';
+                    statusMsg.className = 'status-msg status-error';
+                    statusMsg.textContent = data.error || 'Operation failed.';
                     statusMsg.style.display = 'block';
                 }
             } catch (err) {
-                console.error(err);
-                statusMsg.className = 'status-error';
-                statusMsg.textContent = 'Network error or server unavailable.';
+                statusMsg.className = 'status-msg status-error';
+                statusMsg.textContent = 'Network error.';
                 statusMsg.style.display = 'block';
             } finally {
                 buttons.forEach(b => b.disabled = false);

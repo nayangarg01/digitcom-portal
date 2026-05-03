@@ -37,90 +37,82 @@ def generate_performa_invoice(dc_files, mindump_path, iv_number, activity, outpu
         try:
             wb = openpyxl.load_workbook(dc_file, data_only=True)
             
-            # --- Extract WO Number and Nature of Work from Main WCC ---
-            wo_number = "N/A"
+            # --- Nature of Work ---
             nature_of_work = "AIR FIBER INSTALLATION"
             if activity == 'A6_B6':
                 nature_of_work = "AIR FIBER INSTALLATION(A6+B6)"
             
-            if 'Main WCC' in wb.sheetnames:
-                ws_wcc = wb['Main WCC']
-                found_wo = False
-                for row in ws_wcc.iter_rows(max_row=50):
-                    for cell in row:
-                        val = str(cell.value or "").strip()
-                        if "W.O.Number" in val:
-                            wo_cell = ws_wcc.cell(row=cell.row, column=cell.column + 2)
-                            wo_number = str(wo_cell.value or "N/A").strip()
-                            found_wo = True
-                        if "Air Fiber Installation" in val or "Maintenance Point" in val:
-                            # In some files Nature is next to some label
-                            pass 
-                    if found_wo: break
-            
-            # Fallback for WO from JMS
-            if wo_number == "N/A" and 'JMS' in wb.sheetnames:
-                ws_jms = wb['JMS']
-                header_val = str(ws_jms.cell(row=4, column=8).value or "")
-                if "Work Order No" in header_val:
-                    wo_number = header_val.split(':')[-1].strip()
-
-            # --- Extract Sites and Data from JMS ---
             if 'JMS' not in wb.sheetnames:
                 print(f"Warning: JMS sheet missing in {dc_file}")
                 continue
                 
             ws_jms = wb['JMS']
-            sites = []
+            
+            # --- Robustly find markers in JMS ---
+            wo_number = "N/A"
             site_row = -1
-            
-            # Find which row (11 or 12) contains Site IDs
-            for r in [11, 12, 13]:
-                if "Site ID --" in str(ws_jms.cell(row=r, column=2).value or ""):
-                    site_row = r
-                    break
-            
-            if site_row == -1:
-                print(f"Warning: Could not find Site ID header in {dc_file}")
-                continue
-            
-            # Find item start row (row after 'Description of Item')
             item_header_row = -1
-            for r in range(site_row, site_row + 10):
-                val = str(ws_jms.cell(row=r, column=2).value or "").strip()
-                if 'Description' in val and 'Item' in val:
-                    item_header_row = r
-                    break
             
-            if item_header_row == -1:
-                # Fallback to site_row + 4 if label not found
-                item_header_row = site_row + 3
-                
-            # Sites usually start from column D (4)
-            for col in range(4, ws_jms.max_column + 1):
-                site_id = str(ws_jms.cell(row=site_row, column=col).value or "").strip()
-                if site_id and (site_id.startswith('I-RJ') or site_id.startswith('RJ')):
-                    sites.append({'id': site_id, 'col': col})
-                elif site_id == 'Total Quantity' or 'Total' in site_id:
-                    break
+            for r in range(1, 31):
+                for c in range(1, 15):
+                    cell_val = str(ws_jms.cell(row=r, column=c).value or "").strip()
+                    
+                    # 1. Look for Work Order No
+                    if "Work Order" in cell_val and wo_number == "N/A":
+                        # Value might be in same cell or next
+                        if ':' in cell_val:
+                            wo_number = cell_val.split(':')[-1].strip()
+                        else:
+                            # Try to extract the code at the end (e.g. P14/...)
+                            parts = cell_val.split()
+                            if parts: wo_number = parts[-1].strip()
 
-            # Find Rate column by label search in the same row
-            rate_col = -1
-            for col in range(1, ws_jms.max_column + 1):
-                val = str(ws_jms.cell(row=site_row, column=col).value or "").strip()
-                if 'RATE' in val:
-                    rate_col = col
-                    break
+                    # 2. Look for Site ID header
+                    if "Site ID --" in cell_val:
+                        site_row = r
+                    
+                    # 3. Look for Item Header
+                    if 'Description' in cell_val and 'Item' in cell_val:
+                        item_header_row = r
             
-            if rate_col == -1: 
-                # Also try item_header_row
+            # Fallback for WO from Main WCC if still N/A
+            if wo_number == "N/A" and 'Main WCC' in wb.sheetnames:
+                ws_wcc = wb['Main WCC']
+                for r in range(1, 50):
+                    for c in range(1, 10):
+                        val = str(ws_wcc.cell(row=r, column=c).value or "").strip()
+                        if "W.O.Number" in val:
+                            wo_cell = ws_wcc.cell(row=r, column=c + 2)
+                            wo_number = str(wo_cell.value or "N/A").strip()
+                            break
+
+            if site_row == -1 or item_header_row == -1:
+                print(f"Warning: Missing headers in {dc_file} (SiteRow={site_row}, ItemRow={item_header_row})")
+                continue
+                
+            # --- Extract Sites ---
+            sites = []
+            # Sites usually start from column D (4) or check all columns in site_row
+            for col in range(2, ws_jms.max_column + 1):
+                val = str(ws_jms.cell(row=site_row, column=col).value or "").strip()
+                if val and (val.startswith('I-RJ') or val.startswith('RJ')):
+                    sites.append({'id': val, 'col': col})
+                elif val == 'Total Quantity' or 'Total' in val:
+                    # If we already have sites and hit Total, stop
+                    if sites: break
+
+            # Find Rate column
+            rate_col = -1
+            # Search in site_row or item_header_row
+            for r_check in [site_row, item_header_row]:
                 for col in range(1, ws_jms.max_column + 1):
-                    val = str(ws_jms.cell(row=item_header_row, column=col).value or "").strip()
+                    val = str(ws_jms.cell(row=r_check, column=col).value or "").strip()
                     if 'RATE' in val:
                         rate_col = col
                         break
+                if rate_col != -1: break
             
-            if rate_col == -1: rate_col = ws_jms.max_column - 2 # Fallback
+            if rate_col == -1: rate_col = ws_jms.max_column - 2 # Final fallback
 
             for site in sites:
                 site_id = site['id']

@@ -286,6 +286,49 @@ def populate_main_matrix(sheet_name, df_sites, code_to_col_idx, wb, values_only=
     if sheet_name not in wb.sheetnames: return False
     ws = wb[sheet_name]
     
+    # Header Update Logic
+    amt_col = 30
+    for c in range(4, 50):
+        if "AMOUNT" in str(ws.cell(row=12, column=c).value).upper():
+            amt_col = c
+            break
+    
+    # 0. Headers (Ensuring exact alignment)
+    try:
+        wo_number = get_wo_number(os.getenv('MASTER_PATH', 'MASTER.xlsx'), df_sites.iloc[0, 47] if not df_sites.empty else "")
+    except:
+        wo_number = "P14/630330726"
+        
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=amt_col)
+    ws.cell(row=1, column=1).value = f"Work Order No : {wo_number}"
+    ws.cell(row=1, column=1).alignment = Alignment(horizontal='center', vertical='center')
+    
+    mid = amt_col // 2
+    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=mid)
+    ws.cell(row=2, column=1).value = "Contractor Name: DIGITCOM INDIA TECHNOLOGIES"
+    ws.cell(row=2, column=1).alignment = Alignment(horizontal='left', vertical='center')
+    
+    ws.merge_cells(start_row=2, start_column=mid+1, end_row=2, end_column=amt_col)
+    ws.cell(row=2, column=mid+1).value = "Work Order Dated: 03-10-2025"
+    ws.cell(row=2, column=mid+1).alignment = Alignment(horizontal='center', vertical='center')
+    
+    ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=amt_col)
+    ws.cell(row=3, column=1).value = "WO for Airspan A6 and C6 Radios for Airfiber"
+    ws.cell(row=3, column=1).alignment = Alignment(horizontal='left', vertical='center')
+    
+    # Dates
+    date_col = next((c for c in df_sites.columns if 'COMPLETION' in c.upper() or 'RFS DATE' in c.upper() or 'DATE' in c.upper()), None)
+    min_date = df_sites[date_col].min().strftime('%d-%b-%y').upper() if date_col and not df_sites[date_col].isna().all() else "N/A"
+    max_date = df_sites[date_col].max().strftime('%d-%b-%y').upper() if date_col and not df_sites[date_col].isna().all() else "N/A"
+
+    ws.merge_cells(start_row=4, start_column=1, end_row=4, end_column=amt_col)
+    ws.cell(row=4, column=1).value = f"Service Done From Date: {min_date}"
+    ws.cell(row=4, column=1).alignment = Alignment(horizontal='center', vertical='center')
+    
+    ws.merge_cells(start_row=5, start_column=1, end_row=5, end_column=amt_col)
+    ws.cell(row=5, column=1).value = f"Service Done To Date: {max_date}"
+    ws.cell(row=5, column=1).alignment = Alignment(horizontal='center', vertical='center')
+
     # 0. Safety: Unmerge cells in the data matrix area
     data_merge_ranges = []
     for merged_range in ws.merged_cells.ranges:
@@ -712,52 +755,50 @@ def get_wo_number(master_path, dc_number):
         print(f"Error looking up WO: {e}")
         return "N/A"
 
-def inject_main_wcc_from_reference(wb, df_sites, dc_number, wo_number):
-    """Replaces the Main WCC sheet with a copy from the reference file."""
-    try:
-        ref_path = "/Users/nayangarg/Desktop/DigitcomWebsiteRenovation/Old_Codebase_renovated_v6.1/FinaliseBillingFormat/DIGITCOM_ AIRFIBER_DC0105_ JDPR_29-JAN-26_A6 (REJECT) 2.xlsx"
-        print(f"- Injecting Main WCC from reference: {os.path.basename(ref_path)}")
-        wb_ref = openpyxl.load_workbook(ref_path)
+def copy_sheet_between_workbooks(src_ws, dst_wb, sheet_name, index=None):
+    """Safely copies a sheet from one workbook to another, including values and styles."""
+    if sheet_name in dst_wb.sheetnames:
+        del dst_wb[sheet_name]
+    
+    if index is not None:
+        dst_ws = dst_wb.create_sheet(sheet_name, index)
+    else:
+        dst_ws = dst_wb.create_sheet(sheet_name)
         
-        if 'Main WCC' not in wb_ref.sheetnames:
-            print("ERROR: 'Main WCC' sheet not found in reference file.")
-            return
-            
-        src_ws = wb_ref['Main WCC']
-        
-        # Create new Main WCC at the first position
-        if 'Main WCC' in wb.sheetnames:
-            del wb['Main WCC']
-        dst_ws = wb.create_sheet('Main WCC', 0)
-        
-        # Copy values and styles
-        for row in src_ws.iter_rows():
-            for cell in row:
-                new_cell = dst_ws.cell(row=cell.row, column=cell.column, value=cell.value)
-                if cell.has_style:
+    for row in src_ws.iter_rows():
+        for cell in row:
+            new_cell = dst_ws.cell(row=cell.row, column=cell.column, value=cell.value)
+            if cell.has_style:
+                try:
                     new_cell.font = copy(cell.font)
                     new_cell.border = copy(cell.border)
                     new_cell.fill = copy(cell.fill)
                     new_cell.number_format = copy(cell.number_format)
                     new_cell.alignment = copy(cell.alignment)
+                except: pass
+                    
+    for merged_range in src_ws.merged_cells.ranges:
+        dst_ws.merge_cells(str(merged_range))
         
-        # Copy merged cells
-        for merged_range in src_ws.merged_cells.ranges:
-            dst_ws.merge_cells(str(merged_range))
-            
-        # Copy dimensions
-        for col, dim in src_ws.column_dimensions.items():
-            dst_ws.column_dimensions[col].width = dim.width
-            dst_ws.column_dimensions[col].hidden = dim.hidden
-        for row, dim in src_ws.row_dimensions.items():
-            dst_ws.row_dimensions[row].height = dim.height
-            dst_ws.row_dimensions[row].hidden = dim.hidden
-            
-        # Update Fields
-        # No of Sites: D32
-        dst_ws['D32'] = f"{len(df_sites)} SITES"
+    for col, dim in src_ws.column_dimensions.items():
+        dst_ws.column_dimensions[col].width = dim.width
         
-        # Completion Date: I32
+    for row, dim in src_ws.row_dimensions.items():
+        dst_ws.row_dimensions[row].height = dim.height
+
+def inject_main_wcc_from_reference(output_path, df_sites, dc_number, wo_number):
+    """Uses the 'Reference-First' approach to ensure stability in Apple Numbers."""
+    try:
+        ref_path = "/Users/nayangarg/Desktop/DigitcomWebsiteRenovation/Old_Codebase_renovated_v6.1/FinaliseBillingFormat/DIGITCOM_ AIRFIBER_DC0105_ JDPR_29-JAN-26_A6 (REJECT) 2.xlsx"
+        print(f"- Injecting Main WCC from reference: {os.path.basename(ref_path)}")
+        
+        # 1. Load the reference template as the BASE workbook
+        wb_final = openpyxl.load_workbook(ref_path)
+        
+        # 2. Update Main WCC
+        ws_main = wb_final['Main WCC']
+        ws_main['D32'] = f"{len(df_sites)} SITES"
+        
         date_col = next((c for c in df_sites.columns if 'COMPLETION' in c.upper() or 'RFS DATE' in c.upper()), None)
         date_range = "N/A"
         if date_col:
@@ -765,14 +806,24 @@ def inject_main_wcc_from_reference(wb, df_sites, dc_number, wo_number):
             min_date = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
             max_date = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
             date_range = f"{min_date} TO {max_date}"
-        dst_ws['I32'] = date_range
+        ws_main['I32'] = date_range
+        ws_main['D29'] = wo_number
         
-        # WO Number: D29
-        dst_ws['D29'] = wo_number
+        # 3. Load programmatic sheets from the temp file
+        wb_temp = openpyxl.load_workbook(output_path)
         
-        # Logo Injection removed
-        pass
-            
+        # 4. Copy sheets INTO template base
+        sheets_to_copy = ['JMS', 'WCC', 'Abstract', 'BOQ', 'Declaration', 'Reco', 'Annexture']
+        for sn in wb_temp.sheetnames:
+            # Exact match or prefix match, but NEVER match 'Main WCC'
+            if sn in sheets_to_copy or any(sn.startswith(base) for base in sheets_to_copy):
+                if sn != 'Main WCC':
+                    print(f"  - Copying sheet: {sn}")
+                    copy_sheet_between_workbooks(wb_temp[sn], wb_final, sn)
+        
+        wb_final.save(output_path)
+        print("- Hybrid Injection COMPLETE")
+        
     except Exception as e:
         print(f"Error injecting template: {e}")
 
@@ -869,6 +920,11 @@ def main():
                 os.makedirs(output_dir, exist_ok=True)
                 
             wb.save(output_path)
+            
+            # Step 7: Hybrid Injection for Stable Main WCC
+            wo_number = get_wo_number(master_path, dc_number)
+            inject_main_wcc_from_reference(output_path, df_sites, dc_number, wo_number)
+            
             print(f"COMPLETE: {output_path}")
         except Exception as e:
             print(f"ERROR: {e}")

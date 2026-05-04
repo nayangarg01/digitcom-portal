@@ -7,6 +7,7 @@ import sys
 import argparse
 import os
 from copy import copy
+from openpyxl.drawing.image import Image as OpenpyxlImage
 
 def safe_float(val):
     """
@@ -680,30 +681,100 @@ def generate_reco_sheet(df_sites, wb):
 
     return True
 
-def populate_main_wcc(df_sites, wb, dc_number):
-    """
-    Populates the Main WCC sheet with Logo, Site Count, and Date Range.
-    """
-    if 'Main WCC' not in wb.sheetnames: return
-    ws = wb['Main WCC']
-    
-    # 1. Site Count and Date Range from WCC data
-    num_sites = len(df_sites)
-    
-    # Audit found 'Completion Date ' with a trailing space
-    date_col = 'Completion Date ' if 'Completion Date ' in df_sites.columns else 'Completion Date'
-    if date_col in df_sites.columns:
-        dates = pd.to_datetime(df_sites[date_col], errors='coerce')
-        min_date = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
-        max_date = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
-        date_range = f"{min_date} TO {max_date}"
-    else:
+def get_wo_number(master_path, dc_number):
+    """Looks up the WO number from the Master Tracker's 'WO' column based on 'BILLING FILE' matching dc_number."""
+    try:
+        wb = openpyxl.load_workbook(master_path, data_only=True)
+        ws = wb.active 
+        
+        # Row 2 contains headers
+        headers = [str(c.value).upper().strip() if c.value else "" for c in ws[2]]
+        
+        billing_col_idx = None
+        wo_col_idx = None
+        
+        for i, h in enumerate(headers):
+            if "BILLING FILE" in h or "DC NUMBER" in h:
+                billing_col_idx = i
+            if h == "WO":
+                wo_col_idx = i
+        
+        # Fallbacks to identified indices
+        if billing_col_idx is None: billing_col_idx = 47
+        if wo_col_idx is None: wo_col_idx = 14
+        
+        for row in ws.iter_rows(min_row=3, values_only=True):
+            if str(row[billing_col_idx]).strip().upper() == dc_number.upper():
+                return str(row[wo_col_idx]).strip()
+        
+        return "N/A"
+    except Exception as e:
+        print(f"Error looking up WO: {e}")
+        return "N/A"
+
+def inject_main_wcc_from_reference(wb, df_sites, dc_number, wo_number):
+    """Replaces the Main WCC sheet with a copy from the reference file."""
+    try:
+        ref_path = "/Users/nayangarg/Desktop/DigitcomWebsiteRenovation/Old_Codebase_renovated_v6.1/FinaliseBillingFormat/DIGITCOM_ AIRFIBER_DC0105_ JDPR_29-JAN-26_A6 (REJECT) 2.xlsx"
+        print(f"- Injecting Main WCC from reference: {os.path.basename(ref_path)}")
+        wb_ref = openpyxl.load_workbook(ref_path)
+        
+        if 'Main WCC' not in wb_ref.sheetnames:
+            print("ERROR: 'Main WCC' sheet not found in reference file.")
+            return
+            
+        src_ws = wb_ref['Main WCC']
+        
+        # Create new Main WCC at the first position
+        if 'Main WCC' in wb.sheetnames:
+            del wb['Main WCC']
+        dst_ws = wb.create_sheet('Main WCC', 0)
+        
+        # Copy values and styles
+        for row in src_ws.iter_rows():
+            for cell in row:
+                new_cell = dst_ws.cell(row=cell.row, column=cell.column, value=cell.value)
+                if cell.has_style:
+                    new_cell.font = copy(cell.font)
+                    new_cell.border = copy(cell.border)
+                    new_cell.fill = copy(cell.fill)
+                    new_cell.number_format = copy(cell.number_format)
+                    new_cell.alignment = copy(cell.alignment)
+        
+        # Copy merged cells
+        for merged_range in src_ws.merged_cells.ranges:
+            dst_ws.merge_cells(str(merged_range))
+            
+        # Copy dimensions
+        for col, dim in src_ws.column_dimensions.items():
+            dst_ws.column_dimensions[col].width = dim.width
+            dst_ws.column_dimensions[col].hidden = dim.hidden
+        for row, dim in src_ws.row_dimensions.items():
+            dst_ws.row_dimensions[row].height = dim.height
+            dst_ws.row_dimensions[row].hidden = dim.hidden
+            
+        # Update Fields
+        # No of Sites: D32
+        dst_ws['D32'] = f"{len(df_sites)} SITES"
+        
+        # Completion Date: I32
+        date_col = next((c for c in df_sites.columns if 'COMPLETION' in c.upper() or 'RFS DATE' in c.upper()), None)
         date_range = "N/A"
-    
-    # Cell [32, 4]: No of Sites
-    ws.cell(row=32, column=4).value = f"{num_sites} SITES"
-    # Cell [32, 9]: Completion Date
-    ws.cell(row=32, column=9).value = date_range
+        if date_col:
+            dates = pd.to_datetime(df_sites[date_col], errors='coerce')
+            min_date = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+            max_date = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+            date_range = f"{min_date} TO {max_date}"
+        dst_ws['I32'] = date_range
+        
+        # WO Number: D29
+        dst_ws['D29'] = wo_number
+        
+        # Logo Injection removed
+        pass
+            
+    except Exception as e:
+        print(f"Error injecting template: {e}")
 
 def populate_declaration_data(df_sites, wb, dc_number):
     """
@@ -760,7 +831,9 @@ def main():
             # Step 1: Main WCC & WCC
             print("- Step 1: Populating WCC and Main WCC Headers...")
             generate_wcc_sheet(df_sites, wb)
-            populate_main_wcc(df_sites, wb, dc_number)
+            
+            wo_number = get_wo_number(master_path, dc_number)
+            inject_main_wcc_from_reference(wb, df_sites, dc_number, wo_number)
             
             # Step 2: JMS
             print("- Step 2: Populating JMS (Style DNA Mirroring)...")

@@ -3,6 +3,9 @@ import xlsxwriter
 import sys
 import argparse
 import os
+import openpyxl
+from copy import copy
+from openpyxl.drawing.image import Image as OpenpyxlImage
 
 def safe_float(val):
     if pd.isna(val) or str(val).strip() == "" or str(val).strip().upper() in ["NR", "NA", "N.A", "-"]:
@@ -91,121 +94,133 @@ TEMPLATE_ITEMS_A6_B6 = [
   {"sap": "3339581", "desc": "CHRG TRANSPORTATION-BEYOND 100 KM-SCV", "uom": "KM", "rate": 20}
 ]
 
-def write_main_wcc(wb, df_sites, dc_number, formats):
-    ws = wb.add_worksheet('Main WCC')
-    ws.set_column('A:A', 5)
-    ws.set_column('B:B', 20)
-    ws.set_column('C:G', 15)
-    ws.set_column('H:H', 30)
+def get_wo_number(master_path, dc_number):
+    """Looks up the WO number from the Master Tracker's 'WO' column based on 'BILLING FILE' matching dc_number."""
+    try:
+        wb = openpyxl.load_workbook(master_path, data_only=True)
+        ws = wb.active 
+        
+        # Row 2 contains headers
+        headers = [str(c.value).upper().strip() if c.value else "" for c in ws[2]]
+        
+        billing_col_idx = None
+        wo_col_idx = None
+        
+        for i, h in enumerate(headers):
+            if "BILLING FILE" in h or "DC NUMBER" in h:
+                billing_col_idx = i
+            if h == "WO":
+                wo_col_idx = i
+        
+        # Fallbacks to identified indices
+        if billing_col_idx is None: billing_col_idx = 47
+        if wo_col_idx is None: wo_col_idx = 14
+        
+        for row in ws.iter_rows(min_row=3, values_only=True):
+            if str(row[billing_col_idx]).strip().upper() == dc_number.upper():
+                return str(row[wo_col_idx]).strip()
+        
+        return "N/A"
+    except Exception as e:
+        print(f"Error looking up WO: {e}")
+        return "N/A"
 
-    # Calculate dates and sites
-    num_sites = len(df_sites)
-    date_col = None
-    for c in ['Completion Date ', 'Completion Date', 'RFS DATE']:
-        if c in df_sites.columns:
-            date_col = c
-            break
-            
-    date_range = "N/A"
-    if date_col:
-        dates = pd.to_datetime(df_sites[date_col], errors='coerce')
-        min_date = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
-        max_date = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
-        date_range = f"{min_date} TO {max_date}"
-
-    # Draw the static form (Row 1 to 28, Col B to H)
-    f_title = wb.add_format({'bold': True, 'font_size': 16, 'align': 'center', 'valign': 'vcenter', 'border': 2})
-    f_bold = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1})
-    f_norm = wb.add_format({'align': 'left', 'valign': 'vcenter', 'border': 1})
-    f_center = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
-
-    ws.merge_range('B2:H3', 'Work Completion Certificate', f_title)
-
-    # Row 4
-    ws.write('B5', 'State', f_bold)
-    ws.merge_range('C5:D5', 'RAJASTHAN', f_center)
-    ws.merge_range('E5:G5', 'Maintenance Point', f_bold)
-    ws.write('H5', 'Jaipur', f_center)
-
-    # Row 5 (Project Type)
-    ws.write('B7', 'Project Type', f_bold)
-    ws.write('C7', '93 K', f_center)
-    ws.write('D7', 'Infill', f_center)
-    ws.write('E7', 'Growth', f_center)
-    ws.merge_range('F7:G7', 'Other (Specify) _________________', f_bold)
-    ws.write('H7', 'Air Fiber Installation', f_center)
-
-    # Row 7 (Site Type)
-    ws.write('B9', 'Site Type', f_bold)
-    ws.write('C9', 'Own Built', f_center)
-    ws.write('D9', 'IP Colo', f_center)
-    ws.write('E9', 'RP1', f_center)
-    ws.write('F9', 'BSNL', f_center)
-    ws.write('G9', 'MAG1 NLD AG1', f_center)
-    ws.write('H9', 'ZXZ', f_center)
-
-    # Row 9 (Tower type)
-    ws.write('B11', 'Tower type', f_bold)
-    ws.write('C11', 'GBT', f_center)
-    ws.write('D11', 'RTT', f_center)
-    ws.write('E11', 'RTP', f_center)
-    ws.write('F11', 'GBM', f_center)
-    ws.write('G11', 'NBT Other(Specify) ____________', f_bold)
-    ws.write('H11', 'Air Fiber Installation', f_center)
-
-    # Row 11 & 12 (Cert text)
-    ws.merge_range('B13:H13', 'This is to certify that work has been completed as per specification given in workorder on the sites mentioned', f_center)
-    ws.merge_range('B14:H14', 'The required ITP / Checklists are available and verified in system', f_bold)
-
-    # Row 14
-    ws.write('B16', 'Site Name', f_bold)
-    ws.merge_range('C16:E16', 'As per Annexture', f_center)
-    ws.merge_range('F16:G16', 'SAP ID', f_bold)
-    ws.write('H16', 'As per Annexture', f_center)
-
-    # Row 16
-    ws.write('B18', 'W.O.Number', f_bold)
-    ws.merge_range('C18:E18', 'P14/630330726', f_center)
-    ws.merge_range('F18:G18', 'Vendor Name  M/S.', f_bold)
-    ws.write('H18', 'DIGITCOM INDIA TECHNOLOGIES', f_center)
-
-    # Row 18
-    ws.write('B20', 'No of Sites', f_bold)
-    ws.merge_range('C20:E20', f'{num_sites} SITES', f_center)
-    ws.merge_range('F20:G20', 'Completion Date', f_bold)
-    ws.write('H20', date_range, f_center)
-
-    # Row 20
-    ws.merge_range('B22:E22', 'Vendor Representative', f_bold)
-    ws.merge_range('F22:H22', 'RJIL Representative', f_bold)
-
-    # Row 22
-    ws.write('B24', 'Name', f_bold)
-    ws.merge_range('C24:E24', 'ANKUSH SRIVASTAVA', f_center)
-    ws.merge_range('F24:G24', 'Name', f_bold)
-    ws.write('H24', 'MR. Manish Nahar', f_center)
-
-    # Row 24
-    ws.write('B26', 'Sign', f_bold)
-    ws.merge_range('C26:E26', '', f_norm)
-    ws.merge_range('F26:G26', 'Sign', f_bold)
-    ws.write('H26', '', f_norm)
-
-    # Row 26
-    ws.write('B28', 'Date', f_bold)
-    ws.merge_range('C28:E28', '', f_norm)
-    ws.merge_range('F28:G28', 'Date', f_bold)
-    ws.write('H28', '', f_norm)
-
-    # Row 28
-    ws.merge_range('B30:H30', 'Remarks, if any:', f_bold)
+def copy_sheet_between_workbooks(src_ws, dst_wb, sheet_name, index=None):
+    """Safely copies a sheet from one workbook to another, including values and styles."""
+    if sheet_name in dst_wb.sheetnames:
+        del dst_wb[sheet_name]
     
-    # Row 30 (Note)
-    ws.write('B32', 'Note :', f_bold)
-    ws.merge_range('C32:H32', 'In case of Multiple sites, please attach applicable site details with this certificate', f_norm)
+    if index is not None:
+        dst_ws = dst_wb.create_sheet(sheet_name, index)
+    else:
+        dst_ws = dst_wb.create_sheet(sheet_name)
+        
+    # Copy values and basic styles
+    for row in src_ws.iter_rows():
+        for cell in row:
+            new_cell = dst_ws.cell(row=cell.row, column=cell.column, value=cell.value)
+            if cell.has_style:
+                try:
+                    new_cell.font = copy(cell.font)
+                    new_cell.border = copy(cell.border)
+                    new_cell.fill = copy(cell.fill)
+                    new_cell.number_format = copy(cell.number_format)
+                    new_cell.alignment = copy(cell.alignment)
+                except:
+                    pass
+                    
+    # Merged cells
+    for merged_range in src_ws.merged_cells.ranges:
+        dst_ws.merge_cells(str(merged_range))
+        
+    # Column Dimensions
+    for col, dim in src_ws.column_dimensions.items():
+        dst_ws.column_dimensions[col].width = dim.width
+        
+    # Row Dimensions
+    for row, dim in src_ws.row_dimensions.items():
+        dst_ws.row_dimensions[row].height = dim.height
 
-def write_wcc(wb, df_sites, dc_number, formats, activity='A6'):
+def inject_main_wcc_template(output_path, ref_path, df_sites, dc_number, wo_number):
+    """Uses the 'Reference-First' approach to ensure stability in Apple Numbers."""
+    try:
+        print(f"- Injecting Main WCC using Stable Hybrid logic...")
+        # 1. Load the reference template as the BASE workbook (this ensures a healthy structure)
+        wb_final = openpyxl.load_workbook(ref_path)
+        
+        # 2. Update Main WCC in the base template
+        if 'Main WCC' not in wb_final.sheetnames:
+            print("ERROR: 'Main WCC' not found in template.")
+            return
+            
+        ws_main = wb_final['Main WCC']
+        ws_main['D32'] = f"{len(df_sites)} SITES"
+        
+        # Completion Date
+        date_col = next((c for c in df_sites.columns if 'COMPLETION' in c.upper() or 'RFS DATE' in c.upper()), None)
+        date_range = "N/A"
+        if date_col:
+            dates = pd.to_datetime(df_sites[date_col], errors='coerce')
+            min_date = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+            max_date = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+            date_range = f"{min_date} TO {max_date}"
+        ws_main['I32'] = date_range
+        ws_main['D29'] = wo_number
+        
+        # 3. Load the programmatic sheets from the temp XlsxWriter file
+        wb_temp = openpyxl.load_workbook(output_path)
+        
+        # 4. Copy programmatic sheets INTO the template base
+        sheets_to_copy = ['JMS', 'WCC', 'Abstract', 'BOQ', 'Declaration', 'Reco', 'Annexture']
+        for sn in wb_temp.sheetnames:
+            if any(base in sn for base in sheets_to_copy):
+                print(f"  - Copying programmatic sheet: {sn}")
+                copy_sheet_between_workbooks(wb_temp[sn], wb_final, sn)
+        
+        # 5. Save the final file (overwriting the XlsxWriter temp file)
+        wb_final.save(output_path)
+        print("- Hybrid Generation COMPLETE")
+        
+    except Exception as e:
+        print(f"Error in hybrid generation: {e}")
+        import traceback
+        traceback.print_exc()
+
+def write_main_wcc(wb, df_sites, dc_number, formats):
+    # This is now a placeholder, we will overwrite it with the template using openpyxl
+    ws = wb.add_worksheet('Main WCC')
+    ws.write('A1', 'TEMPLATE PLACEHOLDER')
+
+def write_wcc(wb, df_sites, dc_number, formats, activity='A6', wo_number='P14/630330726'):
     ws = wb.add_worksheet('WCC')
+    
+    # Formats with thin borders
+    f_title = wb.add_format({'bold': True, 'font_size': 12, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#DCE6F1', 'border': 1})
+    f_cert = wb.add_format({'bold': True, 'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+    f_head = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#DCE6F1', 'border': 1, 'text_wrap': True})
+    f_head_yellow = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#FFFF00', 'border': 1, 'text_wrap': True})
+    f_cell = wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_date = wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': 'dd-mmm-yy'})
     
     if activity == 'A6_B6':
         headers_1 = [
@@ -230,7 +245,7 @@ def write_wcc(wb, df_sites, dc_number, formats, activity='A6'):
     ws.merge_range('C3:P4' if activity == 'A6_B6' else 'C3:O4', 'Work Completion Certificate', formats['title'])
     
     # 2. Certification Text
-    cert_text = "This is to certify that below sites pertaining to WO/WCO No.P14/630330726 Dated in 03-10-2025 respect of Digitcom India Technologies  has  been successfully completed in all respect."
+    cert_text = f"This is to certify that below sites pertaining to WO/WCO No.{wo_number} Dated in 03-10-2025 respect of Digitcom India Technologies  has  been successfully completed in all respect."
     ws.merge_range('C6:P6' if activity == 'A6_B6' else 'C6:O6', cert_text, formats['cert_text'])
     
     # 3. Write Headers
@@ -251,7 +266,7 @@ def write_wcc(wb, df_sites, dc_number, formats, activity='A6'):
     col_idx = 2 + len(headers_1) + 2 # Add some padding columns (Column Q or R)
     start_yellow_col = col_idx
     for h in headers_2:
-        ws.write(r_head, col_idx, h, formats['header_yellow'])
+        ws.write(r_head, col_idx, h, f_head_yellow)
         ws.set_column(col_idx, col_idx, 12)
         col_idx += 1
 
@@ -331,7 +346,7 @@ def write_wcc(wb, df_sites, dc_number, formats, activity='A6'):
     ws.write(r_sig+2, 12 if activity == 'A6' else 13, "MR. MANISH NAHAR", formats['bold_left'])
     ws.write(r_sig+3, 12 if activity == 'A6' else 13, "DATE:", formats['bold_left'])
 
-def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity='A6'):
+def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity='A6', wo_number='P14/630330726'):
     ws = wb.add_worksheet(sheet_name)
     num_sites = len(df_sites)
     
@@ -364,14 +379,26 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
 
     f_title = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#D9D9D9', 'border': 1})
     f_center = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter'})
+    f_left = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter'})
+    f_right = wb.add_format({'bold': True, 'align': 'right', 'valign': 'vcenter'})
     f_head = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'bg_color': '#DCE6F1', 'border': 1})
     f_head_vert = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'rotation': 90, 'bg_color': '#DCE6F1', 'border': 1})
     
     # Title Block
     ws.merge_range(0, 0, 0, last_col, sheet_name, f_title)
-    ws.merge_range(1, 0, 1, last_col, 'Work Order No P14/630330726', f_center)
-    ws.merge_range(2, 0, 2, last_col, 'Contractor Name: DIGITCOM INDIA TECHNOLOGIES       Work Order Dated: 03-10-2025', f_center)
-    ws.merge_range(3, 0, 3, last_col, 'WO for Airspan A6 +B6 Radios for Airfiber' if activity == 'A6_B6' else 'WO for Airspan A6 and C6 Radios for Airfiber', f_center)
+    
+    # Row 1: Work Order No (Center)
+    ws.merge_range(1, 0, 1, last_col, f'Work Order No : {wo_number}', f_center)
+    
+    # Row 2: Contractor Name (Left) + Work Order Dated (Center)
+    mid = last_col // 2
+    ws.merge_range(2, 0, 2, mid, 'Contractor Name: DIGITCOM INDIA TECHNOLOGIES', f_left)
+    ws.merge_range(2, mid + 1, 2, last_col, 'Work Order Dated: 03-10-2025', f_center)
+    
+    # Row 3: Project Description (Left)
+    ws.merge_range(3, 0, 3, last_col, 'WO for Airspan A6 and C6 Radios for Airfiber' if activity != 'A6_B6' else 'WO for Airspan A6 +B6 Radios for Airfiber', f_left)
+    
+    # Row 4 & 5: Service Dates (Center)
     ws.merge_range(4, 0, 4, last_col, f'Service Done From Date: {min_date_str}', f_center)
     ws.merge_range(5, 0, 5, last_col, f'Service Done To Date: {max_date_str}', f_center)
     
@@ -396,29 +423,29 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
         ws.write(8, tot_col + 2, 'AMOUNT', f_head)
         
     # Site Type & Sectors
-    ws.write(10, 1, 'Site Type', formats['bold_right'])
-    ws.write(10, 2, '', formats['bold_right'])
+    ws.write(9, 1, 'Site Type', formats['bold_right'])
+    ws.write(9, 2, '', formats['bold_right'])
     for i, (_, row) in enumerate(df_sites.iterrows()):
         tt_col = 'TOWER' if activity == 'A6_B6' else 'Tower type'
         tt = str(row.get(tt_col, '')).strip()
-        ws.write(10, 3 + i, tt, formats['number'])
+        ws.write(9, 3 + i, tt, formats['number'])
         
-    ws.write(12, 1, 'Sectors', formats['bold_right'])
-    ws.write(12, 2, '', formats['bold_right'])
+    ws.write(10, 1, 'Sectors', formats['bold_right'])
+    ws.write(10, 2, '', formats['bold_right'])
     total_sectors = 0
     for i, (_, row) in enumerate(df_sites.iterrows()):
         sec_col = 'NO OF SECTOR' if activity == 'A6_B6' else 'NO OF SECTOR' # Same key actually
         sec = safe_float(row.get(sec_col))
         total_sectors += sec
-        ws.write(12, 3 + i, sec, formats['number'])
-    ws.write(12, tot_col, total_sectors, formats['number_bold'])
+        ws.write(10, 3 + i, sec, formats['number'])
+    ws.write(10, tot_col, total_sectors, formats['number_bold'])
     
     # Data Table Headers
-    ws.write(13, 0, 'Item code', f_head)
-    ws.write(13, 1, 'Description of Item', f_head)
-    ws.write(13, 2, 'UOM', f_head)
+    ws.write(11, 0, 'Item code', f_head)
+    ws.write(11, 1, 'Description of Item', f_head)
+    ws.write(11, 2, 'UOM', f_head)
     
-    r_idx = 14
+    r_idx = 12
     items = TEMPLATE_ITEMS_A6_B6 if activity == 'A6_B6' else TEMPLATE_ITEMS
     for item in items:
         ws.write(r_idx, 0, item['sap'], formats['cell'])
@@ -964,14 +991,23 @@ def main():
                 'date': wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': 'dd-mmm-yy'})
             }
             
-            write_main_wcc(wb, df_sites, dc_number, formats)
-            write_wcc(wb, df_sites, dc_number, formats, activity=activity)
-            write_matrix_sheet(wb, 'JMS', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity)
-            write_matrix_sheet(wb, 'Abstract', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity)
-            write_matrix_sheet(wb, 'BOQ', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity)
+            wo_number = get_wo_number(args.master_path, dc_number)
+            
+            write_main_wcc(wb, df_sites, dc_number, formats) 
+            write_wcc(wb, df_sites, dc_number, formats, activity=activity, wo_number=wo_number)
+            write_matrix_sheet(wb, 'JMS', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity, wo_number=wo_number)
+            write_matrix_sheet(wb, 'Abstract', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity, wo_number=wo_number)
+            write_matrix_sheet(wb, 'BOQ', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity, wo_number=wo_number)
             write_declaration(wb, df_sites, dc_number, formats, activity=activity)
             write_annexure_and_reco(wb, df_sites, dc_number, formats, args.mindump, activity=activity)
 
+        # AFTER CLOSING WORKBOOK (XlsxWriter), Re-open with Openpyxl to inject template
+        ref_template = "/Users/nayangarg/Desktop/DigitcomWebsiteRenovation/Old_Codebase_renovated_v6.1/FinaliseBillingFormat/DIGITCOM_ AIRFIBER_DC0105_ JDPR_29-JAN-26_A6 (REJECT) 2.xlsx"
+        master_tracker = args.master_path
+        
+        wo_number = get_wo_number(master_tracker, dc_number)
+        inject_main_wcc_template(output_path, ref_template, df_sites, dc_number, wo_number)
+        
         print(f"COMPLETE: {output_path}")
     else:
         print("ERROR: No valid data found for DC Number.")

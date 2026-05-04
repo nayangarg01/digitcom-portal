@@ -1,241 +1,203 @@
-import pandas as pd
-import xlsxwriter
 import argparse
 import os
 import openpyxl
-import re
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+from collections import defaultdict
 
 def safe_float(val):
     try:
         if val is None or val == '': return 0.0
+        if isinstance(val, str):
+            val = val.replace(',', '').strip()
         return float(val)
     except:
         return 0.0
+
+def apply_border(cell):
+    thin = Side(border_style="thin", color="000000")
+    cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
 
 def generate_performa_invoice(dc_files, mindump_path, iv_number, activity, output_path):
     # 1. Load MINDUMP for WBS lookup (A6 Dump)
     wbs_mapping = {}
     try:
-        # Load using pandas for easier site-based lookup
-        df_dump = pd.read_excel(mindump_path, sheet_name='A6 DUMP')
-        for _, row in df_dump.iterrows():
-            site_id = str(row.get('Site ID', '')).strip()
-            wbs_id = str(row.get('WBS ID', '')).strip()
-            if site_id and wbs_id and site_id.lower() != 'nan':
-                wbs_mapping[site_id] = wbs_id
+        wb_dump = openpyxl.load_workbook(mindump_path, data_only=True)
+        if 'A6 DUMP' in wb_dump.sheetnames:
+            ws_dump = wb_dump['A6 DUMP']
+            headers = [str(cell.value).strip() for cell in ws_dump[1]]
+            site_id_idx = -1
+            wbs_id_idx = -1
+            for i, h in enumerate(headers):
+                if h == 'Site ID': site_id_idx = i
+                if h == 'WBS ID': wbs_id_idx = i
+            if site_id_idx != -1 and wbs_id_idx != -1:
+                for row in ws_dump.iter_rows(min_row=2, values_only=True):
+                    site_id = str(row[site_id_idx]).strip() if row[site_id_idx] else ""
+                    wbs_id = str(row[wbs_id_idx]).strip() if row[wbs_id_idx] else ""
+                    if site_id and wbs_id and site_id.lower() != 'nan':
+                        wbs_mapping[site_id] = wbs_id
+        wb_dump.close()
     except Exception as e:
         print(f"Warning: Could not load MINDUMP for WBS mapping: {e}")
 
     # 2. Process each DC file
     all_rows = []
-    
     for dc_file in dc_files:
         if not os.path.exists(dc_file):
             print(f"Warning: File not found: {dc_file}")
             continue
-            
         try:
             wb = openpyxl.load_workbook(dc_file, data_only=True)
-            
-            # --- Nature of Work ---
             nature_of_work = "AIR FIBER INSTALLATION"
             if activity == 'A6_B6':
-                nature_of_work = "AIR FIBER INSTALLATION(A6+B6)"
-            
+                nature_of_work = "AIR FIBER INSTALLATION A6+B6"
             if 'JMS' not in wb.sheetnames:
                 print(f"Warning: JMS sheet missing in {dc_file}")
                 continue
-                
             ws_jms = wb['JMS']
-            
-            # --- Robustly find markers in JMS ---
             wo_number = "N/A"
+            vendor = "DIGITCOM INDIA TECHNOLOGIES"
             site_row = -1
             item_header_row = -1
-            
-            for r in range(1, 31):
+            for r in range(1, 16):
                 for c in range(1, 15):
                     cell_val = str(ws_jms.cell(row=r, column=c).value or "").strip()
-                    
-                    # 1. Look for Work Order No
-                    if "Work Order" in cell_val and wo_number == "N/A":
-                        # Value might be in same cell or next
-                        if ':' in cell_val:
-                            wo_number = cell_val.split(':')[-1].strip()
-                        else:
-                            # Try to extract the code at the end (e.g. P14/...)
-                            parts = cell_val.split()
-                            if parts: wo_number = parts[-1].strip()
-
-                    # 2. Look for Site ID header
-                    if "Site ID --" in cell_val:
-                        site_row = r
-                    
-                    # 3. Look for Item Header
-                    if 'Description' in cell_val and 'Item' in cell_val:
-                        item_header_row = r
-            
-            # Fallback for WO from Main WCC if still N/A
-            if wo_number == "N/A" and 'Main WCC' in wb.sheetnames:
-                ws_wcc = wb['Main WCC']
-                for r in range(1, 50):
-                    for c in range(1, 10):
-                        val = str(ws_wcc.cell(row=r, column=c).value or "").strip()
-                        if "W.O.Number" in val:
-                            wo_cell = ws_wcc.cell(row=r, column=c + 2)
-                            wo_number = str(wo_cell.value or "N/A").strip()
-                            break
-
+                    if "Work Order No" in cell_val:
+                        wo_number = cell_val.split(':')[-1].strip() if ':' in cell_val else cell_val.split()[-1].strip()
+                    if "Contractor Name" in cell_val:
+                        vendor = cell_val.split(':')[-1].strip() if ':' in cell_val else cell_val.replace("Contractor Name", "").strip()
+            for r in range(1, 40):
+                for c in range(1, 5):
+                    val = str(ws_jms.cell(row=r, column=c).value or "").strip()
+                    if "Site ID --" in val: site_row = r
+                    if "Description of Item" in val: item_header_row = r
+                if site_row != -1 and item_header_row != -1: break
             if site_row == -1 or item_header_row == -1:
-                print(f"Warning: Missing headers in {dc_file} (SiteRow={site_row}, ItemRow={item_header_row})")
+                print(f"Warning: Missing headers in {dc_file}")
                 continue
-                
-            # --- Extract Sites ---
             sites = []
-            # Sites usually start from column D (4) or check all columns in site_row
-            for col in range(2, ws_jms.max_column + 1):
+            for col in range(4, ws_jms.max_column + 1):
                 val = str(ws_jms.cell(row=site_row, column=col).value or "").strip()
                 if val and (val.startswith('I-RJ') or val.startswith('RJ')):
                     sites.append({'id': val, 'col': col})
-                elif val == 'Total Quantity' or 'Total' in val:
-                    # If we already have sites and hit Total, stop
-                    if sites: break
-
-            # Find Rate column
+                elif 'Total' in val or 'Quantity' in val: break
+                elif not val and col > 4: break
             rate_col = -1
-            # Search in site_row or item_header_row
             for r_check in [site_row, item_header_row]:
                 for col in range(1, ws_jms.max_column + 1):
                     val = str(ws_jms.cell(row=r_check, column=col).value or "").strip()
-                    if 'RATE' in val:
+                    if 'RATE' in val.upper():
                         rate_col = col
                         break
                 if rate_col != -1: break
-            
-            if rate_col == -1: rate_col = ws_jms.max_column - 2 # Final fallback
-
+            if rate_col == -1: rate_col = ws_jms.max_column - 1
             for site in sites:
                 site_id = site['id']
                 site_col = site['col']
                 wbs_id = wbs_mapping.get(site_id, "N/A")
-                
-                # Items start from item_header_row + 1
+                empty_row_count = 0
                 for r in range(item_header_row + 1, ws_jms.max_row + 1):
                     sap_code = str(ws_jms.cell(row=r, column=1).value or "").strip()
                     desc = str(ws_jms.cell(row=r, column=2).value or "").strip()
-                    if not desc or desc.upper() == 'TOTAL': break
                     
-                    qty_val = ws_jms.cell(row=r, column=site_col).value
-                    qty = safe_float(qty_val)
+                    if not desc or desc.upper() == 'TOTAL':
+                        empty_row_count += 1
+                        if empty_row_count > 5 or (desc and desc.upper() == 'TOTAL'):
+                            break
+                        continue
+                    
+                    empty_row_count = 0 # Reset if we find data
+                    qty = safe_float(ws_jms.cell(row=r, column=site_col).value)
                     
                     if qty > 0:
                         rate = safe_float(ws_jms.cell(row=r, column=rate_col).value)
-                        site_amount = qty * rate
-                        
                         all_rows.append({
-                            'vendor': 'DIGITCOM INDIA TECHNOLOGIES',
-                            'scope': 'ISP',
-                            'iv_no': f"PERFORMA INVOICE NO. {iv_number}",
-                            'wo_no': wo_number,
-                            'site': site_id,
-                            'wbs': wbs_id,
-                            'sap_code': sap_code,
-                            'description': desc,
-                            'nature': nature_of_work,
-                            'qty': qty,
-                            'rate': rate,
-                            'amount': site_amount
+                            'vendor': vendor, 'scope': 'ISP', 'iv_no': f"PERFORMA INVOICE NO. {iv_number}",
+                            'wo_no': wo_number, 'site': site_id, 'wbs': wbs_id, 'sap_code': sap_code,
+                            'description': desc, 'nature': nature_of_work, 'qty': qty, 'rate': rate, 'amount': qty * rate
                         })
-                        
+            wb.close()
         except Exception as e:
             print(f"Error processing {dc_file}: {e}")
-            import traceback
-            traceback.print_exc()
 
     # 3. Create Final Workbook
-    with xlsxwriter.Workbook(output_path) as wb:
-        # Formats
-        f_header = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#D9D9D9', 'font_size': 10})
-        f_cell = wb.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'font_size': 9})
-        f_num = wb.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'font_size': 9})
-        f_amount = wb.add_format({'border': 1, 'align': 'right', 'valign': 'vcenter', 'font_size': 9, 'num_format': '#,##0'})
-        f_title = wb.add_format({'bold': True, 'font_size': 14, 'align': 'center', 'valign': 'vcenter'})
-        
-        f_sum_title = wb.add_format({'bold': True, 'font_size': 16, 'align': 'center', 'valign': 'vcenter', 'border': 1})
-        f_sum_head = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#FFFF00'})
-        f_sum_total = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#00B050', 'font_color': 'black'})
-        f_sum_total_num = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#00B050', 'font_color': 'black', 'num_format': '#,##0'})
+    out_wb = openpyxl.Workbook()
+    
+    # Detail Sheet "1"
+    ws1 = out_wb.active
+    ws1.title = "1"
+    headers = ['VENDOR', 'SCOPE', 'IV NO', 'WO NO', 'SE NO', 'JMS', 'CI', 'SITE', 'WBS', 'DESC-SRIPTION', 'NATURE OF WORK', 'QTY', 'RATE', 'AMOUNT']
+    header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+    header_font = Font(bold=True)
+    for i, h in enumerate(headers, 1):
+        cell = ws1.cell(row=1, column=i)
+        cell.value = h
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+        apply_border(cell)
+    
+    for r_idx, r_data in enumerate(all_rows, 2):
+        row = [r_data['vendor'], r_data['scope'], r_data['iv_no'], r_data['wo_no'], '', '', '', r_data['site'], r_data['wbs'], r_data['description'], r_data['nature'], r_data['qty'], r_data['rate'], r_data['amount']]
+        for c_idx, val in enumerate(row, 1):
+            cell = ws1.cell(row=r_idx, column=c_idx)
+            cell.value = val
+            apply_border(cell)
+            if c_idx >= 12: cell.number_format = '#,##0'
 
-        # Sheet "1"
-        ws1 = wb.add_worksheet('1')
-        headers = ['VENDOR', 'SCOPE', 'IV NO', 'WO NO', 'SE NO', 'JMS', 'CI', 'SITE', 'WBS', 'DESC-SRIPTION', 'NATURE OF WORK', 'QTY', 'RATE', 'AMOUNT']
-        for i, h in enumerate(headers):
-            ws1.write(0, i, h, f_header)
-        
-        ws1.set_column(0, 0, 30) # Vendor
-        ws1.set_column(1, 1, 10) # Scope
-        ws1.set_column(2, 2, 25) # IV No
-        ws1.set_column(3, 3, 20) # WO No
-        ws1.set_column(7, 7, 20) # Site
-        ws1.set_column(8, 8, 20) # WBS
-        ws1.set_column(9, 9, 40) # Desc
-        ws1.set_column(10, 10, 25) # Nature
-        
-        row_idx = 1
-        for r in all_rows:
-            ws1.write(row_idx, 0, r['vendor'], f_cell)
-            ws1.write(row_idx, 1, r['scope'], f_cell)
-            ws1.write(row_idx, 2, r['iv_no'], f_cell)
-            ws1.write(row_idx, 3, r['wo_no'], f_cell)
-            ws1.write(row_idx, 4, '', f_cell) # SE NO
-            ws1.write(row_idx, 5, '', f_cell) # JMS
-            ws1.write(row_idx, 6, '', f_cell) # CI
-            ws1.write(row_idx, 7, r['site'], f_cell)
-            ws1.write(row_idx, 8, r['wbs'], f_cell)
-            ws1.write(row_idx, 9, r['description'], f_cell)
-            ws1.write(row_idx, 10, r['nature'], f_cell)
-            ws1.write(row_idx, 11, r['qty'], f_num)
-            ws1.write(row_idx, 12, r['rate'], f_amount)
-            ws1.write(row_idx, 13, r['amount'], f_amount)
-            row_idx += 1
+    # Summary Sheet "Sheet1"
+    ws_sum = out_wb.create_sheet("Sheet1")
+    ws_sum.merge_cells('B2:F2')
+    title_cell = ws_sum.cell(row=2, column=2)
+    title_cell.value = f'JMS DATA FOR PERFORMA INVOICE NO. {iv_number}'
+    title_cell.font = Font(bold=True, size=16)
+    title_cell.alignment = Alignment(horizontal="center")
+    apply_border(title_cell) # Note: apply_border on merged cell only styles the first cell
+    
+    sum_heads = ['DESCRIPTION', 'CODE', 'RATE', 'Sum of QTY', 'Sum of AMOUNT']
+    sum_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    for i, h in enumerate(sum_heads, 2):
+        cell = ws_sum.cell(row=3, column=i)
+        cell.value = h
+        cell.fill = sum_fill
+        cell.font = Font(bold=True)
+        apply_border(cell)
 
-        # Summary Sheet
-        ws_sum = wb.add_worksheet('Summary sheet1')
-        ws_sum.set_column('A:A', 5)
-        ws_sum.set_column('B:B', 50) # Description
-        ws_sum.set_column('C:C', 15) # Code
-        ws_sum.set_column('D:D', 15) # Rate
-        ws_sum.set_column('E:E', 15) # Qty
-        ws_sum.set_column('F:F', 20) # Amount
-        
-        ws_sum.merge_range('B2:F2', f'JMS DATA FOR PERFORMA INVOICE NO. {iv_number}', f_sum_title)
-        
-        sum_heads = ['DESCRIPTION', 'CODE', 'RATE', 'Sum of QTY', 'Sum of AMOUNT']
-        for i, h in enumerate(sum_heads):
-            ws_sum.write(2, i + 1, h, f_sum_head)
-            
-        df_all = pd.DataFrame(all_rows)
-        if not df_all.empty:
-            # Group by description, code, and rate
-            pivot = df_all.groupby(['description', 'sap_code', 'rate']).agg({'qty': 'sum', 'amount': 'sum'}).reset_index()
-            # Sort to match template if possible (usually by description)
-            pivot = pivot.sort_values('description')
-            
-            curr_row = 3
-            for _, row in pivot.iterrows():
-                ws_sum.write(curr_row, 1, row['description'], f_cell)
-                ws_sum.write(curr_row, 2, row['sap_code'], f_num)
-                ws_sum.write(curr_row, 3, row['rate'], f_num)
-                ws_sum.write(curr_row, 4, row['qty'], f_num)
-                ws_sum.write(curr_row, 5, row['amount'], f_amount)
-                curr_row += 1
-            
-            # Grand Total Row
-            ws_sum.write(curr_row, 1, 'Grand Total', f_sum_total)
-            ws_sum.write(curr_row, 2, '', f_sum_total)
-            ws_sum.write(curr_row, 3, '', f_sum_total)
-            ws_sum.write(curr_row, 4, df_all['qty'].sum(), f_sum_total_num)
-            ws_sum.write(curr_row, 5, df_all['amount'].sum(), f_sum_total_num)
+    summary_data = defaultdict(lambda: {'qty': 0.0, 'amount': 0.0})
+    for r in all_rows:
+        key = (r['description'].strip(), r['sap_code'], r['rate'])
+        summary_data[key]['qty'] += r['qty']
+        summary_data[key]['amount'] += r['amount']
+    
+    sorted_keys = sorted(summary_data.keys(), key=lambda x: x[0])
+    curr_row = 4
+    total_qty = 0.0
+    total_amt = 0.0
+    for key in sorted_keys:
+        desc, code, rate = key
+        q, a = summary_data[key]['qty'], summary_data[key]['amount']
+        ws_sum.cell(row=curr_row, column=2).value = desc
+        ws_sum.cell(row=curr_row, column=3).value = code
+        ws_sum.cell(row=curr_row, column=4).value = rate
+        ws_sum.cell(row=curr_row, column=5).value = q
+        ws_sum.cell(row=curr_row, column=6).value = a
+        for c in range(2, 7): apply_border(ws_sum.cell(row=curr_row, column=c))
+        total_qty += q
+        total_amt += a
+        curr_row += 1
+    
+    total_fill = PatternFill(start_color="00B050", end_color="00B050", fill_type="solid")
+    ws_sum.cell(row=curr_row, column=2).value = 'Grand Total'
+    ws_sum.cell(row=curr_row, column=5).value = total_qty
+    ws_sum.cell(row=curr_row, column=6).value = total_amt
+    for c in range(2, 7):
+        cell = ws_sum.cell(row=curr_row, column=c)
+        cell.fill = total_fill
+        cell.font = Font(bold=True)
+        apply_border(cell)
+        if c >= 5: cell.number_format = '#,##0.00'
+
+    out_wb.save(output_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -245,5 +207,4 @@ if __name__ == "__main__":
     parser.add_argument("--activity", default='A6')
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
-    
     generate_performa_invoice(args.files, args.mindump, args.iv_number, args.activity, args.output)

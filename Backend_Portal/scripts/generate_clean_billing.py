@@ -191,9 +191,10 @@ def inject_main_wcc_template(output_path, ref_path, df_sites, dc_number, wo_numb
         wb_temp = openpyxl.load_workbook(output_path)
         
         # 4. Copy programmatic sheets INTO the template base
+        # Using exact matching to avoid overwriting 'Main WCC' because it contains 'WCC'
         sheets_to_copy = ['JMS', 'WCC', 'Abstract', 'BOQ', 'Declaration', 'Reco', 'Annexture']
         for sn in wb_temp.sheetnames:
-            if any(base in sn for base in sheets_to_copy):
+            if sn in sheets_to_copy or any(sn.startswith(base) for base in sheets_to_copy):
                 print(f"  - Copying programmatic sheet: {sn}")
                 copy_sheet_between_workbooks(wb_temp[sn], wb_final, sn)
         

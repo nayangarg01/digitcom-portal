@@ -1,18 +1,13 @@
 import pandas as pd
-import openpyxl
-from openpyxl.utils import get_column_letter
-from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
-from openpyxl.cell.cell import MergedCell
+import xlsxwriter
 import sys
 import argparse
 import os
+import openpyxl
 from copy import copy
 from openpyxl.drawing.image import Image as OpenpyxlImage
 
 def safe_float(val):
-    """
-    Safely converts a value to float, handling 'NR', 'NA', or other text by returning 0.0.
-    """
     if pd.isna(val) or str(val).strip() == "" or str(val).strip().upper() in ["NR", "NA", "N.A", "-"]:
         return 0.0
     try:
@@ -20,709 +15,84 @@ def safe_float(val):
     except:
         return 0.0
 
-def load_master_data(master_path, dc_number):
+def format_date(val):
+    if pd.isna(val) or str(val).strip() == "":
+        return ""
     try:
-        # Load KM SHEET (first sheet)
-        df_full = pd.read_excel(master_path, header=None)
-        
-        if df_full.empty:
-            print("ERROR: Master Tracker file is empty.")
-            return None, None
+        dt = pd.to_datetime(val)
+        return dt.strftime('%d-%b-%y')
+    except:
+        return val
+
+def get_warehouse_name(code):
+    code = str(code).strip().upper()
+    mapping = {
+        'JLKD': 'JAIPUR',
+        'JLJH': 'JODHPUR',
+        'JLJQ': 'SAFEDABAD'
+    }
+    return mapping.get(code, code if code else 'JODHPUR')
+
+def load_master_data(master_path, dc_number, activity='A6'):
+    try:
+        sheet_name = 'A6+B6 Billings' if activity == 'A6_B6' else 0
+        df_full = pd.read_excel(master_path, sheet_name=sheet_name, header=None)
+        if df_full.empty: return None, None
             
-        # 1. Discover the 'BILLING FILE' column index (where DC numbers live)
-        # Search row 1 (0-indexed) which usually contains headers in this file
         dc_col_idx = 0
-        found_header = False
+        # For A6+B6, headers are usually in row 0, but for safety we check row 1 as well
+        header_row = 1 if activity == 'A6' else 0
+        raw_headers_list = df_full.iloc[header_row].tolist() if len(df_full) > header_row else []
         
-        # Safely extract headers from Row 1
-        raw_row1 = df_full.iloc[1].tolist() if len(df_full) > 1 else []
-        for i, h in enumerate(raw_row1):
+        for i, h in enumerate(raw_headers_list):
             h_str = str(h).upper().strip()
             if "BILLING FILE" in h_str or "DC NUMBER" in h_str:
                 dc_col_idx = i
-                found_header = True
                 break
-        
-        if not found_header:
-            print("WARNING: 'BILLING FILE' column not found in Row 2. Defaulting to column ID search.")
-            # Fallback: Search all columns for the DC number if header hit fails
-            for c_idx in range(df_full.shape[1]):
-                col_sample = df_full.iloc[:, c_idx].astype(str).str.upper().tolist()
-                if dc_number.upper() in col_sample:
-                    dc_col_idx = c_idx
-                    break
 
-        # 2. Filter Sites based on the discovered Billing column
         df_sites = df_full[df_full.iloc[:, dc_col_idx].astype(str).str.strip().str.upper() == dc_number.upper()].copy()
-        
-        if df_sites.empty:
-            print(f"DATA ERROR: No site records found for DC Number '{dc_number}' in column {dc_col_idx}.")
-            return None, None
+        if df_sites.empty: return None, None
             
-        # FIX: Assign proper column names so .upper() works in downstream functions
-        # Use the raw header row (Row 1) for column names
-        raw_headers = df_full.iloc[1].tolist()
+        raw_headers = df_full.iloc[header_row].tolist()
         df_sites.columns = [str(h).strip() for h in raw_headers]
         
-        # 3. Discover Item Code mapping (Dual-Key: Check Row 0 AND Row 1)
-        # Template uses SAP Codes, Master has them in Row 0 (Index 0)
         code_to_col_idx = {}
+        # Matrix mapping (only relevant for A6 for now, or if A6+B6 uses same item codes)
         row0 = df_full.iloc[0].tolist()
         row1 = df_full.iloc[1].tolist()
-        
         for i in range(len(row0)):
-            # Capture SAP Codes (Row 0)
             sap = str(row0[i]).split('.')[0].strip()
-            if sap and sap != 'nan':
-                code_to_col_idx[sap] = i
-                
-            # Capture Descriptions (Row 1)
+            if sap and sap != 'nan': code_to_col_idx[sap] = i
             desc = str(row1[i]).strip()
-            if desc and desc != 'nan':
-                code_to_col_idx[desc] = i
+            if desc and desc != 'nan': code_to_col_idx[desc] = i
                 
         return df_sites, code_to_col_idx
     except Exception as e:
         print(f"Error loading Master: {e}")
-        import traceback
-        traceback.print_exc()
         return None, None
 
-def generate_wcc_sheet(df_sites, wb):
-    """Injects the filtered sites into the WCC Template sheet using eNBsiteID."""
-    if 'WCC' not in wb.sheetnames:
-        print("WCC sheet missing.")
-        return False
-    ws = wb['WCC']
-    
-    # Locate headers in WCC
-    header_row_idx = None
-    cols_map = {}
-    for r_idx, row in enumerate(ws.iter_rows(values_only=True), start=1):
-        if row and 'GIS SECTOR_ID' in str(row):
-            header_row_idx = r_idx
-            for c_idx, val in enumerate(row, start=1):
-                if val: cols_map[str(val).strip()] = c_idx
-            break
-            
-    if not header_row_idx:
-        print("Could not locate WCC headers.")
-        return False
+# Template structure for Matrix
+TEMPLATE_ITEMS = [
+  {"sap": "3367489", "desc": "CHRG BASE RADIO INST&COMS AZIMUTH", "uom": "EA", "rate": 200},
+  {"sap": "3367548", "desc": "CHRG LAYING-MULTIMODE FIBER CABLE", "uom": "M", "rate": 5},
+  {"sap": "3137158", "desc": "LAYING-2CX2.5SQMM POWER CABLE", "uom": "M", "rate": 12},
+  {"sap": "3397253", "desc": "CHRG EXTRA TRANSPORT. > 50 KM (PICKUP", "uom": "KM", "rate": 20},
+  {"sap": "3397271", "desc": "CHRG TRANSPORT-UPTO 50KM-SCV-2-3SITE", "uom": "EA", "rate": 1500},
+  {"sap": "3367713", "desc": "CHRG ATP-11C - WIFI A6 DEPLOYMENT", "uom": "EA", "rate": 700},
+  {"sap": "3367739", "desc": "CHRG ATP-11A - WIFI A6 DEPLOYMENT", "uom": "EA", "rate": 700},
+  {"sap": "3317347", "desc": "SITC 1CX6 SQMM CU CBL YY FRLSH", "uom": "M", "rate": 68},
+  {"sap": "3383067", "desc": "CHRG APPLY PUFF SEALENT AT CABLE ENTRY", "uom": "EA", "rate": 330},
+  {"sap": "3269867", "desc": "TERMINATION OF CABLE 1CX6 SQMM Y", "uom": "M", "rate": 40},
+  {"sap": "3397248", "desc": "EXTRA VISIT", "uom": "EA", "rate": 1000},
+  {"sap": "3268025", "desc": "INSTALLATION OF POLE MOUNT ON TOWER", "uom": "EA", "rate": 500}
+]
 
-    start_row = header_row_idx + 1
-    base_styles = {}
-    for c_idx in range(1, ws.max_column + 1):
-        cell = ws.cell(row=start_row, column=c_idx)
-        base_styles[c_idx] = {
-            'font': copy(cell.font), 'border': copy(cell.border), 'fill': copy(cell.fill),
-            'number_format': cell.number_format, 'alignment': copy(cell.alignment)
-        }
-
-    # Manage row expansion
-    if len(df_sites) > 22:
-        ws.insert_rows(start_row + 22, amount=(len(df_sites) - 22))
-    elif len(df_sites) < 22:
-        ws.delete_rows(start_row + len(df_sites), amount=(22 - len(df_sites)))
-        
-    aktbc_col = next((c for c in df_sites.columns if 'CHRG EXTRA TRANSPORT' in c.upper() or 'AKTBC' == c.upper()), None)
-
-    for i, (_, row) in enumerate(df_sites.iterrows()):
-        curr_row = start_row + i
-        def get_val(matcher):
-            c_name = next((c for c in df_sites.columns if matcher.upper() in c.upper()), None)
-            return row[c_name] if c_name else ""
-            
-        mapping = [
-            ('Sr. No', i + 1),
-            ('ENB SITE ID', get_val('ENBSITEID')),
-            ('PMP SAP ID', get_val('PMP ID')),
-            ('GIS SECTOR_ID', get_val('GIS SECTOR')),
-            ('No of Sectors', get_val('NO OF SECTOR')),
-            ('Tower type', get_val('Tower type')),
-            ('JC', get_val('JC')), ('WH', get_val('WH')), ('VEHICLE NO', get_val('VEHICLE NO')),
-            ('MIN  NO', get_val('MIN NO')), ('MIN Date', get_val('MIN DATE')), ('Completion Date', get_val('Completion Date')),
-            ('REMARKS', "RFS DONE" if pd.notna(get_val('Completion Date')) and str(get_val('Completion Date')) != "" else ""),
-            ('ACTUAL KM', safe_float(row[aktbc_col]) if aktbc_col else 0.0),
-            ('KM-50', safe_float(get_val('KM-50(for a6+b6-100)'))),
-            ('KM IN WO', safe_float(get_val('KM IN WO'))),
-            ('A6 in wo', safe_float(get_val('A6 in wo'))),
-            ('cpri in wo', safe_float(get_val('cpri in wo'))),
-            ('power in wo', safe_float(get_val('power in wo'))),
-            ('puff sealant in wo', safe_float(get_val('puff sealant in wo'))),
-            ('termination in wo', safe_float(get_val('termination in wo'))),
-            ('EXTRA VISIT IN WO', safe_float(get_val('EXTRA VISIT IN WO'))),
-            ('Polemount in wo', safe_float(get_val('Polemount in wo')))
-        ]
-        
-        act_km = next((v for k, v in mapping if k == 'ACTUAL KM'), 0.0)
-        wo_km = next((v for k, v in mapping if k == 'KM IN WO'), 0.0)
-        mapping.append(('GAP', act_km - wo_km))
-        mapping.append(('USED KM IN WCC', act_km if act_km <= wo_km else wo_km))
-
-        for c_idx in range(1, ws.max_column + 1):
-            c = ws.cell(row=curr_row, column=c_idx)
-            styles = base_styles.get(c_idx)
-            if styles:
-                c.font, c.border, c.fill = copy(styles['font']), copy(styles['border']), copy(styles['fill'])
-                c.number_format, c.alignment = styles['number_format'], copy(styles['alignment'])
-
-        for col_name, val in mapping:
-            c_target = next((cols_map[k] for k in cols_map if col_name.upper() in k.upper()), None)
-            if c_target:
-                target_cell = ws.cell(row=curr_row, column=c_target)
-                target_cell.value = val.to_pydatetime() if isinstance(val, pd.Timestamp) else val
-                
-    # Update totals
-    last_r = start_row + len(df_sites) - 1
-    for sc in ['ACTUAL KM', 'USED KM IN WCC']:
-        c_i = next((cols_map[k] for k in cols_map if sc.upper() in k.upper()), None)
-        if c_i:
-            let = get_column_letter(c_i)
-            ws.cell(row=last_r+1, column=c_i).value = f"=SUM({let}{start_row}:{let}{last_r})"
-    return True
-
-def generate_jms_sheet(df_sites, code_to_col_idx, wb):
-    if 'JMS' not in wb.sheetnames:
-        return False
-    ws = wb['JMS']
-    
-    # 1. Coordinate Discovery (Non-Invasive)
-    coord = {}
-    for r in range(1, 40):
-        v = str(ws.cell(row=r, column=2).value).upper() if ws.cell(row=r, column=2).value else ""
-        if "COUNT" in v: coord['COUNT_ROW'] = r
-        if "SITE ID" in v: coord['SITE_ROW'] = r
-        if "SITE TYPE" in v: coord['TOWER_ROW'] = r
-        if "SECTORS" in v: coord['SECTOR_ROW'] = r
-        # Find TOTAL row to define matrix bottom
-        if r > 15 and "TOTAL" in v:
-            coord['TOTAL_ROW'] = r
-            break
-            
-    # Defaults if labels not found
-    C_ROW = coord.get('COUNT_ROW', 9)
-    S_ROW = coord.get('SITE_ROW', 10)
-    T_ROW = coord.get('TOWER_ROW', 11)
-    SEC_ROW = coord.get('SECTOR_ROW', 12)
-    MAX_R = coord.get('TOTAL_ROW', 26)
-    START_COL = 4  # Column D
-    
-    # Identify Template's Summary columns (Total Qty, Rate, Amount)
-    # Usually they follow the 22-column matrix
-    # Based on DC0105: Matrix is D to Y (Index 4 to 25). AA (27) is Total Qty.
-    TOTAL_QTY_COL = 27
-    
-    # Carry over Column Widths for Summary Columns (Total Qty, Rate, Amount)
-    # Col 27, 28, 29 in original are AA, AB, AC
-    orig_widths = {
-        'qty': ws.column_dimensions[get_column_letter(27)].width,
-        'rate': ws.column_dimensions[get_column_letter(28)].width,
-        'amt': ws.column_dimensions[get_column_letter(29)].width
-    }
-
-    # 2. Matrix Management (Only adding if absolutely necessary)
-    num_sites = len(df_sites)
-    if num_sites > 22:
-        # Insert columns BEFORE Total Quantity to maintain formulas
-        ws.insert_cols(27, amount=(num_sites - 22))
-        TOTAL_QTY_COL = 27 + (num_sites - 22)
-    elif num_sites < 22:
-        # We delete columns within the site range only
-        ws.delete_cols(START_COL + num_sites, amount=(22 - num_sites))
-        TOTAL_QTY_COL = 27 - (22 - num_sites)
-    else:
-        TOTAL_QTY_COL = 27
-
-    # 3. Data Injection (ONLY TOUCH SITES MATRIX)
-    for i, (_, site_row) in enumerate(df_sites.iterrows()):
-        curr_col = START_COL + i
-        
-        # Headers
-        ws.cell(row=C_ROW, column=curr_col).value = i + 1
-        # Site ID Header at Verdana 35 Bold
-        cell_id = ws.cell(row=S_ROW, column=curr_col)
-        cell_id.value = str(site_row['eNBsiteID']).strip()
-        cell_id.font = Font(name='Verdana', size=35, bold=True)
-        cell_id.alignment = Alignment(horizontal='center', vertical='center', text_rotation=90)
-        
-        ws.cell(row=T_ROW, column=curr_col).value = str(site_row['Tower type']).strip()
-        ws.cell(row=SEC_ROW, column=curr_col).value = site_row['NO OF SECTOR']
-        
-        # Matrix Values (Items 16 to MAX_R-1)
-        for r_idx in range(16, MAX_R):
-            item_id_val = ws.cell(row=r_idx, column=1).value
-            try:
-                item_code = str(int(item_id_val)) if item_id_val else ""
-            except:
-                item_code = str(item_id_val).strip() if item_id_val else ""
-            
-            if item_code in code_to_col_idx:
-                src_col = code_to_col_idx[item_code]
-                val = site_row.iloc[src_col]
-                ws.cell(row=r_idx, column=curr_col).value = safe_float(val)
-            else:
-                # If Item code row is mentioned but not found in tracker, reset to 0
-                ws.cell(row=r_idx, column=curr_col).value = 0.0
-            
-            # Apply Centering to all matrix data cells
-            ws.cell(row=r_idx, column=curr_col).alignment = Alignment(horizontal='center', vertical='center')
-
-from copy import copy
-
-def copy_cell_style(src_cell, dst_cell):
-    """Clones the exact DNA (Font, Border, Fill, Alignment, etc.) from one cell to another."""
-    if src_cell.has_style:
-        dst_cell.font = copy(src_cell.font)
-        dst_cell.border = copy(src_cell.border)
-        dst_cell.fill = copy(src_cell.fill)
-        dst_cell.number_format = copy(src_cell.number_format)
-        dst_cell.alignment = copy(src_cell.alignment)
-
-def populate_main_matrix(sheet_name, df_sites, code_to_col_idx, wb, values_only=False):
-    """
-    Universal Engine for JMS, Abstract, and BOQ. 
-    Writes the full site matrix and clones Style DNA from Row 25.
-    """
-    if sheet_name not in wb.sheetnames: return False
-    ws = wb[sheet_name]
-    
-    # Header Update Logic
-    amt_col = 30
-    for c in range(4, 50):
-        if "AMOUNT" in str(ws.cell(row=12, column=c).value).upper():
-            amt_col = c
-            break
-    
-    # 0. Headers (Ensuring exact alignment)
-    try:
-        wo_number = get_wo_number(os.getenv('MASTER_PATH', 'MASTER.xlsx'), df_sites.iloc[0, 47] if not df_sites.empty else "")
-    except:
-        wo_number = "P14/630330726"
-        
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=amt_col)
-    ws.cell(row=1, column=1).value = f"Work Order No : {wo_number}"
-    ws.cell(row=1, column=1).alignment = Alignment(horizontal='center', vertical='center')
-    
-    mid = amt_col // 2
-    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=mid)
-    ws.cell(row=2, column=1).value = "Contractor Name: DIGITCOM INDIA TECHNOLOGIES"
-    ws.cell(row=2, column=1).alignment = Alignment(horizontal='left', vertical='center')
-    
-    ws.merge_cells(start_row=2, start_column=mid+1, end_row=2, end_column=amt_col)
-    ws.cell(row=2, column=mid+1).value = "Work Order Dated: 03-10-2025"
-    ws.cell(row=2, column=mid+1).alignment = Alignment(horizontal='center', vertical='center')
-    
-    ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=amt_col)
-    ws.cell(row=3, column=1).value = "WO for Airspan A6 and C6 Radios for Airfiber"
-    ws.cell(row=3, column=1).alignment = Alignment(horizontal='left', vertical='center')
-    
-    # Dates
-    date_col = next((c for c in df_sites.columns if 'COMPLETION' in c.upper() or 'RFS DATE' in c.upper() or 'DATE' in c.upper()), None)
-    min_date = df_sites[date_col].min().strftime('%d-%b-%y').upper() if date_col and not df_sites[date_col].isna().all() else "N/A"
-    max_date = df_sites[date_col].max().strftime('%d-%b-%y').upper() if date_col and not df_sites[date_col].isna().all() else "N/A"
-
-    ws.merge_cells(start_row=4, start_column=1, end_row=4, end_column=amt_col)
-    ws.cell(row=4, column=1).value = f"Service Done From Date: {min_date}"
-    ws.cell(row=4, column=1).alignment = Alignment(horizontal='center', vertical='center')
-    
-    ws.merge_cells(start_row=5, start_column=1, end_row=5, end_column=amt_col)
-    ws.cell(row=5, column=1).value = f"Service Done To Date: {max_date}"
-    ws.cell(row=5, column=1).alignment = Alignment(horizontal='center', vertical='center')
-
-    # 0. Safety: Unmerge cells in the data matrix area
-    data_merge_ranges = []
-    for merged_range in ws.merged_cells.ranges:
-        if merged_range.min_row >= 11 and merged_range.max_row <= 30:
-            data_merge_ranges.append(merged_range)
-    for m_range in data_merge_ranges:
-        ws.unmerge_cells(str(m_range))
-
-    # 1. Discovery & Cleanup
-    num_sites = len(df_sites)
-    START_COL, C_ROW, S_ROW, T_ROW, SEC_ROW = 4, 11, 12, 13, 14
-    MAX_R = 28 # Items 16-27, Total 28
-    
-    # FIND TEMPLATE TOTALS POSITION (The Anchor)
-    orig_total_col = None
-    for c in range(START_COL + 1, 60):
-        h = str(ws.cell(row=12, column=c).value).upper().strip()
-        if "TOTAL QUANTITY" in h: 
-            orig_total_col = c
-            break
-    
-    # DYNAMIC SCALING (FIXED FOOTPRINT): Only delete if oversite, Clear if undersite
-    if orig_total_col:
-        num_template_site_cols = orig_total_col - START_COL
-        if num_sites < num_template_site_cols:
-            # UNDERSITE: No Delete! Clear unused columns instead to save signatures.
-            # This keeps 'Total Quantity' at AA (Column 27)
-            for c_clear in range(START_COL + num_sites, orig_total_col):
-                for r_clear in range(11, MAX_R):
-                    cell = ws.cell(row=r_clear, column=c_clear)
-                    cell.value = None
-                    cell.fill = PatternFill(fill_type=None)
-        elif num_sites > num_template_site_cols:
-            # OVERSITE: Insert columns to push totals to the right
-            num_to_add = num_sites - num_template_site_cols
-            ws.insert_cols(orig_total_col, num_to_add)
-    
-    # RE-FIND POSITIONS AFTER SCALING
-    TOTAL_QTY_COL, rate_col, amt_col = None, None, None
-    for c in range(START_COL, 65):
-        h = str(ws.cell(row=12, column=c).value).upper().strip()
-        if "TOTAL QUANTITY" in h: TOTAL_QTY_COL = c
-        elif "RATE AS PER SOW" in h: rate_col = c
-        elif "AMOUNT" in h: amt_col = c
-    
-    if not TOTAL_QTY_COL: TOTAL_QTY_COL = START_COL + num_sites
-    if not rate_col: rate_col = TOTAL_QTY_COL + 1
-    if not amt_col: amt_col = rate_col + 1
-
-    # 2. Data Injection
-    fcl, lcl = get_column_letter(START_COL), get_column_letter(START_COL + num_sites - 1)
-    
-    # Pre-populate Mandatory Labels for Abstract/BOQ (if missing)
-    if sheet_name in ['Abstract', 'BOQ']:
-        ws.cell(row=26, column=2).value = "EXTRA VISIT"
-        ws.cell(row=27, column=2).value = "POLE MOUNT"
-        ws.cell(row=26, column=3).value = "EA"
-        ws.cell(row=27, column=3).value = "EA"
-
-    for i, (_, site_row) in enumerate(df_sites.iterrows()):
-        curr_col = START_COL + i
-        ws.cell(row=C_ROW, column=curr_col).value = i + 1
-        
-        # PMP ID Authority (Row 12)
-        cell_id = ws.cell(row=S_ROW, column=curr_col)
-        cell_id.value = str(site_row['PMP ID']).strip()
-        cell_id.font = Font(name='Verdana', size=35, bold=True)
-        cell_id.alignment = Alignment(text_rotation=90, horizontal='center', vertical='center')
-        
-        ws.cell(row=T_ROW, column=curr_col).value = str(site_row['Tower type']).strip()
-        ws.cell(row=SEC_ROW, column=curr_col).value = site_row['NO OF SECTOR']
-        
-        for r in range(16, MAX_R):
-            item_id_val = ws.cell(row=r, column=1).value
-            try: item_code = str(int(item_id_val)) if item_id_val else ""
-            except: item_code = str(item_id_val).strip() if item_id_val else ""
-            
-            # Special bypass for mandatory rows
-            if not item_code and r == 26: item_code = "EXTRA VISIT"
-            if not item_code and r == 27: item_code = "POLE MOUNT"
-            
-            val = site_row.iloc[code_to_col_idx[item_code]] if item_code in code_to_col_idx else 0.0
-            cell_data = ws.cell(row=r, column=curr_col)
-            cell_data.value = safe_float(val)
-            cell_data.alignment = Alignment(horizontal='center', vertical='center')
-
-    # 3. STYLE DNA MIRRORING, RATES & SUMMATIONS (Strictly mirror Row 25 down to 27)
-    for r in range(16, MAX_R + 1):
-        # Mirror Style from Row 25
-        for c in range(1, amt_col + 1):
-            copy_cell_style(ws.cell(row=25, column=c), ws.cell(row=r, column=c))
-            
-        if r < MAX_R:
-            # ASSIGN SPECIFIC RATES
-            item_id_val = ws.cell(row=r, column=1).value
-            try: item_code = str(int(item_id_val)) if item_id_val else ""
-            except: item_code = str(item_id_val).strip() if item_id_val else ""
-            
-            if "EXTRA VISIT" in item_code.upper() or r == 26:
-                ws.cell(row=r, column=rate_col).value = 1000
-            elif "POLE MOUNT" in item_code.upper() or r == 27:
-                ws.cell(row=r, column=rate_col).value = 500
-            
-            # Row-wise Summations
-            f_col = get_column_letter(START_COL)
-            if r == 27: curr_code = "POLE MOUNT"
-
-            if values_only:
-                row_sum = sum([safe_float(df_sites.iloc[i].iloc[code_to_col_idx[curr_code]]) 
-                               if curr_code in code_to_col_idx else 0.0 
-                               for i in range(num_sites)])
-                ws.cell(row=r, column=TOTAL_QTY_COL).value = row_sum
-                rate = safe_float(ws.cell(row=r, column=rate_col).value)
-                ws.cell(row=r, column=amt_col).value = row_sum * rate
-            else:
-                ws.cell(row=r, column=TOTAL_QTY_COL).value = f"=SUM({fcl}{r}:{lcl}{r})"
-                ws.cell(row=r, column=amt_col).value = f"={get_column_letter(TOTAL_QTY_COL)}{r}*{get_column_letter(rate_col)}{r}"
-
-    # Sectors Total
-    ws.cell(row=SEC_ROW, column=TOTAL_QTY_COL).value = f"=SUM({fcl}{SEC_ROW}:{lcl}{SEC_ROW})"
-
-    # Grand Total (Row 28)
-    grand_total_row = MAX_R
-    for r in range(MAX_R, MAX_R + 10):
-        if "TOTAL" in str(ws.cell(row=r, column=2).value).upper():
-            grand_total_row = r; break
-            
-    if values_only:
-        v_sum = sum([safe_float(ws.cell(row=rr, column=amt_col).value) for rr in range(16, grand_total_row)])
-        ws.cell(row=grand_total_row, column=amt_col).value = v_sum
-    else:
-        ws.cell(row=grand_total_row, column=amt_col).value = f"=SUM({get_column_letter(amt_col)}16:{get_column_letter(amt_col)}{grand_total_row-1})"
-
-    return True
-
-def generate_annexure_sheet(df_sites, wb, mindump_path=None):
-    """
-    Builds a 'Clean-Room' Annexure with Size 20 font and Snapshot 2 layout.
-    LATEST-DATE LOGIC: For each site, finds the MAX(Date) in MINDUMP and pulls its rows.
-    """
-    if 'Annexture' not in wb.sheetnames: return False
-    ws = wb['Annexture']
-    
-    # 0. DEEP WIPE: Remove everything below the title to kill ghost formatting
-    max_r, max_c = ws.max_row, ws.max_column
-    for r in range(2, max_r + 1):
-        for c in range(1, max_c + 1):
-            cell = ws.cell(row=r, column=c)
-            cell.value = None
-            cell.fill = PatternFill(fill_type=None)
-            cell.border = Border()
-            cell.font = Font(name='Calibri', size=11)
-            cell.alignment = Alignment()
-
-    pmp_ids = df_sites.iloc[:, 1].astype(str).str.strip().tolist()
-
-    try:
-        # Priority: 1. Provided Path, 2. Fallback local, 3. Numbers fallback
-        if mindump_path and os.path.exists(mindump_path):
-            df_dump = pd.read_excel(mindump_path)
-        elif os.path.exists('Billing/MINDUMP.xlsx'):
-            df_dump = pd.read_excel('Billing/MINDUMP.xlsx')
-        else:
-            print("ERROR: MINDUMP file not found. Annexure will be empty.")
-            df_dump = pd.DataFrame()
-            
-        if not df_dump.empty:
-            df_dump['Site ID'] = df_dump['Site ID'].astype(str).str.strip()
-            
-            # 1. Per-Site Discovery Loop
-            df_all_snapshots = []
-            for pid in pmp_ids:
-                df_site = df_dump[df_dump['Site ID'] == pid]
-                if not df_site.empty:
-                    latest_date = df_site['Date'].max()
-                    df_snapshot = df_site[df_site['Date'] == latest_date]
-                    df_all_snapshots.append(df_snapshot)
-            
-            if not df_all_snapshots:
-                print(f"WARNING: No material found in MINDUMP for sites {pmp_ids}")
-                df_filtered = pd.DataFrame()
-            else:
-                df_filtered = pd.concat(df_all_snapshots)
-        else:
-            df_filtered = pd.DataFrame()
-    except Exception as e:
-        print(f"Annexure Error: {e}")
-        return False
-
-    if df_filtered.empty:
-        # We proceed to make an empty table with zeros later
-        pivot = pd.DataFrame(columns=pmp_ids)
-    else:
-        pivot = df_filtered.pivot_table(index=['SAP Code', 'Material Description'], 
-                                       columns='Site ID', values='No. Of Qty', aggfunc='sum').fillna(0)
-
-    # 1. Styles
-    medium_side = Side(style='medium', color="000000")
-    medium_border = Border(left=medium_side, right=medium_side, top=medium_side, bottom=medium_side)
-    F_SIZE = 20
-    
-    # 2. SITE HEADERS (Row 2, Vertical)
-    START_COL = 2
-    ws.row_dimensions[2].height = 120
-    for i, pmp_id in enumerate(pmp_ids):
-        col = START_COL + i
-        cell = ws.cell(row=2, column=col)
-        cell.value = pmp_id
-        cell.font = Font(name='Calibri', size=F_SIZE, bold=True)
-        cell.alignment = Alignment(text_rotation=90, horizontal='center', vertical='center', wrap_text=True)
-        cell.border = medium_border
-        ws.column_dimensions[get_column_letter(col)].width = 7
-
-    num_sites = len(pmp_ids)
-    sum_col = START_COL + num_sites
-    desc_col = sum_col + 1
-    
-    # Header Labels for Summary
-    header_labels = [(1, "Row Labels"), (sum_col, "GRAND\nTOTAL"), (desc_col, "Material Description")]
-    for c, lab in header_labels:
-        cell = ws.cell(row=2, column=c)
-        cell.value = lab
-        cell.font = Font(name='Calibri', size=F_SIZE, bold=True)
-        # Use Wrap Text for GRAND TOTAL to keep column narrow
-        cell.alignment = Alignment(horizontal='center', vertical='center', wrapText=True)
-        cell.border = medium_border
-        
-        if c == desc_col: 
-            ws.column_dimensions[get_column_letter(c)].width = 70 # Expanded for long names
-        elif c == sum_col:
-            ws.column_dimensions[get_column_letter(c)].width = 12
-
-    # 3. Data Infill
-    last_r = 2
-    for r_idx, (idx_vals, row_vals) in enumerate(pivot.iterrows()):
-        curr_row = 3 + r_idx
-        last_r = curr_row
-        sap_code, mat_desc = idx_vals
-        ws.cell(row=curr_row, column=1).value = str(sap_code)
-        
-        # Calculate Row Sum in Python for RECO handshake
-        row_sum = 0
-        for i, pmp_id in enumerate(pmp_ids):
-            q = float(row_vals.get(pmp_id, 0))
-            ws.cell(row=curr_row, column=START_COL+i).value = q
-            row_sum += q
-        
-        # Write Hard Number to Grand Total cell (so RECO can read it)
-        ws.cell(row=curr_row, column=sum_col).value = row_sum
-        ws.cell(row=curr_row, column=desc_col).value = str(mat_desc)
-        
-        for c in range(1, desc_col + 1):
-            cell = ws.cell(row=curr_row, column=c)
-            cell.font = Font(name='Calibri', size=F_SIZE)
-            cell.alignment = Alignment(horizontal='center', vertical='center')
-            cell.border = medium_border
-
-    # 4. BOTTOM TOTAL ROW
-    total_row = last_r + 1
-    ws.cell(row=total_row, column=1).value = "Grand Total"
-    ws.cell(row=total_row, column=1).font = Font(name='Calibri', size=F_SIZE, bold=True)
-    ws.cell(row=total_row, column=1).border = medium_border
-    
-    for i in range(num_sites + 1):
-        col = START_COL + i
-        let = get_column_letter(col)
-        ws.cell(row=total_row, column=col).value = f"=SUM({let}3:{let}{last_r})"
-        cell = ws.cell(row=total_row, column=col)
-        cell.font = Font(name='Calibri', size=F_SIZE + 4, bold=True)
-        cell.alignment = Alignment(horizontal='center', vertical='center')
-        cell.border = medium_border
-        
-    blue_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-    for c in range(1, desc_col + 1):
-        ws.cell(row=2, column=c).fill = blue_fill
-        ws.cell(row=total_row, column=c).fill = blue_fill
-
-    return True
-
-def generate_reco_sheet(df_sites, wb):
-    """
-    Builds the Reconciliation (RECO) sheet with Live Excel Formulas.
-    Data is sourced from the Annexure's Grand Total column.
-    """
-    if 'Reco' not in wb.sheetnames: return False
-    ws = wb['Reco']
-    
-    # ATTEMPT TO ANCHOR R4G Project (K1 / Row 1, Col 11)
-    # If merged, we need to ensure it stays put or is re-merged
-    project_val = "R4G Project"
-    # We will preserve it in a variable and write it back if scaling shifts it
-    
-    # 0. DEEP WIPE (Except headers and labels)
-    for c in range(3, 100):
-        for r in range(10, 35):
-            cell_w = ws.cell(row=r, column=c)
-            if not isinstance(cell_w, MergedCell):
-                cell_w.value = None
-            
-    # 1. ACQUIRE MATERIALS FROM ANNEXURE
-    if 'Annexture' not in wb.sheetnames: return False
-    ws_ann = wb['Annexture']
-    materials = []
-    
-    # Find Grand Total and Description Columns
-    gt_col, desc_col = 0, 0
-    for c in range(1, 45):
-        h_val = str(ws_ann.cell(row=2, column=c).value or "").upper()
-        if "GRAND" in h_val and "TOTAL" in h_val:
-            gt_col = c
-        elif "MATERIAL DESCRIPTION" in h_val:
-            desc_col = c
-            
-    if gt_col == 0: return False
-    # Fallback for desc_col if not found
-    if desc_col == 0: desc_col = 2
-    
-    for r in range(3, 100):
-        sap = str(ws_ann.cell(row=r, column=1).value or "")
-        if not sap: break
-        # Skip the Grand Total summary row from Annexure
-        if "GRAND TOTAL" in sap.upper(): continue
-        
-        desc = ws_ann.cell(row=r, column=desc_col).value
-        qty = ws_ann.cell(row=r, column=gt_col).value
-        materials.append({'sap': sap, 'desc': desc, 'qty': qty})
-        
-    if not materials: return False
-    
-    # 2. DYNAMIC SCALING (Template baseline is 7 materials: C-I)
-    START_COL = 3
-    num_materials = len(materials)
-    
-    # Identify and Unmerge R4G Project to prevent shift conflicts
-    project_range = None
-    for merged_range in list(ws.merged_cells.ranges):
-        min_r, min_c, max_r, max_c = merged_range.min_row, merged_range.min_col, merged_range.max_row, merged_range.max_col
-        if min_r <= 1 <= max_r: # Check if it covers Row 1 where Project box lives
-            cell_val = str(ws.cell(row=min_r, column=min_c).value or "")
-            if "PROJECT" in cell_val.upper():
-                project_range = (min_r, min_c, max_r, max_c)
-                ws.unmerge_cells(merged_range.coord)
-                ws.cell(row=min_r, column=min_c).value = None # Clear old pos
-    
-    if num_materials > 7:
-        ws.insert_cols(START_COL + 7, num_materials - 7)
-        
-    last_mat_col = START_COL + num_materials
-    
-    # 3. POPULATION & FORMULAS
-    for i, mat in enumerate(materials):
-        col_idx = START_COL + i
-        cl = get_column_letter(col_idx)
-        ws.cell(row=10, column=col_idx).value = mat['desc']
-        ws.cell(row=10, column=col_idx).alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
-        ws.cell(row=11, column=col_idx).value = mat['sap']
-        ws.cell(row=14, column=col_idx).value = safe_float(mat['qty'])
-        ws.cell(row=16, column=col_idx).value = 0
-        ws.cell(row=18, column=col_idx).value = f"={cl}14+{cl}16"
-        ws.cell(row=20, column=col_idx).value = 0
-        ws.cell(row=21, column=col_idx).value = 0
-        ws.cell(row=22, column=col_idx).value = 0
-        ws.cell(row=23, column=col_idx).value = f"=SUM({cl}21:{cl}22)"
-        ws.cell(row=25, column=col_idx).value = f"={cl}18-{cl}23"
-        ws.cell(row=28, column=col_idx).value = f"={cl}25"
-        ws.cell(row=29, column=col_idx).value = 0
-        ws.cell(row=31, column=col_idx).value = f"={cl}28+{cl}29"
-        ws.cell(row=33, column=col_idx).value = f"={cl}25-{cl}31"
-        for r_styl in [10, 11, 14, 16, 18, 20, 21, 22, 23, 25, 28, 29, 31, 33]:
-            copy_cell_style(ws.cell(row=r_styl, column=3), ws.cell(row=r_styl, column=col_idx))
-
-    # 4. PURGE TRAILING & RE-ANCHOR PROJECT BOX
-    for c_purge in range(last_mat_col, last_mat_col + 20):
-        for r_purge in range(10, 35):
-            cell_p = ws.cell(row=r_purge, column=c_purge)
-            if not isinstance(cell_p, MergedCell):
-                cell_p.value = None
-                cell_p.border = Border()
-                cell_p.fill = PatternFill(fill_type=None)
-    
-    # Re-merge Project Box at Absolute Anchor (Relative to material end or original K1)
-    # The user SS shows it at the end of the materials.
-    target_start_col = last_mat_col + 2
-    ws.cell(row=1, column=target_start_col).value = "R4G Project"
-    # Create the merge range (7 rows high, 4 columns wide approx)
-    new_range = f"{get_column_letter(target_start_col)}1:{get_column_letter(target_start_col+4)}7"
-    ws.merge_cells(new_range)
-    # Style the merged cell
-    top_cell = ws.cell(row=1, column=target_start_col)
-    top_cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    top_cell.font = Font(bold=True, size=14)
-    top_cell.border = Border(left=Side(style='medium'), right=Side(style='medium'), top=Side(style='medium'), bottom=Side(style='medium'))
-
-    return True
+TEMPLATE_ITEMS_A6_B6 = [
+  {"sap": "3398758", "desc": "ITC A6 & B6 - ONE-SECTOR SITE", "uom": "EA", "rate": 13015},
+  {"sap": "3398834", "desc": "ITC A6 & B6 - TWO-SECTOR SITE", "uom": "EA", "rate": 14915},
+  {"sap": "3398764", "desc": "ITC A6 & B6 - THREE-SECTOR SITE", "uom": "EA", "rate": 16815},
+  {"sap": "3339581", "desc": "CHRG TRANSPORTATION-BEYOND 100 KM-SCV", "uom": "KM", "rate": 20}
+]
 
 def get_wo_number(master_path, dc_number):
     """Looks up the WO number from the Master Tracker's 'WO' column based on 'BILLING FILE' matching dc_number."""
@@ -747,7 +117,8 @@ def get_wo_number(master_path, dc_number):
         if wo_col_idx is None: wo_col_idx = 14
         
         for row in ws.iter_rows(min_row=3, values_only=True):
-            if str(row[billing_col_idx]).strip().upper() == dc_number.upper():
+            cell_val = str(row[billing_col_idx]).strip().upper() if row[billing_col_idx] else ""
+            if dc_number.upper() in cell_val:
                 return str(row[wo_col_idx]).strip()
         
         return "N/A"
@@ -765,6 +136,7 @@ def copy_sheet_between_workbooks(src_ws, dst_wb, sheet_name, index=None):
     else:
         dst_ws = dst_wb.create_sheet(sheet_name)
         
+    # Copy values and basic styles
     for row in src_ws.iter_rows():
         for cell in row:
             new_cell = dst_ws.cell(row=cell.row, column=cell.column, value=cell.value)
@@ -775,31 +147,37 @@ def copy_sheet_between_workbooks(src_ws, dst_wb, sheet_name, index=None):
                     new_cell.fill = copy(cell.fill)
                     new_cell.number_format = copy(cell.number_format)
                     new_cell.alignment = copy(cell.alignment)
-                except: pass
+                except:
+                    pass
                     
+    # Merged cells
     for merged_range in src_ws.merged_cells.ranges:
         dst_ws.merge_cells(str(merged_range))
         
+    # Column Dimensions
     for col, dim in src_ws.column_dimensions.items():
         dst_ws.column_dimensions[col].width = dim.width
         
+    # Row Dimensions
     for row, dim in src_ws.row_dimensions.items():
         dst_ws.row_dimensions[row].height = dim.height
 
-def inject_main_wcc_from_reference(output_path, df_sites, dc_number, wo_number):
+def inject_main_wcc_template(output_path, ref_path, df_sites, dc_number, wo_number):
     """Uses the 'Reference-First' approach to ensure stability in Apple Numbers."""
     try:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        ref_path = os.path.join(script_dir, '..', 'templates', 'billing_template.xlsx')
-        print(f"- Injecting Main WCC from reference: {os.path.basename(ref_path)}")
-        
-        # 1. Load the reference template as the BASE workbook
+        print(f"- Injecting Main WCC using Stable Hybrid logic...")
+        # 1. Load the reference template as the BASE workbook (this ensures a healthy structure)
         wb_final = openpyxl.load_workbook(ref_path)
         
-        # 2. Update Main WCC
+        # 2. Update Main WCC in the base template
+        if 'Main WCC' not in wb_final.sheetnames:
+            print("ERROR: 'Main WCC' not found in template.")
+            return
+            
         ws_main = wb_final['Main WCC']
         ws_main['D32'] = f"{len(df_sites)} SITES"
         
+        # Completion Date
         date_col = next((c for c in df_sites.columns if 'COMPLETION' in c.upper() or 'RFS DATE' in c.upper()), None)
         date_range = "N/A"
         if date_col:
@@ -810,134 +188,833 @@ def inject_main_wcc_from_reference(output_path, df_sites, dc_number, wo_number):
         ws_main['I32'] = date_range
         ws_main['D29'] = wo_number
         
-        # 3. Load programmatic sheets from the temp file
+        # 3. Load the programmatic sheets from the temp XlsxWriter file
         wb_temp = openpyxl.load_workbook(output_path)
         
-        # 4. Copy sheets INTO template base
+        # 4. Copy programmatic sheets INTO the template base
+        # Using exact matching to avoid overwriting 'Main WCC' because it contains 'WCC'
         sheets_to_copy = ['JMS', 'WCC', 'Abstract', 'BOQ', 'Declaration', 'Reco', 'Annexture']
         for sn in wb_temp.sheetnames:
-            # Exact match or prefix match, but NEVER match 'Main WCC'
             if sn in sheets_to_copy or any(sn.startswith(base) for base in sheets_to_copy):
-                if sn != 'Main WCC':
-                    print(f"  - Copying sheet: {sn}")
-                    copy_sheet_between_workbooks(wb_temp[sn], wb_final, sn)
+                print(f"  - Copying programmatic sheet: {sn}")
+                copy_sheet_between_workbooks(wb_temp[sn], wb_final, sn)
         
+        # 5. Remove redundant sheets for A6+B6
+        if 'Annexture' in wb_final.sheetnames and any('-A6' in s for s in wb_final.sheetnames):
+            del wb_final['Annexture']
+        if 'Reco' in wb_final.sheetnames and any('-A6' in s for s in wb_final.sheetnames):
+            del wb_final['Reco']
+
+        # 6. Save the final file
         wb_final.save(output_path)
-        print("- Hybrid Injection COMPLETE")
+        print("- Hybrid Generation COMPLETE")
         
     except Exception as e:
-        print(f"Error injecting template: {e}")
+        print(f"Error in hybrid generation: {e}")
+        import traceback
+        traceback.print_exc()
 
-def populate_declaration_data(df_sites, wb, dc_number):
-    """
-    Updates the Declaration sheet with the dynamic site count.
-    """
-    if 'Declaration' not in wb.sheetnames: return
-    ws = wb['Declaration']
+def write_main_wcc(wb, df_sites, dc_number, formats):
+    # This is now a placeholder, we will overwrite it with the template using openpyxl
+    ws = wb.add_worksheet('Main WCC')
+    ws.write('A1', 'TEMPLATE PLACEHOLDER')
+
+def write_wcc(wb, df_sites, dc_number, formats, activity='A6', wo_number='P14/630330726'):
+    ws = wb.add_worksheet('WCC')
+    
+    # Formats with thin borders
+    f_title = wb.add_format({'bold': True, 'font_size': 12, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#DCE6F1', 'border': 1})
+    f_cert = wb.add_format({'bold': True, 'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+    f_head = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#DCE6F1', 'border': 1, 'text_wrap': True})
+    f_head_yellow = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#FFFF00', 'border': 1, 'text_wrap': True})
+    f_cell = wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_date = wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': 'dd-mmm-yy'})
+    
+    if activity == 'A6_B6':
+        headers_1 = [
+            'Sr. No', 'FT ENB SAP ID', 'FT PMP SAP ID', 'FT GIS SECTOR_ID', 'FB-FT HOP ID', 'No of Sectors', 
+            'Tower type ', 'JC', 'WH', 'VEHICLE NO', 'MIN  NO', 'MIN Date', 
+            'Completion Date ', 'REMARKS'
+        ]
+        headers_2 = [
+            'ACTUAL KM', 'KM IN WO', 'GAP', 'USED KM IN WCC'
+        ]
+    else:
+        headers_1 = [
+            'Sr. No', 'ENB SITE ID', 'PMP SAP ID', 'GIS SECTOR_ID', 'No of Sectors', 
+            'Tower type', 'JC', 'WH', 'VEHICLE NO', 'MIN NO', 'MIN Date', 
+            'Completion Date', 'REMARKS'
+        ]
+        headers_2 = [
+            'ACTUAL KM', 'KM IN WO', 'GAP', 'USED KM IN WCC'
+        ]
+    
+    # 1. Main Title
+    ws.merge_range('C3:P4' if activity == 'A6_B6' else 'C3:O4', 'Work Completion Certificate', formats['title'])
+    
+    # 2. Certification Text
+    cert_text = f"This is to certify that below sites pertaining to WO/WCO No.{wo_number} Dated in 03-10-2025 respect of Digitcom India Technologies  has  been successfully completed in all respect."
+    ws.merge_range('C6:P6' if activity == 'A6_B6' else 'C6:O6', cert_text, formats['cert_text'])
+    
+    # 3. Write Headers
+    r_head = 8
+    col_idx = 2  # Start at column C (index 2)
+    for h in headers_1:
+        ws.write(r_head, col_idx, h, formats['header_blue'])
+        if 'ID' in h or 'SECTOR' in h:
+            ws.set_column(col_idx, col_idx, 22)
+        elif 'HOP' in h:
+            ws.set_column(col_idx, col_idx, 40)
+        elif 'Date' in h or 'REMARKS' in h or 'VEHICLE' in h:
+            ws.set_column(col_idx, col_idx, 15)
+        else:
+            ws.set_column(col_idx, col_idx, 10)
+        col_idx += 1
+        
+    col_idx = 2 + len(headers_1) + 2 # Add some padding columns (Column Q or R)
+    start_yellow_col = col_idx
+    for h in headers_2:
+        ws.write(r_head, col_idx, h, f_head_yellow)
+        ws.set_column(col_idx, col_idx, 12)
+        col_idx += 1
+
+    def get_val(row, matcher):
+        c_name = next((c for c in df_sites.columns if matcher.upper() in c.upper()), None)
+        return row[c_name] if c_name else ""
+    
+    if activity == 'A6_B6':
+        aktbc_col = next((c for c in df_sites.columns if 'AKTBC(FT)' in c.upper()), None)
+    else:
+        aktbc_col = next((c for c in df_sites.columns if 'CHRG EXTRA TRANSPORT' in c.upper() or 'AKTBC' == c.upper()), None)
+
+    r_idx = 9
+    total_act = 0
+    total_used = 0
+
+    for i, (_, row) in enumerate(df_sites.iterrows()):
+        act_km = safe_float(row[aktbc_col]) if aktbc_col else 0.0
+        wo_km = safe_float(get_val(row, 'KM IN WO'))
+        gap = act_km - wo_km
+        # Logic: ACTUAL KM if GAP is negative (ACTUAL < WO), else KM IN WO
+        used_km = act_km if gap < 0 else wo_km
+        
+        total_act += act_km
+        total_used += used_km
+        
+        if activity == 'A6_B6':
+            vals_1 = [
+                i + 1, get_val(row, 'eNBsiteID'), get_val(row, 'PMP ID'), get_val(row, 'SEC ID'),
+                get_val(row, 'FB-FT HOP ID'), safe_float(get_val(row, 'NO OF SECTOR')), get_val(row, 'TOWER'), 
+                get_val(row, 'JC'), get_val(row, 'WAREHOUSE'), get_val(row, 'VEHICLE NO'), get_val(row, 'MIN NO'),
+                format_date(get_val(row, 'MIN DATE')), format_date(get_val(row, 'RFS DATE')), 
+                "RFS DONE" if pd.notna(get_val(row, 'RFS DATE')) and str(get_val(row, 'RFS DATE')) != "" else ""
+            ]
+        else:
+            vals_1 = [
+                i + 1, get_val(row, 'ENBSITEID'), get_val(row, 'PMP ID'), get_val(row, 'GIS SECTOR'),
+                safe_float(get_val(row, 'NO OF SECTOR')), get_val(row, 'Tower type'), get_val(row, 'JC'),
+                get_val(row, 'WH'), get_val(row, 'VEHICLE NO'), get_val(row, 'MIN NO'),
+                format_date(get_val(row, 'MIN DATE')), format_date(get_val(row, 'Completion Date')), 
+                "RFS DONE" if pd.notna(get_val(row, 'Completion Date')) and str(get_val(row, 'Completion Date')) != "" else ""
+            ]
+        
+        vals_2 = [
+            act_km, wo_km, gap, used_km
+        ]
+        
+        for c, val in enumerate(vals_1):
+            c_pos = 2 + c
+            if isinstance(val, pd.Timestamp):
+                ws.write_datetime(r_idx, c_pos, val, formats['date'])
+            elif isinstance(val, (int, float)):
+                ws.write_number(r_idx, c_pos, val, formats['number'])
+            else:
+                ws.write(r_idx, c_pos, str(val), formats['cell'])
+                
+        for c, val in enumerate(vals_2):
+            c_pos = start_yellow_col + c
+            ws.write_number(r_idx, c_pos, val, formats['number'])
+            
+        r_idx += 1
+
+    # Totals Row for Yellow Table
+    ws.write(r_idx, start_yellow_col, total_act, formats['header_yellow'])
+    ws.write(r_idx, start_yellow_col + 1, "", formats['header_yellow'])
+    ws.write(r_idx, start_yellow_col + 2, "", formats['header_yellow'])
+    ws.write(r_idx, start_yellow_col + 3, total_used, formats['header_yellow'])
+
+    r_sig = r_idx + 2
+    ws.write(r_sig, 3, "SIGN:", formats['bold_left'])
+    ws.write(r_sig+1, 3, "PROJECT-IN-CHARGE", formats['bold_left'])
+    ws.write(r_sig+2, 3, "MR. YUNUS KHAN", formats['bold_left'])
+    ws.write(r_sig+3, 3, "DATE:", formats['bold_left'])
+    
+    ws.write(r_sig, 12 if activity == 'A6' else 13, "SIGN:", formats['bold_left'])
+    ws.write(r_sig+1, 12 if activity == 'A6' else 13, "DEPLOYMENT HEAD", formats['bold_left'])
+    ws.write(r_sig+2, 12 if activity == 'A6' else 13, "MR. MANISH NAHAR", formats['bold_left'])
+    ws.write(r_sig+3, 12 if activity == 'A6' else 13, "DATE:", formats['bold_left'])
+
+def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity='A6', wo_number='P14/630330726'):
+    ws = wb.add_worksheet(sheet_name)
     num_sites = len(df_sites)
     
-    # Find the cell with "SITES" and replace the number
-    import re
-    for r in range(1, 30):
-        for c in range(1, 10):
-            cell = ws.cell(row=r, column=c)
-            v = str(cell.value or "")
-            if 'SITES' in v.upper():
-                new_v = re.sub(r'\d+\s+SITES', f"{num_sites} SITES", v, flags=re.I)
-                cell.value = new_v
+    # Calculate dates
+    date_col = None
+    for c in ['Completion Date ', 'Completion Date', 'RFS DATE']:
+        if c in df_sites.columns:
+            date_col = c
+            break
+            
+    min_date_str = "N/A"
+    max_date_str = "N/A"
+    if date_col:
+        dates = pd.to_datetime(df_sites[date_col], errors='coerce')
+        min_date_str = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+        max_date_str = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+
+    tot_col = 3 + num_sites
+    last_col = tot_col + 2 if include_amounts else tot_col
+    
+    ws.set_column(0, 0, 15)
+    ws.set_column(1, 1, 40)
+    ws.set_column(2, 2, 8)
+    for col in range(3, tot_col):
+        ws.set_column(col, col, 5)
+    ws.set_column(tot_col, tot_col, 15)
+    if include_amounts:
+        ws.set_column(tot_col + 1, tot_col + 1, 15)
+        ws.set_column(tot_col + 2, tot_col + 2, 15)
+
+    f_title = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#D9D9D9', 'border': 1})
+    f_center = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter'})
+    f_left = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter'})
+    f_right = wb.add_format({'bold': True, 'align': 'right', 'valign': 'vcenter'})
+    f_head = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'bg_color': '#DCE6F1', 'border': 1})
+    f_head_vert = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'rotation': 90, 'bg_color': '#DCE6F1', 'border': 1})
+    
+    # Title Block (Row 1: Sheet Name, Row 2: Work Order)
+    ws.merge_range(0, 0, 0, last_col, sheet_name, f_title)
+    ws.merge_range(1, 0, 1, last_col, f'Work Order No : {wo_number}', f_center)
+    
+    # Row 2: Contractor Name (Left) + Work Order Dated (Center)
+    mid = last_col // 2
+    ws.merge_range(2, 0, 2, mid, 'Contractor Name: DIGITCOM INDIA TECHNOLOGIES', f_left)
+    ws.merge_range(2, mid + 1, 2, last_col, 'Work Order Dated: 03-10-2025', f_center)
+    
+    # Row 3: Project Description (Left)
+    ws.merge_range(3, 0, 3, last_col, 'WO for Airspan A6 and C6 Radios for Airfiber' if activity != 'A6_B6' else 'WO for Airspan A6 +B6 Radios for Airfiber', f_left)
+    
+    # Row 4 & 5: Service Dates (Center)
+    ws.merge_range(4, 0, 4, last_col, f'Service Done From Date: {min_date_str}', f_center)
+    ws.merge_range(5, 0, 5, last_col, f'Service Done To Date: {max_date_str}', f_center)
+    
+    # Site Headers
+    ws.write(7, 1, 'Count -', formats['bold_right'])
+    ws.write(7, 2, '', formats['bold_right'])
+    ws.write(8, 0, 'Code', f_head)
+    ws.write(8, 1, 'Site ID --', f_head)
+    ws.write(8, 2, '', f_head)
+    
+    ws.set_row(8, 150)  # Increase row height for rotated text
+    
+    for i, (_, row) in enumerate(df_sites.iterrows()):
+        col = 3 + i
+        ws.write(7, col, i + 1, formats['number_bold'])
+        pmp_id = str(row.get('PMP ID', '')).strip()
+        ws.write(8, col, pmp_id, f_head_vert)
+        
+    ws.write(8, tot_col, 'Total Quantity', f_head)
+    if include_amounts:
+        ws.write(8, tot_col + 1, 'RATE AS PER SOW', f_head)
+        ws.write(8, tot_col + 2, 'AMOUNT', f_head)
+        
+    # Site Type & Sectors
+    ws.write(9, 1, 'Site Type', formats['bold_right'])
+    ws.write(9, 2, '', formats['bold_right'])
+    for i, (_, row) in enumerate(df_sites.iterrows()):
+        tt_col = 'TOWER' if activity == 'A6_B6' else 'Tower type'
+        tt = str(row.get(tt_col, '')).strip()
+        ws.write(9, 3 + i, tt, formats['number'])
+        
+    ws.write(10, 1, 'Sectors', formats['bold_right'])
+    ws.write(10, 2, '', formats['bold_right'])
+    total_sectors = 0
+    for i, (_, row) in enumerate(df_sites.iterrows()):
+        sec_col = 'NO OF SECTOR' if activity == 'A6_B6' else 'NO OF SECTOR' # Same key actually
+        sec = safe_float(row.get(sec_col))
+        total_sectors += sec
+        ws.write(10, 3 + i, sec, formats['number'])
+    ws.write(10, tot_col, total_sectors, formats['number_bold'])
+    
+    # Data Table Headers
+    ws.write(11, 0, 'Item code', f_head)
+    ws.write(11, 1, 'Description of Item', f_head)
+    ws.write(11, 2, 'UOM', f_head)
+    
+    r_idx = 12
+    items = TEMPLATE_ITEMS_A6_B6 if activity == 'A6_B6' else TEMPLATE_ITEMS
+    for item in items:
+        ws.write(r_idx, 0, item['sap'], formats['cell'])
+        ws.write(r_idx, 1, item['desc'], formats['cell_left'])
+        ws.write(r_idx, 2, item['uom'], formats['cell'])
+        
+        row_sum = 0
+        for i, (_, site_row) in enumerate(df_sites.iterrows()):
+            col = 3 + i
+            sap_code = item['sap']
+            
+            # Special Mapping Logic
+            if activity == 'A6_B6':
+                if sap_code == "3339581":
+                    val = safe_float(site_row.get('AKTBC(FT)', 0.0))
+                else:
+                    # For SAP codes like '3398758(ITC A6 & B6 - ONE-SECTOR SITE)', we check for the prefix in columns
+                    found_col = next((c for c in df_sites.columns if sap_code in c), None)
+                    val = safe_float(site_row[found_col]) if found_col else 0.0
+            else:
+                val = site_row.iloc[code_to_col_idx[sap_code]] if sap_code in code_to_col_idx else 0.0
+                if sap_code == "3397248":
+                    val = safe_float(site_row.get('EXTRA VISIT IN WO', 0.0))
+                elif sap_code == "3268025":
+                    val = safe_float(site_row.get('Polemount in wo', 0.0))
+                else:
+                    val = safe_float(val)
+                
+            ws.write(r_idx, col, val, formats['number'])
+            row_sum += val
+            
+        ws.write_formula(r_idx, tot_col, f"=SUM({xlsxwriter.utility.xl_col_to_name(3)}{r_idx+1}:{xlsxwriter.utility.xl_col_to_name(tot_col-1)}{r_idx+1})", formats['number_bold'])
+        
+        if include_amounts:
+            rate = safe_float(item['rate'])
+            ws.write(r_idx, tot_col + 1, rate, formats['number'])
+            ws.write_formula(r_idx, tot_col + 2, f"={xlsxwriter.utility.xl_col_to_name(tot_col)}{r_idx+1}*{xlsxwriter.utility.xl_col_to_name(tot_col+1)}{r_idx+1}", formats['number_bold'], row_sum * rate)
+            
+        r_idx += 1
+        
+    if include_amounts:
+        ws.merge_range(r_idx, 0, r_idx, tot_col + 1, "TOTAL", formats['bold_right'])
+        ws.write_formula(r_idx, tot_col + 2, f"=SUM({xlsxwriter.utility.xl_col_to_name(tot_col+2)}15:{xlsxwriter.utility.xl_col_to_name(tot_col+2)}{r_idx})", formats['number_bold'])
+
+    r_sig = r_idx + 2
+    left_col = 1
+    right_col = tot_col + 2 if include_amounts else tot_col
+    
+    ws.write(r_sig, left_col, "SIGN:", formats['bold_left'])
+    ws.write(r_sig+1, left_col, "PROJECT-IN-CHARGE", formats['bold_left'])
+    ws.write(r_sig+2, left_col, "MR. YUNUS KHAN", formats['bold_left'])
+    ws.write(r_sig+3, left_col, "DATE:", formats['bold_left'])
+    
+    if sheet_name == 'BOQ':
+        mid_col = (left_col + right_col) // 2
+        ws.write(r_sig, mid_col, "SIGN:", formats['bold_left'])
+        ws.write(r_sig+1, mid_col, "DEPLOYMENT HEAD", formats['bold_left'])
+        ws.write(r_sig+2, mid_col, "MR. MANISH NAHAR", formats['bold_left'])
+        ws.write(r_sig+3, mid_col, "DATE:", formats['bold_left'])
+        
+        ws.write(r_sig, right_col, "SIGN:", formats['bold_left'])
+        ws.write(r_sig+1, right_col, "RJIO CTO", formats['bold_left'])
+        ws.write(r_sig+2, right_col, "MR.RAJEEV KUMAR GUPTA", formats['bold_left'])
+        ws.write(r_sig+3, right_col, "DATE:", formats['bold_left'])
+    else:
+        ws.write(r_sig, right_col, "SIGN:", formats['bold_left'])
+        ws.write(r_sig+1, right_col, "DEPLOYMENT HEAD", formats['bold_left'])
+        ws.write(r_sig+2, right_col, "MR. MANISH NAHAR", formats['bold_left'])
+        ws.write(r_sig+3, right_col, "DATE:", formats['bold_left'])
+
+def write_declaration(wb, df_sites, dc_number, formats, activity='A6', wo_number='N/A'):
+    ws = wb.add_worksheet('Declaration')
+    
+    # Get warehouse name
+    wh_code = df_sites['WAREHOUSE'].iloc[0] if 'WAREHOUSE' in df_sites.columns and not df_sites.empty else 'JLJH'
+    wh_name = get_warehouse_name(wh_code)
+    # Increased widths to prevent Apple Numbers from visually stretching the merged cells
+    ws.set_column('A:A', 35)
+    ws.set_column('B:C', 30)
+    ws.set_column('D:D', 40)
+    
+    f_title = wb.add_format({'bold': True, 'font_size': 14, 'align': 'center', 'valign': 'vcenter', 'border': 2})
+    f_bold = wb.add_format({'bold': True, 'font_size': 10, 'align': 'left', 'valign': 'vcenter', 'border': 1})
+    f_bold_center = wb.add_format({'bold': True, 'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_center = wb.add_format({'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_text = wb.add_format({'font_size': 10, 'align': 'left', 'valign': 'top', 'text_wrap': True, 'border': 1})
+    f_empty = wb.add_format({'border': 1})
+    
+    # Row 1
+    ws.merge_range('A1:D1', 'DECLARATION STATEMENT', f_title)
+    
+    # Row 2
+    ws.write('A2', 'Name of Contractor', f_bold)
+    ws.merge_range('B2:C2', 'DIGITCOM INDIA TECHNOLOGIES', f_bold_center)
+    ws.merge_range('D2:D6', '', f_empty) # Logo placeholder
+    
+    # Row 3 & 4
+    ws.merge_range('A3:A4', 'Authorised Signatory', f_bold)
+    ws.merge_range('B3:C4', '', f_empty)
+    
+    # Row 5
+    ws.write('A5', 'Vendor Code', f_bold)
+    ws.merge_range('B5:C5', '3267708', f_bold_center)
+    
+    # Row 6
+    ws.write('A6', 'Work Order No:', f_bold)
+    ws.merge_range('B6:C6', str(wo_number), f_bold_center)
+    
+    # Row 7
+    ws.write('A7', 'SAP ID/WBS :', f_bold)
+    ws.merge_range('B7:D7', 'As per Annexture', f_bold_center)
+    
+    # Row 8
+    ws.write('A8', 'Warehouse Location', f_bold)
+    ws.merge_range('B8:D8', wh_name, f_bold_center)
+    
+    # Row 9
+    ws.merge_range('A9:D9', 'Declaration', f_bold_center)
+    
+    # Get max date
+    date_col = 'Completion Date ' if 'Completion Date ' in df_sites.columns else 'Completion Date'
+    max_date_str = "30.03.2026"
+    if date_col in df_sites.columns:
+        dates = pd.to_datetime(df_sites[date_col], errors='coerce')
+        if not dates.isna().all():
+            max_date_str = dates.max().strftime('%d.%m.%Y')
+            
+    cert_text = f"We hereby certify that this Material Reconcilation Statement as on {max_date_str} attached herein is certified and justified by Bills submited by Contractor for given Work Done on given site as per Work Order Issued."
+    
+    # Row 10-12
+    ws.merge_range('A10:D12', cert_text, f_text)
+    ws.set_row(9, 30)
+    ws.set_row(10, 30)
+    ws.set_row(11, 30)
+    
+    # Row 13
+    activity_label = "A6+B6" if activity == "A6_B6" else "A6"
+    ws.merge_range('A13:D13', f'{len(df_sites)} SITES({activity_label})', f_bold_center)
+    
+    # Row 14 (blank narrow with vertical split)
+    ws.write('A14', '', f_empty)
+    ws.merge_range('B14:D14', '', f_empty)
+    ws.set_row(13, 8)
+    
+    # Row 15 (Headers)
+    ws.write('A15', 'Warehouse Incharge', f_bold_center)
+    ws.write('B15', 'Circle Project Head', f_bold_center)
+    ws.write('C15', 'Contractor', f_bold_center)
+    ws.write('D15', 'Remark', f_bold_center)
+    
+    # Row 16-19 (Signatures row 1)
+    ws.merge_range('A16:A19', '', f_empty)
+    ws.merge_range('B16:B19', '', f_empty)
+    ws.merge_range('C16:C19', '', f_empty)
+    ws.merge_range('D16:D23', '', f_empty) # Remarks spans down
+    
+    # Row 20
+    ws.write('A20', 'Checked By Material Coordinator', f_bold)
+    ws.merge_range('B20:C20', 'Through FC&A', f_bold_center)
+    
+    # Row 21-23 (Signatures row 2)
+    ws.merge_range('A21:A23', '', f_empty)
+    ws.merge_range('B21:C23', '', f_empty)
+    
+    # Give signature rows height
+    ws.set_row(15, 20)
+    ws.set_row(16, 20)
+    ws.set_row(17, 20)
+    ws.set_row(18, 20)
+    ws.set_row(20, 20)
+    ws.set_row(21, 20)
+    ws.set_row(22, 20)
+
+def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path, activity='A6', wo_number='N/A'):
+    if activity == 'A6_B6':
+        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "A6", "Annexture-A6", "Reco-A6", wo_number=wo_number)
+        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "B6", "Annexture-B6", "Reco-B6", wo_number=wo_number)
+    else:
+        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "A6", "Annexture", "Reco", wo_number=wo_number)
+
+def create_annexure_reco_pair(wb, df_sites, formats, mindump_path, sub_activity, ann_name, rec_name, wo_number='N/A'):
+    ws_ann = wb.add_worksheet(ann_name)
+    ws_rec = wb.add_worksheet(rec_name)
+    
+    # Get warehouse name
+    wh_code = df_sites['WAREHOUSE'].iloc[0] if 'WAREHOUSE' in df_sites.columns and not df_sites.empty else 'JLJH'
+    wh_name = get_warehouse_name(wh_code)
+    
+    # Base Site List
+    billing_pmp_ids = df_sites['PMP ID'].astype(str).str.strip().tolist()
+    
+    # If B6, we need a different set of column headers (Far End + Near End PMPs)
+    ann_pmp_ids = []
+    
+    # Process mindump early to build headers if B6
+    try:
+        sheet_to_read = f"{sub_activity} DUMP"
+        try:
+            df_mindump = pd.read_excel(mindump_path, sheet_name=sheet_to_read)
+        except:
+            df_mindump = pd.read_excel(mindump_path)
+            
+        if sub_activity == 'B6':
+            # Logic for B6: Split HOP ID and find matching PMP IDs in dump
+            for _, site_row in df_sites.iterrows():
+                hop_id = str(site_row.get('FB-FT HOP ID', '')).strip()
+                if not hop_id or hop_id.upper() == 'NONE': continue
+                
+                # Remove _A6 suffix
+                clean_hop = hop_id.replace('_A6', '')
+                
+                # Split logic: Standard pattern is ID1-ID2 where each starts with I-RJ-
+                # We split by '-I-RJ-' to keep it safe
+                ends = []
+                if '-I-RJ-' in clean_hop:
+                    parts = clean_hop.split('-I-RJ-')
+                    ends = [parts[0], 'I-RJ-' + parts[1]]
+                else:
+                    ends = [clean_hop]
+                
+                matched_pmp_for_this_site = []
+                for end in ends:
+                    if not end: continue
+                    # Search in ENB ID, Site ID, or DWG columns
+                    mask = (
+                        df_mindump['ENB ID'].astype(str).str.contains(end, na=False) |
+                        df_mindump['Site ID'].astype(str).str.contains(end, na=False) |
+                        df_mindump['DWG'].astype(str).str.contains(end, na=False)
+                    )
+                    matched_rows = df_mindump[mask]
+                    for _, m_row in matched_rows.iterrows():
+                        # Try COMMON ID first, then Site ID as fallback for PMP ID
+                        pmp = str(m_row.get('COMMON ID', '')).strip()
+                        if not pmp or pmp.lower() in ['nan', 'none']:
+                            pmp = str(m_row.get('Site ID', '')).strip()
+                        
+                        if pmp and pmp.lower() not in ['nan', 'none']:
+                            if pmp not in matched_pmp_for_this_site:
+                                matched_pmp_for_this_site.append(pmp)
+                
+                # Add to headers in order
+                for p in matched_pmp_for_this_site:
+                    if p not in ann_pmp_ids:
+                        ann_pmp_ids.append(p)
+        else:
+            # A6 Case: Headers are just the PMP IDs from the billing tracker
+            ann_pmp_ids = billing_pmp_ids
+            
+        # Match Site Logic for Pivot
+        def match_site(row):
+            if sub_activity == 'B6':
+                cid = str(row.get('COMMON ID', '')).strip()
+                if not cid or cid.lower() in ['nan', 'none']:
+                    cid = str(row.get('Site ID', '')).strip()
+                if cid in ann_pmp_ids:
+                    return cid
+            else:
+                wbs = str(row.get('WBS ID', ''))
+                site_id = str(row.get('Site ID', ''))
+                for pid in ann_pmp_ids:
+                    if pid in wbs or pid in site_id:
+                        return pid
+            return None
+            
+        df_mindump['Matched_PMP'] = df_mindump.apply(match_site, axis=1)
+        df_filtered = df_mindump[df_mindump['Matched_PMP'].notna()]
+        
+        if not df_filtered.empty:
+            pt = pd.pivot_table(df_filtered, values='No. Of Qty', index=['SAP Code', 'Material Description'], columns='Matched_PMP', aggfunc='sum', fill_value=0)
+            for pid in ann_pmp_ids:
+                if pid not in pt.columns:
+                    pt[pid] = 0
+            pt = pt[ann_pmp_ids]
+            pt = pt.sort_index()
+        else:
+            pt = pd.DataFrame(columns=ann_pmp_ids)
+            
+    except Exception as e:
+        print(f"Warning: Could not process MINDUMP for {ann_name}: {e}")
+        import traceback
+        traceback.print_exc()
+        ann_pmp_ids = billing_pmp_ids if not ann_pmp_ids else ann_pmp_ids
+        pt = pd.DataFrame(columns=ann_pmp_ids)
+
+    # Setup Annexure Sheet with ann_pmp_ids
+    num_cols = len(ann_pmp_ids)
+    tot_col = num_cols + 1
+    desc_col = tot_col + 1
+    
+    ws_ann.set_column(0, 0, 15)
+    for col in range(1, tot_col):
+        ws_ann.set_column(col, col, 5)
+    ws_ann.set_column(tot_col, tot_col, 10)
+    ws_ann.set_column(desc_col, desc_col, 40)
+    
+    f_title = wb.add_format({'bold': True, 'font_size': 14, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_head = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'border': 1, 'bg_color': '#DCE6F1'})
+    f_head_vert = wb.add_format({'bold': True, 'font_size': 8, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'rotation': 90, 'border': 1, 'bg_color': '#DCE6F1'})
+    f_cell = wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_cell_bold = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_sum_row = wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#DCE6F1'})
+    f_sum_row_bold = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#DCE6F1'})
+    f_empty = wb.add_format({'border': 1})
+    
+    ws_ann.merge_range(0, 0, 0, tot_col, f'Annexture-{sub_activity}', f_title)
+    ws_ann.write(0, desc_col, '', f_empty)
+    
+    ws_ann.set_row(1, 120)
+    ws_ann.write(1, 0, 'Row Labels', f_head)
+    for i, pid in enumerate(ann_pmp_ids):
+        ws_ann.write(1, i + 1, pid, f_head_vert)
+    ws_ann.write(1, tot_col, 'Grand Total', f_head)
+    ws_ann.write(1, desc_col, '', f_empty)
+    
+    r_idx = 2
+    col_sums = {pid: 0 for pid in ann_pmp_ids}
+    grand_total_sum = 0
+    reco_items = []
+    
+    for (sap_code, desc), row in pt.iterrows():
+        ws_ann.write(r_idx, 0, str(sap_code), f_cell_bold)
+        row_total = 0
+        for i, pid in enumerate(ann_pmp_ids):
+            val = safe_float(row[pid])
+            ws_ann.write(r_idx, i + 1, val, f_cell)
+            col_sums[pid] += val
+            row_total += val
+            
+        ws_ann.write(r_idx, tot_col, row_total, f_cell)
+        grand_total_sum += row_total
+        ws_ann.write(r_idx, desc_col, str(desc), f_cell_bold)
+        reco_items.append({"sap": str(sap_code), "desc": str(desc), "annexure_row": r_idx + 1})
+        r_idx += 1
+        
+    # Bottom Grand Total Row
+    ws_ann.write(r_idx, 0, 'Grand Total', f_sum_row_bold)
+    for i, pid in enumerate(ann_pmp_ids):
+        ws_ann.write(r_idx, i + 1, col_sums[pid], f_sum_row)
+    ws_ann.write(r_idx, tot_col, grand_total_sum, f_sum_row)
+    ws_ann.write(r_idx, desc_col, '', f_empty)
+    
+    # --- RECO SHEET ---
+    # Calculate dates
+    date_col = None
+    for c in ['Completion Date ', 'Completion Date', 'RFS DATE']:
+        if c in df_sites.columns:
+            date_col = c
+            break
+            
+    min_date_str = "N/A"
+    max_date_str = "N/A"
+    if date_col:
+        dates = pd.to_datetime(df_sites[date_col], errors='coerce')
+        min_date_str = dates.min().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+        max_date_str = dates.max().strftime('%d-%b-%y').upper() if not dates.isna().all() else "N/A"
+
+    num_items = len(reco_items)
+    last_col = 1 + num_items
+    
+    # Setup columns
+    ws_rec.set_column(0, 0, 5)   # Col A: Index
+    ws_rec.set_column(1, 1, 45)  # Col B: Description Label
+    # Apply width 20 to all material columns (from Col C onwards)
+    ws_rec.set_column(2, last_col, 15)
+        
+    f_reco_header_label = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1})
+    f_reco_header_val = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    f_r4g_box = wb.add_format({'bold': True, 'font_size': 16, 'align': 'center', 'valign': 'vcenter', 'border': 2})
+    f_reco_title = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1, 'bg_color': '#DCE6F1'})
+    
+    # Standard Table Formats
+    f_reco_item_head = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True, 'font_size': 9, 'bg_color': '#D9D9D9'})
+    f_reco_cell = wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0'})
+    f_reco_cell_bold = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0', 'text_wrap': True})
+    f_reco_label = wb.add_format({'align': 'left', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+    f_reco_label_bold = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+    f_reco_index = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+    
+    # Specific Color Formats
+    f_blue_head = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1, 'bg_color': '#BDD7EE', 'text_wrap': True})
+    f_blue_index = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#BDD7EE'})
+    
+    f_yellow_label = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1, 'bg_color': '#FFFF00', 'text_wrap': True})
+    f_yellow_cell = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#FFFF00', 'num_format': '0'})
+    f_yellow_index = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#FFFF00'})
+    
+    f_empty = wb.add_format({'border': 1})
+    
+    # Metadata Header Block (Rows 0-6)
+    meta_labels = [
+        ('Name of Contractor', 'DIGITCOM INDIA TECHNOLOGIES'),
+        ('WO No', wo_number),
+        ('Site ID', 'As per attached Detail'),
+        ('WBS Code', 'As per attached Detail'),
+        ('Site Name', 'As per attached Detail'),
+        ('Warehouse Location', wh_name),
+        ('Time Period', f'{min_date_str} TO {max_date_str}')
+    ]
+    
+    for r, (label, val) in enumerate(meta_labels):
+        ws_rec.write(r, 0, label, f_reco_header_label)
+        ws_rec.merge_range(r, 1, r, 5, val, f_reco_header_label)
+        
+    # R4G Project Box (Merged Rows 0-6, starting from Col 6 to last_col)
+    if last_col >= 6:
+        ws_rec.merge_range(0, 6, 6, last_col, 'R4G Project', f_r4g_box)
+    else:
+        ws_rec.write(0, last_col + 1, 'R4G Project', f_r4g_box)
+        
+    # Main Title Row (Row 8)
+    ws_rec.merge_range(8, 0, 8, last_col, 'Material Reconciliation Statement', f_reco_title)
+    
+    # Items Headers (Rows 10-11)
+    ws_rec.set_row(10, 60)
+    ws_rec.write(10, 1, 'Material Description', f_reco_item_head)
+    ws_rec.write(11, 1, 'Material Code', f_reco_item_head)
+    ws_rec.write(10, 0, '', f_reco_item_head)
+    ws_rec.write(11, 0, '', f_reco_item_head)
+    
+    for i, item in enumerate(reco_items):
+        col = 2 + i
+        # Keep numeric item headers standard (White) instead of Gray/Blue
+        ws_rec.write(10, col, item['desc'], f_reco_cell_bold)
+        ws_rec.write(11, col, item['sap'], f_reco_cell_bold)
+        
+    # Section A
+    ws_rec.write(12, 0, 'A.', f_blue_index)
+    ws_rec.write(12, 1, 'Receipt details as confirmed by Contractor:', f_blue_head)
+    for i in range(num_items): ws_rec.write(12, 2 + i, '', f_empty)
+    
+    ws_rec.write(14, 0, '1', f_reco_index)
+    ws_rec.write(14, 1, 'Received directly from Warehouse', f_yellow_label)
+    for i, item in enumerate(reco_items):
+        col = 2 + i
+        annex_col_str = xlsxwriter.utility.xl_col_to_name(tot_col)
+        ws_rec.write_formula(14, col, f"='{ann_name}'!{annex_col_str}{item['annexure_row']}", f_reco_cell)
+        
+    ws_rec.write(16, 0, '2', f_reco_index)
+    ws_rec.write(16, 1, 'Material received from other contractors', f_reco_label)
+    for i in range(num_items): ws_rec.write(16, 2 + i, 0, f_reco_cell)
+        
+    ws_rec.write(18, 0, '', f_reco_index)
+    ws_rec.write(18, 1, 'Total (1+2)', f_yellow_label)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        ws_rec.write_formula(18, 2 + i, f"={col_str}15+{col_str}17", f_reco_cell_bold)
+        
+    # Section B
+    ws_rec.write(20, 0, 'B.', f_blue_index)
+    ws_rec.write(20, 1, 'Material Transferred to other contractors / returned to Warehouse', f_blue_head)
+    for i in range(num_items): ws_rec.write(20, 2 + i, '', f_empty)
+    
+    ws_rec.write(21, 0, '1', f_reco_index)
+    ws_rec.write(21, 1, 'Material Transferred to other contractors', f_reco_label)
+    for i in range(num_items): ws_rec.write(21, 2 + i, 0, f_reco_cell)
+        
+    ws_rec.write(22, 0, '2', f_reco_index)
+    ws_rec.write(22, 1, 'Material Returned to Warehouse (in line with MRN Guidelines)', f_reco_label)
+    for i in range(num_items): ws_rec.write(22, 2 + i, 0, f_reco_cell)
+        
+    ws_rec.write(23, 0, '', f_reco_index)
+    ws_rec.write(23, 1, 'Total', f_reco_label_bold)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        ws_rec.write_formula(23, 2 + i, f"={col_str}22+{col_str}23", f_reco_cell_bold)
+        
+    # Section C
+    ws_rec.write(25, 0, 'C', f_yellow_index)
+    ws_rec.write(25, 1, 'Balance ( A  -  B )', f_yellow_label)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        ws_rec.write_formula(25, 2 + i, f"={col_str}19-{col_str}24", f_reco_cell_bold)
+        
+    # Section D
+    ws_rec.write(27, 0, 'D', f_reco_index)
+    ws_rec.write(27, 1, 'CONSUMPTION', f_reco_label_bold)
+    for i in range(num_items): ws_rec.write(27, 2 + i, '', f_empty)
+    
+    ws_rec.write(28, 0, '1', f_reco_index)
+    ws_rec.write(28, 1, 'Material Consumed', f_yellow_label)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        annex_col_str = xlsxwriter.utility.xl_col_to_name(tot_col)
+        ws_rec.write_formula(28, 2 + i, f"='{ann_name}'!{annex_col_str}{reco_items[i]['annexure_row']}", f_reco_cell)
+        
+    ws_rec.write(29, 0, '2', f_reco_index)
+    ws_rec.write(29, 1, 'Wastage (max as per WO norms)', f_reco_label)
+    for i in range(num_items): ws_rec.write(29, 2 + i, 0, f_reco_cell)
+        
+    ws_rec.write(31, 0, '', f_reco_index)
+    ws_rec.write(31, 1, 'Total -Actual consumption (1+2)', f_yellow_label)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        ws_rec.write_formula(31, 2 + i, f"={col_str}29+{col_str}30", f_reco_cell_bold)
+        
+    # Section E
+    ws_rec.set_row(33, 40)
+    ws_rec.write(33, 0, 'E.', f_yellow_index)
+    ws_rec.write(33, 1, 'Excess consumption for which cost to be recovered from the Contractor (C-D)', f_yellow_label)
+    for i in range(num_items):
+        col_str = xlsxwriter.utility.xl_col_to_name(2 + i)
+        ws_rec.write_formula(33, 2 + i, f"={col_str}26-{col_str}32", f_reco_cell_bold)
 
 def main():
-    parser = argparse.ArgumentParser(description="Unified Precision Billing Engine")
-    parser.add_argument("master_path", help="Path to Master Tracker")
-    parser.add_argument("dc_number", help="DC Code (e.g. DC0105)")
-    parser.add_argument("--template", help="Path to Master Template", default='Billing/MASTER_JMS_TEMPLATE.xlsx')
-    parser.add_argument("--output", help="Path to save the generated file")
-    parser.add_argument("--mindump", help="Path to MINDUMP File")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("master_path")
+    parser.add_argument("dc_number")
+    parser.add_argument("--output", default=None)
+    parser.add_argument("--mindump", default=None)
+    parser.add_argument("--activity", default='A6', choices=['A6', 'A6_B6'])
+    # Ignored legacy flags
+    parser.add_argument("--template", default=None) 
     args = parser.parse_args()
 
-    master_path = args.master_path
     dc_number = args.dc_number
-    template_path = args.template
     output_path = args.output if args.output else f"Billing/{dc_number}_Unified_Billing.xlsx"
-    mindump_path = args.mindump
-
-    print(f"--- Launching Unified Precision Billing Engine for {dc_number} ---")
+    activity = args.activity
     
-    df_sites, code_to_col_idx = load_master_data(master_path, dc_number)
+    print(f"--- Generating Clean Billing Workbook for {dc_number} ({activity}) ---")
+    df_sites, code_to_col_idx = load_master_data(args.master_path, dc_number, activity=activity)
     
     if df_sites is not None and not df_sites.empty:
-        try:
-            # Load from provided or default template path
-            wb = openpyxl.load_workbook(template_path)
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        
+        with xlsxwriter.Workbook(output_path, {'nan_inf_to_errors': True}) as wb:
+            formats = {
+                'title': wb.add_format({'bold': True, 'font_size': 12, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#DCE6F1', 'border': 1}),
+                'cert_text': wb.add_format({'bold': True, 'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'border': 1}),
+                'header': wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#DCE6F1', 'border': 1, 'text_wrap': True}),
+                'header_blue': wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#DCE6F1', 'border': 1, 'text_wrap': True}),
+                'header_yellow': wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#FFFF00', 'border': 1, 'text_wrap': True}),
+                'header_vertical': wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'rotation': 90, 'bg_color': '#DCE6F1', 'border': 1}),
+                'cell': wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1}),
+                'cell_left': wb.add_format({'font_size': 9, 'align': 'left', 'valign': 'vcenter', 'border': 1}),
+                'number': wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0'}),
+                'number_bold': wb.add_format({'font_size': 9, 'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0', 'bg_color': '#F2F2F2'}),
+                'bold_right': wb.add_format({'font_size': 9, 'bold': True, 'align': 'right', 'valign': 'vcenter'}),
+                'bold_left': wb.add_format({'font_size': 9, 'bold': True, 'align': 'left', 'valign': 'vcenter'}),
+                'date': wb.add_format({'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': 'dd-mmm-yy'})
+            }
             
-            # Global Header Swap
-            target_sheets = wb.sheetnames
-            for sheet_name in target_sheets:
-                ws_h = wb[sheet_name]
-                for r in range(1, 10):
-                    for c in range(1, 20):
-                        cell = ws_h.cell(row=r, column=c)
-                        if "DC-CODE" in str(cell.value):
-                            cell.value = str(cell.value).replace("DC-CODE", dc_number)
+            wo_number = get_wo_number(args.master_path, dc_number)
+            
+            write_main_wcc(wb, df_sites, dc_number, formats) 
+            write_wcc(wb, df_sites, dc_number, formats, activity=activity, wo_number=wo_number)
+            write_matrix_sheet(wb, 'JMS', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity, wo_number=wo_number)
+            write_matrix_sheet(wb, 'Abstract', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity, wo_number=wo_number)
+            write_matrix_sheet(wb, 'BOQ', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity, wo_number=wo_number)
+            write_declaration(wb, df_sites, dc_number, formats, activity=activity, wo_number=wo_number)
+            write_annexure_and_reco(wb, df_sites, dc_number, formats, args.mindump, activity=activity, wo_number=wo_number)
 
-            # Step 1: Main WCC & WCC
-            print("- Step 1: Populating WCC and Main WCC Headers...")
-            generate_wcc_sheet(df_sites, wb)
-            
-            wo_number = get_wo_number(master_path, dc_number)
-            inject_main_wcc_from_reference(wb, df_sites, dc_number, wo_number)
-            
-            # Step 2: JMS
-            print("- Step 2: Populating JMS (Style DNA Mirroring)...")
-            populate_main_matrix('JMS', df_sites, code_to_col_idx, wb)
-            
-            # Step 3: Cloning into Abstract & BOQ
-            print("- Step 3: Cloning JMS into Abstract & BOQ...")
-            jms_ws = wb['JMS']
-            for name in ['Abstract', 'BOQ']:
-                if name in wb.sheetnames: wb.remove(wb[name])
-                new_ws = wb.copy_worksheet(jms_ws)
-                new_ws.title = name
-                for r in range(1, 10):
-                    for c in range(1, 40):
-                        cell = new_ws.cell(row=r, column=c)
-                        if str(cell.value).upper() == "JMS": cell.value = name.upper()
-            
-            # Step 4: Declaration
-            print("- Step 4: Updating Declaration...")
-            populate_declaration_data(df_sites, wb, dc_number)
-            
-            # Step 5: Annexure
-            print("- Step 5: Populating Annexure (LatestSnapshot)...")
-            generate_annexure_sheet(df_sites, wb, mindump_path=mindump_path)
-            
-            # Step 6: RECO
-            print("- Step 6: Populating RECO (Pure Logic)...")
-            generate_reco_sheet(df_sites, wb)
-
-            # Ensure output directory exists for backend reliability
-            output_dir = os.path.dirname(os.path.abspath(output_path))
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir, exist_ok=True)
-                
-            wb.save(output_path)
-            
-            # Step 7: Hybrid Injection for Stable Main WCC
-            wo_number = get_wo_number(master_path, dc_number)
-            inject_main_wcc_from_reference(output_path, df_sites, dc_number, wo_number)
-            
-            print(f"COMPLETE: {output_path}")
-        except Exception as e:
-            print(f"ERROR: {e}")
-            import traceback
-            traceback.print_exc()
-            sys.exit(1)
+        # AFTER CLOSING WORKBOOK (XlsxWriter), use the Stable Hybrid logic
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        ref_template = os.path.join(script_dir, '..', 'templates', 'billing_template.xlsx')
+        
+        master_tracker = args.master_path
+        
+        wo_number = get_wo_number(master_tracker, dc_number)
+        inject_main_wcc_template(output_path, ref_template, df_sites, dc_number, wo_number)
+        
+        print(f"COMPLETE: {output_path}")
     else:
-        if df_sites is None:
-            print(f"CRITICAL ERROR: Failed to load Master Tracker file at {master_path}")
-        else:
-            print(f"DATA ERROR: No site records found for DC Number '{dc_number}' in the provided Master Tracker.")
-        sys.exit(1)
+        print("ERROR: No valid data found for DC Number.")
 
 if __name__ == "__main__":
     main()

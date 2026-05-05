@@ -117,7 +117,8 @@ def get_wo_number(master_path, dc_number):
         if wo_col_idx is None: wo_col_idx = 14
         
         for row in ws.iter_rows(min_row=3, values_only=True):
-            if str(row[billing_col_idx]).strip().upper() == dc_number.upper():
+            cell_val = str(row[billing_col_idx]).strip().upper() if row[billing_col_idx] else ""
+            if dc_number.upper() in cell_val:
                 return str(row[wo_col_idx]).strip()
         
         return "N/A"
@@ -198,7 +199,13 @@ def inject_main_wcc_template(output_path, ref_path, df_sites, dc_number, wo_numb
                 print(f"  - Copying programmatic sheet: {sn}")
                 copy_sheet_between_workbooks(wb_temp[sn], wb_final, sn)
         
-        # 5. Save the final file (overwriting the XlsxWriter temp file)
+        # 5. Remove redundant sheets for A6+B6
+        if 'Annexture' in wb_final.sheetnames and any('-A6' in s for s in wb_final.sheetnames):
+            del wb_final['Annexture']
+        if 'Reco' in wb_final.sheetnames and any('-A6' in s for s in wb_final.sheetnames):
+            del wb_final['Reco']
+
+        # 6. Save the final file
         wb_final.save(output_path)
         print("- Hybrid Generation COMPLETE")
         
@@ -385,10 +392,8 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
     f_head = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'bg_color': '#DCE6F1', 'border': 1})
     f_head_vert = wb.add_format({'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True, 'rotation': 90, 'bg_color': '#DCE6F1', 'border': 1})
     
-    # Title Block
+    # Title Block (Row 1: Sheet Name, Row 2: Work Order)
     ws.merge_range(0, 0, 0, last_col, sheet_name, f_title)
-    
-    # Row 1: Work Order No (Center)
     ws.merge_range(1, 0, 1, last_col, f'Work Order No : {wo_number}', f_center)
     
     # Row 2: Contractor Name (Left) + Work Order Dated (Center)
@@ -517,7 +522,7 @@ def write_matrix_sheet(wb, sheet_name, df_sites, code_to_col_idx, dc_number, for
         ws.write(r_sig+2, right_col, "MR. MANISH NAHAR", formats['bold_left'])
         ws.write(r_sig+3, right_col, "DATE:", formats['bold_left'])
 
-def write_declaration(wb, df_sites, dc_number, formats, activity='A6'):
+def write_declaration(wb, df_sites, dc_number, formats, activity='A6', wo_number='N/A'):
     ws = wb.add_worksheet('Declaration')
     
     # Get warehouse name
@@ -553,7 +558,7 @@ def write_declaration(wb, df_sites, dc_number, formats, activity='A6'):
     
     # Row 6
     ws.write('A6', 'Work Order No:', f_bold)
-    ws.merge_range('B6:C6', 'P14/630330726', f_bold_center)
+    ws.merge_range('B6:C6', str(wo_number), f_bold_center)
     
     # Row 7
     ws.write('A7', 'SAP ID/WBS :', f_bold)
@@ -620,18 +625,14 @@ def write_declaration(wb, df_sites, dc_number, formats, activity='A6'):
     ws.set_row(21, 20)
     ws.set_row(22, 20)
 
-def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path, activity='A6'):
+def write_annexure_and_reco(wb, df_sites, dc_number, formats, mindump_path, activity='A6', wo_number='N/A'):
     if activity == 'A6_B6':
-        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "A6", "Annexture-A6", "Reco-A6")
-        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "B6", "Annexture-B6", "Reco-B6")
+        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "A6", "Annexture-A6", "Reco-A6", wo_number=wo_number)
+        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "B6", "Annexture-B6", "Reco-B6", wo_number=wo_number)
     else:
-        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "A6", "Annexture", "Reco")
+        create_annexure_reco_pair(wb, df_sites, formats, mindump_path, "A6", "Annexture", "Reco", wo_number=wo_number)
 
-def create_annexure_reco_pair(wb, df_sites, formats, mindump_path, sub_activity, ann_name, rec_name):
-    ws_ann = wb.add_worksheet(ann_name)
-    ws_rec = wb.add_worksheet(rec_name)
-    
-def create_annexure_reco_pair(wb, df_sites, formats, mindump_path, sub_activity, ann_name, rec_name):
+def create_annexure_reco_pair(wb, df_sites, formats, mindump_path, sub_activity, ann_name, rec_name, wo_number='N/A'):
     ws_ann = wb.add_worksheet(ann_name)
     ws_rec = wb.add_worksheet(rec_name)
     
@@ -813,8 +814,8 @@ def create_annexure_reco_pair(wb, df_sites, formats, mindump_path, sub_activity,
     # Setup columns
     ws_rec.set_column(0, 0, 5)   # Col A: Index
     ws_rec.set_column(1, 1, 45)  # Col B: Description Label
-    for i in range(num_items):
-        ws_rec.set_column(2 + i, 2 + i, 12)
+    # Apply width 20 to all material columns (from Col C onwards)
+    ws_rec.set_column(2, last_col, 15)
         
     f_reco_header_label = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1})
     f_reco_header_val = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
@@ -824,7 +825,7 @@ def create_annexure_reco_pair(wb, df_sites, formats, mindump_path, sub_activity,
     # Standard Table Formats
     f_reco_item_head = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True, 'font_size': 9, 'bg_color': '#D9D9D9'})
     f_reco_cell = wb.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0'})
-    f_reco_cell_bold = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0'})
+    f_reco_cell_bold = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0', 'text_wrap': True})
     f_reco_label = wb.add_format({'align': 'left', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
     f_reco_label_bold = wb.add_format({'bold': True, 'align': 'left', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
     f_reco_index = wb.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
@@ -842,7 +843,7 @@ def create_annexure_reco_pair(wb, df_sites, formats, mindump_path, sub_activity,
     # Metadata Header Block (Rows 0-6)
     meta_labels = [
         ('Name of Contractor', 'DIGITCOM INDIA TECHNOLOGIES'),
-        ('WO No', 'P14/630330726'),
+        ('WO No', wo_number),
         ('Site ID', 'As per attached Detail'),
         ('WBS Code', 'As per attached Detail'),
         ('Site Name', 'As per attached Detail'),
@@ -999,8 +1000,8 @@ def main():
             write_matrix_sheet(wb, 'JMS', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity, wo_number=wo_number)
             write_matrix_sheet(wb, 'Abstract', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity, wo_number=wo_number)
             write_matrix_sheet(wb, 'BOQ', df_sites, code_to_col_idx, dc_number, formats, include_amounts=True, activity=activity, wo_number=wo_number)
-            write_declaration(wb, df_sites, dc_number, formats, activity=activity)
-            write_annexure_and_reco(wb, df_sites, dc_number, formats, args.mindump, activity=activity)
+            write_declaration(wb, df_sites, dc_number, formats, activity=activity, wo_number=wo_number)
+            write_annexure_and_reco(wb, df_sites, dc_number, formats, args.mindump, activity=activity, wo_number=wo_number)
 
         # AFTER CLOSING WORKBOOK (XlsxWriter), use the Stable Hybrid logic
         script_dir = os.path.dirname(os.path.abspath(__file__))

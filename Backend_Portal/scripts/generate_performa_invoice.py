@@ -150,7 +150,7 @@ def generate_performa_invoice(dc_files, mindump_path, iv_number, activity, outpu
                             'wo_no': wo_number,
                             'site': site_id,
                             'wbs': wbs_id,
-                            'sap_code': sap,
+                            'sap_code': sap_code,
                             'description': desc,
                             'nature': nature_of_work,
                             'qty': qty,

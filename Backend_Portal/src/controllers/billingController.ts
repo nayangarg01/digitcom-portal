@@ -33,11 +33,13 @@ export const generateFullBilling = async (req: Request, res: Response) => {
         const outputPath = path.join(outputDir, outputFileName);
         
         const absoluteMasterPath = path.resolve(backendRoot, files['masterFile'][0].path);
+        const masterWithExt = absoluteMasterPath + '.xlsx';
+        fs.renameSync(absoluteMasterPath, masterWithExt);
         
         // Construct arguments for Python
         const pythonArgs = [
             scriptPath,
-            absoluteMasterPath,
+            masterWithExt,
             billingTarget,
             '--template', templatePath,
             '--output', outputPath,
@@ -47,7 +49,9 @@ export const generateFullBilling = async (req: Request, res: Response) => {
         // Add mindump if provided
         if (files['mindumpFile'] && files['mindumpFile'].length > 0) {
             const absoluteMindumpPath = path.resolve(backendRoot, files['mindumpFile'][0].path);
-            pythonArgs.push('--mindump', absoluteMindumpPath);
+            const mindumpWithExt = absoluteMindumpPath + '.xlsx';
+            fs.renameSync(absoluteMindumpPath, mindumpWithExt);
+            pythonArgs.push('--mindump', mindumpWithExt);
         }
 
         console.log(`Billing: Starting Unified Generation for ${billingTarget}`);
@@ -69,10 +73,17 @@ export const generateFullBilling = async (req: Request, res: Response) => {
         pythonProcess.on('close', (code: number) => {
             // Cleanup uploaded temp files
             try {
-                if (fs.existsSync(absoluteMasterPath)) fs.unlinkSync(absoluteMasterPath);
+                if (fs.existsSync(masterWithExt)) fs.unlinkSync(masterWithExt);
                 if (files['mindumpFile'] && files['mindumpFile'].length > 0) {
                     const absoluteMindumpPath = path.resolve(backendRoot, files['mindumpFile'][0].path);
-                    if (fs.existsSync(absoluteMindumpPath)) fs.unlinkSync(absoluteMindumpPath);
+                    const mindumpWithExt = absoluteMindumpPath + '.xlsx';
+                    if (fs.existsSync(mindumpWithExt)) fs.unlinkSync(mindumpWithExt);
+                }
+                if (files['dcFiles'] && files['dcFiles'].length > 0) {
+                    files['dcFiles'].forEach(f => {
+                        const p = path.resolve(backendRoot, f.path) + '.xlsx';
+                        if (fs.existsSync(p)) fs.unlinkSync(p);
+                    });
                 }
             } catch (err) {
                 console.warn('Billing: Temp file cleanup failed', err);

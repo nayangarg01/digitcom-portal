@@ -34,14 +34,21 @@ export const generatePerformaInvoice = async (req: Request, res: Response) => {
         const outputPath = path.join(outputDir, outputFileName);
         
         const absoluteMindumpPath = path.resolve(backendRoot, files['mindumpFile'][0].path);
+        const mindumpWithExt = absoluteMindumpPath + '.xlsx';
+        fs.renameSync(absoluteMindumpPath, mindumpWithExt);
         
-        // Collect all DC file paths
-        const dcFilePaths = files['dcFiles'].map(f => path.resolve(backendRoot, f.path));
+        // Collect all DC file paths and add extensions
+        const dcFilePaths = files['dcFiles'].map(f => {
+            const p = path.resolve(backendRoot, f.path);
+            const pWithExt = p + '.xlsx';
+            fs.renameSync(p, pWithExt);
+            return pWithExt;
+        });
 
         const pythonArgs = [
             scriptPath,
             '--files', ...dcFilePaths,
-            '--mindump', absoluteMindumpPath,
+            '--mindump', mindumpWithExt,
             '--iv_number', ivNumber,
             '--activity', activity || 'A6',
             '--output', outputPath
@@ -66,7 +73,7 @@ export const generatePerformaInvoice = async (req: Request, res: Response) => {
             // Cleanup uploaded temp files
             try {
                 dcFilePaths.forEach(p => { if (fs.existsSync(p)) fs.unlinkSync(p); });
-                if (fs.existsSync(absoluteMindumpPath)) fs.unlinkSync(absoluteMindumpPath);
+                if (fs.existsSync(mindumpWithExt)) fs.unlinkSync(mindumpWithExt);
             } catch (err) {
                 console.warn('Performa: Temp file cleanup failed', err);
             }

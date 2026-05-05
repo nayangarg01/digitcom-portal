@@ -151,6 +151,10 @@
                     <span class="loader" id="loader-unified"></span>
                 </div>
                 <div id="status-unified" class="status-msg"></div>
+                <div id="logs-unified" style="display:none; margin-top:15px; padding:10px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px; font-family:monospace; font-size:12px; color:#555; max-height:150px; overflow-y:auto;">
+                    <strong>Generation Logs:</strong><br>
+                    <div id="log-content-unified"></div>
+                </div>
             </section>
 
             <section class="billing-card" id="performa-section" style="display: none;">
@@ -195,6 +199,10 @@
                     <span class="loader" id="loader-performa"></span>
                 </div>
                 <div id="status-performa" class="status-msg"></div>
+                <div id="logs-performa" style="display:none; margin-top:15px; padding:10px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px; font-family:monospace; font-size:12px; color:#555; max-height:150px; overflow-y:auto;">
+                    <strong>Generation Logs:</strong><br>
+                    <div id="log-content-performa"></div>
+                </div>
             </section>
         </main>
     </div>
@@ -284,6 +292,15 @@
 
                 if (response.ok && data.success) {
                     statusMsg.className = 'status-msg status-success';
+                    
+                    // Display Logs
+                    const logsDiv = document.getElementById(`logs-${type}`);
+                    const logContent = document.getElementById(`log-content-${type}`);
+                    if (data.logs && data.logs.length > 0) {
+                        logContent.innerHTML = data.logs.map(l => `<div>${l}</div>`).join('');
+                        logsDiv.style.display = 'block';
+                    }
+
                     const fullDownloadUrl = `${API_URL}${data.downloadUrl}`;
                     
                     statusMsg.innerHTML = `${data.message} <br><button id="dl-${type}" class="btn-generate" style="background:#28a745; margin-top:10px; padding: 8px 15px; font-size: 14px;">Download Generated File</button>`;

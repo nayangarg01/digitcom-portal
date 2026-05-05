@@ -35,6 +35,7 @@ def get_warehouse_name(code):
 
 def load_master_data(master_path, dc_number, activity='A6'):
     try:
+        print(f"DEBUG: Attempting WO lookup for {dc_number} in {os.path.basename(master_path)}")
         sheet_name = 'A6+B6 Billings' if activity == 'A6_B6' else 0
         df_full = pd.read_excel(master_path, sheet_name=sheet_name, header=None)
         if df_full.empty: return None, None
@@ -97,31 +98,30 @@ TEMPLATE_ITEMS_A6_B6 = [
 def get_wo_number(master_path, dc_number):
     """Looks up the WO number from the Master Tracker's 'WO' column based on 'BILLING FILE' matching dc_number."""
     try:
-        wb = openpyxl.load_workbook(master_path, data_only=True)
-        ws = wb.active 
+        df = pd.read_excel(master_path, header=1)
+        billing_col = next((c for c in df.columns if "BILLING" in str(c).upper() or "DC" in str(c).upper()), None)
+        wo_col = next((c for c in df.columns if "WO" == str(c).upper().strip()), None)
         
-        # Row 2 contains headers
-        headers = [str(c.value).upper().strip() if c.value else "" for c in ws[2]]
+        if not billing_col or not wo_col: return "N/A"
         
-        billing_col_idx = None
-        wo_col_idx = None
+        # Try both direct and partial match
+        match = df[df[billing_col].astype(str).str.contains(dc_number.strip(), na=False, case=False)]
         
-        for i, h in enumerate(headers):
-            if "BILLING FILE" in h or "DC NUMBER" in h:
-                billing_col_idx = i
-            if h == "WO":
-                wo_col_idx = i
-        
-        # Fallbacks to identified indices
-        if billing_col_idx is None: billing_col_idx = 47
-        if wo_col_idx is None: wo_col_idx = 14
-        
-        for row in ws.iter_rows(min_row=3, values_only=True):
-            cell_val = str(row[billing_col_idx]).strip().upper() if row[billing_col_idx] else ""
-            if dc_number.upper() in cell_val:
-                return str(row[wo_col_idx]).strip()
-        
-        return "N/A"
+        if match.empty:
+            print(f"DEBUG: No direct match for {dc_number}. Attempting numeric fallback...")
+            import re
+            num_part = re.search(r'\d+', dc_number)
+            if num_part:
+                match = df[df[billing_col].astype(str).str.contains(num_part.group(), na=False)]
+                
+        if match.empty:
+            print(f"DEBUG: CRITICAL ERROR - No rows found for {dc_number} in Master Tracker.")
+            return "N/A"
+            
+        # Get WO
+        wo_val = match[wo_col].iloc[0]
+        print(f"DEBUG: Successfully matched DC {dc_number}. Found WO: {wo_val}")
+        return str(wo_val).strip()
     except Exception as e:
         print(f"Error looking up WO: {e}")
         return "N/A"

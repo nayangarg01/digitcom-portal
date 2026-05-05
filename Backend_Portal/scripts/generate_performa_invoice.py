@@ -23,6 +23,7 @@ def generate_performa_invoice(dc_files, mindump_path, iv_number, activity, outpu
             wbs_id = str(row.get('WBS ID', '')).strip()
             if site_id and wbs_id and site_id.lower() != 'nan':
                 wbs_mapping[site_id] = wbs_id
+        print(f"DEBUG: Loaded {len(wbs_mapping)} WBS mappings from MINDUMP.")
     except Exception as e:
         print(f"Warning: Could not load MINDUMP for WBS mapping: {e}")
 
@@ -41,6 +42,7 @@ def generate_performa_invoice(dc_files, mindump_path, iv_number, activity, outpu
             nature_of_work = "AIR FIBER INSTALLATION"
             if activity == 'A6_B6':
                 nature_of_work = "AIR FIBER INSTALLATION(A6+B6)"
+            print(f"DEBUG: Processing file: {os.path.basename(dc_file)} for activity {activity}")
             
             if 'JMS' not in wb.sheetnames:
                 print(f"Warning: JMS sheet missing in {dc_file}")
@@ -94,8 +96,10 @@ def generate_performa_invoice(dc_files, mindump_path, iv_number, activity, outpu
                         if wo_number != "N/A": break
 
             if site_row == -1 or item_header_row == -1:
-                print(f"Warning: Missing headers in {dc_file} (SiteRow={site_row}, ItemRow={item_header_row})")
+                print(f"DEBUG: ERROR - Headers not found in {os.path.basename(dc_file)}. SiteRow={site_row}, ItemRow={item_header_row}")
                 continue
+            
+            print(f"DEBUG: Found headers. SiteRow={site_row}, ItemRow={item_header_row}. WO={wo_number}")
                 
             # --- Extract Sites ---
             sites = []
@@ -141,24 +145,29 @@ def generate_performa_invoice(dc_files, mindump_path, iv_number, activity, outpu
                         
                         all_rows.append({
                             'vendor': 'DIGITCOM INDIA TECHNOLOGIES',
-                            'scope': 'ISP',
+                            'scope': 'A6',
                             'iv_no': f"PERFORMA INVOICE NO. {iv_number}",
                             'wo_no': wo_number,
                             'site': site_id,
                             'wbs': wbs_id,
-                            'sap_code': sap_code,
+                            'sap_code': sap,
                             'description': desc,
                             'nature': nature_of_work,
                             'qty': qty,
                             'rate': rate,
                             'amount': site_amount
                         })
+            
+            print(f"DEBUG: Successfully extracted {len(all_rows)} row entries from {os.path.basename(dc_file)}")
                         
         except Exception as e:
             print(f"Error processing {dc_file}: {e}")
             import traceback
             traceback.print_exc()
 
+    if not all_rows:
+        print("DEBUG: CRITICAL ERROR - No data rows were extracted from ANY file. Sheet will be empty.")
+        
     # 3. Create Final Workbook
     with xlsxwriter.Workbook(output_path) as wb:
         # Formats

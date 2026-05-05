@@ -87,7 +87,8 @@ export const generatePerformaInvoice = async (req: Request, res: Response) => {
                 success: true,
                 message: `Performa Invoice ${ivNumber} generated successfully.`,
                 downloadUrl: `/billing/download/${outputFileName}`,
-                filename: outputFileName
+                filename: outputFileName,
+                logs: pythonOutput.split('\n')
             });
         });
 

@@ -98,7 +98,8 @@ export const generateFullBilling = async (req: Request, res: Response) => {
                 success: true,
                 message: `Billing file for ${billingTarget} generated successfully.`,
                 downloadUrl: `/billing/download/${outputFileName}`,
-                filename: outputFileName
+                filename: outputFileName,
+                logs: pythonOutput.split('\n')
             });
         });
 

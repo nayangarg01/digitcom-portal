@@ -789,7 +789,8 @@ def copy_sheet_between_workbooks(src_ws, dst_wb, sheet_name, index=None):
 def inject_main_wcc_from_reference(output_path, df_sites, dc_number, wo_number):
     """Uses the 'Reference-First' approach to ensure stability in Apple Numbers."""
     try:
-        ref_path = "/Users/nayangarg/Desktop/DigitcomWebsiteRenovation/Old_Codebase_renovated_v6.1/FinaliseBillingFormat/DIGITCOM_ AIRFIBER_DC0105_ JDPR_29-JAN-26_A6 (REJECT) 2.xlsx"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        ref_path = os.path.join(script_dir, '..', 'templates', 'billing_template.xlsx')
         print(f"- Injecting Main WCC from reference: {os.path.basename(ref_path)}")
         
         # 1. Load the reference template as the BASE workbook

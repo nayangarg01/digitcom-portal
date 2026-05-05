@@ -1002,8 +1002,10 @@ def main():
             write_declaration(wb, df_sites, dc_number, formats, activity=activity)
             write_annexure_and_reco(wb, df_sites, dc_number, formats, args.mindump, activity=activity)
 
-        # AFTER CLOSING WORKBOOK (XlsxWriter), Re-open with Openpyxl to inject template
-        ref_template = "/Users/nayangarg/Desktop/DigitcomWebsiteRenovation/Old_Codebase_renovated_v6.1/FinaliseBillingFormat/DIGITCOM_ AIRFIBER_DC0105_ JDPR_29-JAN-26_A6 (REJECT) 2.xlsx"
+        # AFTER CLOSING WORKBOOK (XlsxWriter), use the Stable Hybrid logic
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        ref_template = os.path.join(script_dir, '..', 'templates', 'billing_template.xlsx')
+        
         master_tracker = args.master_path
         
         wo_number = get_wo_number(master_tracker, dc_number)

@@ -36,8 +36,14 @@ def get_warehouse_name(code):
 def load_master_data(master_path, dc_number, activity='A6'):
     try:
         print(f"DEBUG: Attempting WO lookup for {dc_number} in {os.path.basename(master_path)}")
-        sheet_name = 'A6+B6 Billings' if activity == 'A6_B6' else 0
-        df_full = pd.read_excel(master_path, sheet_name=sheet_name, header=None)
+        xl = pd.ExcelFile(master_path)
+        sheet_name = 0
+        if activity == 'A6_B6':
+            if 'A6+B6 Billings' in xl.sheet_names:
+                sheet_name = 'A6+B6 Billings'
+            else:
+                print("DEBUG: 'A6+B6 Billings' sheet not found in workbook, falling back to first sheet.")
+        df_full = xl.parse(sheet_name, header=None)
         if df_full.empty: return None, None
             
         dc_col_idx = 0

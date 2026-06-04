@@ -422,11 +422,12 @@
             // Render Automated Routes
             data.routes.forEach((route, idx) => {
                 const color = colors[idx % colors.length];
+                const displayLabel = route.label.startsWith("Route") ? route.label : `Route ${route.label}`;
                 const card = document.createElement('div');
                 card.className = 'route-card';
                 card.innerHTML = `
                     <div class="route-header" style="border-left-color: ${color}">
-                        <strong>Route ${route.label}</strong>
+                        <strong>${displayLabel}</strong>
                         <span style="float: right">Legs: ${route.legs.length}</span>
                     </div>
                     <div class="route-sequence">
@@ -443,7 +444,7 @@
                     weight: 2,
                     opacity: 1,
                     fillOpacity: 1
-                }).addTo(map).bindPopup(`<strong>Warehouse:</strong> Route ${route.label} Origin`);
+                }).addTo(map).bindPopup(`<strong>Warehouse:</strong> ${displayLabel} Origin`);
                 routeLayers.push(whMarker);
 
                 const pathPoints = [[origin.lat, origin.lng]];

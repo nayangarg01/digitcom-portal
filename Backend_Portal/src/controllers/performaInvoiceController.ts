@@ -56,7 +56,7 @@ export const generatePerformaInvoice = async (req: Request, res: Response) => {
 
         console.log(`Performa: Starting generation for IV ${ivNumber} with ${dcFilePaths.length} files`);
 
-        const pythonProcess = spawn('python3.11', pythonArgs);
+        const pythonProcess = spawn('python3', pythonArgs);
 
         let pythonOutput = '';
         let pythonError = '';

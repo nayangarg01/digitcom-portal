@@ -93,7 +93,7 @@ export const generateRoutes = async (req: Request, res: Response) => {
     
     // Spawn Python process
     const { spawn } = require('child_process');
-    const pythonProcess = spawn('python3.11', [
+    const pythonProcess = spawn('python3', [
         scriptPath,
         file.path,
         apiKey,
@@ -168,7 +168,7 @@ export const calculateManualDistances = async (req: Request, res: Response) => {
     const outputPath = path.join(__dirname, `../../uploads/${outputFilename}`);
     
     const { spawn } = require('child_process');
-    const pythonProcess = spawn('python3.11', [scriptPath, file.path, apiKey, outputPath]);
+    const pythonProcess = spawn('python3', [scriptPath, file.path, apiKey, outputPath]);
 
     let pythonOutput = '';
     let pythonError = '';

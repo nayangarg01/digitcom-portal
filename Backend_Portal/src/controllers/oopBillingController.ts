@@ -346,3 +346,156 @@ export const generateOOPRoutes = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, error: error.message || 'Internal Server Error' });
     }
 };
+
+export const getOOPDbSummary = async (req: Request, res: Response) => {
+    try {
+        console.log("OOP Controller: Received database summary request");
+        const backendRoot = path.resolve(__dirname, '../..');
+        const scriptPath = path.join(backendRoot, 'scripts/query_oop_db.py');
+        const pythonArgs: string[] = [scriptPath, '--summary'];
+
+        const pythonProcess = spawn('python3', pythonArgs);
+
+        let pythonOutput = '';
+        let pythonError = '';
+
+        pythonProcess.stdout.on('data', (data: any) => {
+            pythonOutput += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data: any) => {
+            pythonError += data.toString();
+        });
+
+        pythonProcess.on('close', (code: number) => {
+            if (code !== 0) {
+                console.error('OOP Controller DB Summary Error:', pythonError);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to query database summary.',
+                    details: pythonError
+                });
+            }
+
+            try {
+                const result = JSON.parse(pythonOutput.trim());
+                res.json(result);
+            } catch (e: any) {
+                console.error('OOP Controller Summary JSON Parse Error:', pythonOutput);
+                res.status(500).json({
+                    success: false,
+                    error: 'Failed to parse database summary: ' + e.message,
+                    details: pythonOutput
+                });
+            }
+        });
+    } catch (error: any) {
+        console.error('OOP Controller DB Summary Route Error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Internal Server Error' });
+    }
+};
+
+export const listOOPSites = async (req: Request, res: Response) => {
+    try {
+        console.log("OOP Controller: Received database sites list request");
+        const backendRoot = path.resolve(__dirname, '../..');
+        const scriptPath = path.join(backendRoot, 'scripts/query_oop_db.py');
+        const pythonArgs: string[] = [scriptPath, '--list'];
+
+        const pythonProcess = spawn('python3', pythonArgs);
+
+        let pythonOutput = '';
+        let pythonError = '';
+
+        pythonProcess.stdout.on('data', (data: any) => {
+            pythonOutput += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data: any) => {
+            pythonError += data.toString();
+        });
+
+        pythonProcess.on('close', (code: number) => {
+            if (code !== 0) {
+                console.error('OOP Controller DB List Error:', pythonError);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to query database sites list.',
+                    details: pythonError
+                });
+            }
+
+            try {
+                const result = JSON.parse(pythonOutput.trim());
+                res.json({ success: true, sites: result });
+            } catch (e: any) {
+                console.error('OOP Controller List JSON Parse Error:', pythonOutput);
+                res.status(500).json({
+                    success: false,
+                    error: 'Failed to parse database sites list: ' + e.message,
+                    details: pythonOutput
+                });
+            }
+        });
+    } catch (error: any) {
+        console.error('OOP Controller DB List Route Error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Internal Server Error' });
+    }
+};
+
+export const getOOPSiteDetail = async (req: Request, res: Response) => {
+    try {
+        const { uniqueKey } = req.params;
+        console.log(`OOP Controller: Received site detail request for ${uniqueKey}`);
+
+        if (!uniqueKey) {
+            return res.status(400).json({ error: 'Unique Key parameter is required' });
+        }
+
+        const backendRoot = path.resolve(__dirname, '../..');
+        const scriptPath = path.join(backendRoot, 'scripts/query_oop_db.py');
+        const pythonArgs: string[] = [scriptPath, '--detail', String(uniqueKey)];
+
+        const pythonProcess = spawn('python3', pythonArgs);
+
+        let pythonOutput = '';
+        let pythonError = '';
+
+        pythonProcess.stdout.on('data', (data: any) => {
+            pythonOutput += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data: any) => {
+            pythonError += data.toString();
+        });
+
+        pythonProcess.on('close', (code: number) => {
+            if (code !== 0) {
+                console.error('OOP Controller DB Detail Error:', pythonError);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to query site details.',
+                    details: pythonError
+                });
+            }
+
+            try {
+                const result = JSON.parse(pythonOutput.trim());
+                if (result.error) {
+                    return res.status(404).json({ success: false, error: result.error });
+                }
+                res.json({ success: true, site: result });
+            } catch (e: any) {
+                console.error('OOP Controller Detail JSON Parse Error:', pythonOutput);
+                res.status(500).json({
+                    success: false,
+                    error: 'Failed to parse site details: ' + e.message,
+                    details: pythonOutput
+                });
+            }
+        });
+    } catch (error: any) {
+        console.error('OOP Controller DB Detail Route Error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Internal Server Error' });
+    }
+};

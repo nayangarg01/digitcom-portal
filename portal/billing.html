@@ -93,6 +93,7 @@
             <nav class="sidebar-menu">
                 <a href="route-planning.html">Route Planning</a>
                 <a href="billing.html" class="active">Billing Operations</a>
+                <a href="database-registry.html">Database Registry</a>
                 <a href="work-order.html">Work Order Extraction</a>
                 <a href="#" onclick="logout()" style="margin-top: 50px;">Logout</a>
             </nav>
@@ -210,33 +211,6 @@
                 <h3>OOP Billing Engine & Database Registry</h3>
                 <p style="color: #888; margin-bottom: 25px;">This system keeps a persistent local registry of site objects. Upload trackers to update the registry, or generate files from existing database records.</p>
                 
-                <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 25px; margin-bottom: 25px;">
-                    <h4 style="margin-top:0; color:#28a745;">Block A: Sync & Update Database Registry</h4>
-                    <p style="color: #aaa; font-size:13px; margin-top:0;">Upload the latest trackers to register new sites or update existing site details (incremental sync).</p>
-                    
-                    <div class="form-group">
-                        <label for="masterFileOop">Master DPR Tracker (.xlsx)</label>
-                        <input type="file" id="masterFileOop" class="form-control" accept=".xlsx">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="mindumpFileOop">MINDUMP Data (.xlsx) <span style="color:#888; font-weight:normal;">(Optional)</span></label>
-                        <input type="file" id="mindumpFileOop" class="form-control" accept=".xlsx">
-                    </div>
-
-                    <div style="display: flex; gap: 15px; align-items: center; margin-top: 20px;">
-                        <button class="btn-generate" onclick="handleGenerate('oop-sync')" style="background:#007bff;">
-                            Sync & Update Database
-                        </button>
-                        <span class="loader" id="loader-oop-sync"></span>
-                    </div>
-                    <div id="status-oop-sync" class="status-msg"></div>
-                    <div id="logs-oop-sync" style="display:none; margin-top:15px; padding:10px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px; font-family:monospace; font-size:12px; color:#555; max-height:150px; overflow-y:auto;">
-                        <strong>Sync Logs:</strong><br>
-                        <div id="log-content-oop-sync"></div>
-                    </div>
-                </div>
-
                 <div>
                     <h4 style="color:#28a745;">Block B: Generate Billing File from Database</h4>
                     <p style="color: #aaa; font-size:13px; margin-top:0;">Enter a DC Number to generate the complete formatted workbook directly from registered database models.</p>
@@ -395,15 +369,6 @@
                 formData.append('ivNumber', ivInput.value.trim());
                 formData.append('activity', document.querySelector('input[name="activityTypePerforma"]:checked').value);
                 endpoint = '/billing/generate-performa';
-            } else if (type === 'oop-sync') {
-                const masterInput = document.getElementById('masterFileOop');
-                const mindumpInput = document.getElementById('mindumpFileOop');
-
-                if (!masterInput.files[0]) return alert('Please upload a Master DPR file');
-
-                formData.append('masterFile', masterInput.files[0]);
-                if (mindumpInput.files[0]) formData.append('mindumpFile', mindumpInput.files[0]);
-                endpoint = '/billing/oop-sync-db';
             } else if (type === 'oop-gen') {
                 const targetInput = document.getElementById('billingTargetOop');
                 const activityInput = document.getElementById('activityTypeOop');

@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Registry | Digitcom India Technologies</title>
+    <link rel="stylesheet" href="portal.css">
+    <style>
+        .loader {
+            display: none;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #002D58;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-msg {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .status-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        /* Search & Filters Styling */
+        .filters-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 2;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .filter-select {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        /* Modal Layout */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 950px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            animation: slideIn 0.25s ease-out;
+            box-sizing: border-box;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .detail-item {
+            font-size: 14px;
+        }
+
+        .detail-item strong {
+            display: block;
+            color: #555;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 15px;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 15px;
+        }
+
+        .tab-link {
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            color: #888;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-link.active {
+            color: #002D58;
+            border-bottom-color: #002D58;
+        }
+
+        .tab-pane {
+            display: none;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .detail-table th {
+            padding: 10px;
+            background-color: #f1f3f5;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 600;
+        }
+
+        .detail-table td {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .btn-view-details {
+            background-color: #002D58;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-view-details:hover {
+            background-color: #0056b3;
+        }
+
+        /* Pagination Controls */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            font-size: 14px;
+        }
+
+        .pagination-btn {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background-color: #f8f9fa;
+            border-color: #bbb;
+        }
+
+        .pagination-btn:disabled {
+            color: #ccc;
+            cursor: not-allowed;
+            background-color: #fcfcfc;
+        }
+
+        .form-control {
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="portal-container">
+        <aside class="sidebar">
+            <div class="logo"><img src="../images/logo.jpg" alt="Digitcom Logo"></div>
+            <nav class="sidebar-menu">
+                <a href="route-planning.html">Route Planning</a>
+                <a href="billing.html">Billing Operations</a>
+                <a href="database-registry.html" class="active">Database Registry</a>
+                <a href="work-order.html">Work Order Extraction</a>
+                <a href="#" onclick="logout()" style="margin-top: 50px;">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header-bar">
+                <h1>Database Registry</h1>
+                <div class="user-info">Admin User</div>
+            </header>
+
+            <!-- Stats breakdown -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Total Registered Sites</h4>
+                    <div class="value" id="stat-total">--</div>
+                </div>
+                <div class="stat-card">
+                    <h4>A6 Sites</h4>
+                    <div class="value" id="stat-a6" style="color: #007bff;">--</div>
+                </div>
+                <div class="stat-card">
+                    <h4>A6+B6 Sites</h4>
+                    <div class="value" id="stat-a6b6" style="color: #28a745;">--</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Last Updated</h4>
+                    <div class="value" id="stat-updated" style="font-size: 1.1rem; line-height: 2.1rem; color: #555;">--</div>
+                </div>
+            </div>
+
+            <!-- Incremental Sync Card -->
+            <div class="form-card">
+                <h3 style="margin-top: 0; color: #002D58;">Incremental Database Sync</h3>
+                <p style="color: #888; font-size: 13px; margin-top: 0; margin-bottom: 20px;">
+                    Upload the latest DPR tracker and MIN dump spreadsheets to update coordinates, site milestones, and material dispatches. Existing records will be updated incrementally.
+                </p>
+
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="masterFileOop" style="font-weight: 500;">Master DPR Tracker (.xlsx)</label>
+                        <input type="file" id="masterFileOop" class="form-control" accept=".xlsx" style="margin-bottom: 0;">
+                        <small style="color: #888; display: block; margin-top: 5px;">Primary spreadsheet containing site codes and coordinates.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mindumpFileOop" style="font-weight: 500;">MINDUMP Data (.xlsx) <span style="color: #aaa; font-weight: normal;">(Optional)</span></label>
+                        <input type="file" id="mindumpFileOop" class="form-control" accept=".xlsx" style="margin-bottom: 0;">
+                        <small style="color: #888; display: block; margin-top: 5px;">Dispatcher logs showing material quantities delivered.</small>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; align-items: center; margin-top: 25px;">
+                    <button class="btn-primary" id="btn-sync-db" onclick="handleDatabaseSync()">
+                        Sync & Update Database
+                    </button>
+                    <span class="loader" id="loader-oop-sync"></span>
+                </div>
+
+                <div id="status-oop-sync" class="status-msg"></div>
+
+                <div id="logs-oop-sync" style="display:none; margin-top:15px; padding:12px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px; font-family:monospace; font-size:12px; color:#555; max-height:150px; overflow-y:auto;">
+                    <div style="font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 3px; color: #333;">Sync Logs:</div>
+                    <div id="log-content-oop-sync"></div>
+                </div>
+            </div>
+
+            <!-- Database Sites Viewer -->
+            <div class="data-table-container">
+                <h3 style="margin-top: 0; color: #002D58; margin-bottom: 20px;">Sites Registry Registry</h3>
+
+                <!-- Filter Controls -->
+                <div class="filters-bar">
+                    <input type="text" id="searchBar" class="search-input" placeholder="Search by Site ID, DC Number, WBS ID, PMP ID, or Work Order..." oninput="handleFilterChange()">
+                    
+                    <select id="filterActivity" class="filter-select" onchange="handleFilterChange()">
+                        <option value="ALL">All Activities</option>
+                        <option value="A6">A6 Layout Only</option>
+                        <option value="A6+B6">A6+B6 Layout Only</option>
+                    </select>
+                </div>
+
+                <!-- Data Table -->
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Site ID</th>
+                                <th>PMP ID</th>
+                                <th>DC Number</th>
+                                <th>Work Order</th>
+                                <th>Warehouse</th>
+                                <th>Activity Type</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sites-table-body">
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: #888; padding: 30px;">Loading database records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination controls -->
+                <div class="pagination-container">
+                    <div id="pagination-info" style="color: #666;">Showing 0 to 0 of 0 sites</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="prevBtn" class="pagination-btn" onclick="changePage(-1)" disabled>Previous</button>
+                        <button id="nextBtn" class="pagination-btn" onclick="changePage(1)" disabled>Next</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Site Details Modal -->
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2 id="modal-site-id" style="color: #002D58; margin-top: 0; margin-bottom: 20px;">Site Details: I-RJ-XXXX-ENB-XXXX</h2>
+            
+            <!-- Site Info Grid -->
+            <div class="detail-grid">
+                <div class="detail-item"><strong>PMP ID</strong><span id="detail-pmp">--</span></div>
+                <div class="detail-item"><strong>WBS ID</strong><span id="detail-wbs">--</span></div>
+                <div class="detail-item"><strong>GIS Sector ID</strong><span id="detail-sector">--</span></div>
+                <div class="detail-item"><strong>Hop ID</strong><span id="detail-hop">--</span></div>
+                <div class="detail-item"><strong>Tower Type</strong><span id="detail-tower">--</span></div>
+                <div class="detail-item"><strong>JC / Area</strong><span id="detail-jc">--</span></div>
+                <div class="detail-item"><strong>Warehouse</strong><span id="detail-wh">--</span></div>
+                <div class="detail-item"><strong>Vehicle Number</strong><span id="detail-vehicle">--</span></div>
+                <div class="detail-item"><strong>Coordinates</strong><span id="detail-coords">--</span></div>
+                <div class="detail-item"><strong>Work Order</strong><span id="detail-wo">--</span></div>
+                <div class="detail-item"><strong>DC Number</strong><span id="detail-dc">--</span></div>
+                <div class="detail-item"><strong>Milestone Date</strong><span id="detail-date">--</span></div>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="tabs-header">
+                <button class="tab-link active" onclick="switchModalTab('items')">Programmed Quantities</button>
+                <button class="tab-link" onclick="switchModalTab('dispatches')">Material Dispatches (<span id="dispatch-count">0</span>)</button>
+            </div>
+
+            <!-- Programmed Items Tab -->
+            <div id="tab-items" class="tab-pane active">
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">SAP Code</th>
+                            <th style="width: 50%;">Material Description</th>
+                            <th style="width: 20%; text-align: center;">DPR Qty (Consumed)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-items-body">
+                        <!-- Items populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Material Dispatches Tab -->
+            <div id="tab-dispatches" class="tab-pane">
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>MIN Date</th>
+                            <th>MIN Number</th>
+                            <th>SAP Code</th>
+                            <th>Material Description</th>
+                            <th style="text-align: center;">Qty Delivered</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-dispatches-body">
+                        <!-- Dispatches populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        checkAuth();
+
+        let allSites = [];
+        let filteredSites = [];
+        let currentPage = 1;
+        const recordsPerPage = 10;
+
+        // Load summaries and database listing on boot
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadDbSummary();
+            await loadSitesList();
+        });
+
+        async function loadDbSummary() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/billing/oop-db-summary`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('stat-total').textContent = data.total_sites || 0;
+                    document.getElementById('stat-a6').textContent = data.a6_sites || 0;
+                    document.getElementById('stat-a6b6').textContent = data.a6b6_sites || 0;
+                    
+                    if (data.last_updated) {
+                        const date = new Date(data.last_updated);
+                        document.getElementById('stat-updated').textContent = date.toLocaleDateString('en-IN', {
+                            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                        });
+                    } else {
+                        document.getElementById('stat-updated').textContent = 'No database found';
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load summary stats:', err);
+            }
+        }
+
+        async function loadSitesList() {
+            const token = localStorage.getItem('token');
+            const tableBody = document.getElementById('sites-table-body');
+            
+            try {
+                const response = await fetch(`${API_URL}/billing/oop-sites`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    allSites = data.sites || [];
+                    filteredSites = [...allSites];
+                    
+                    currentPage = 1;
+                    renderSitesTable();
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #d9534f; padding: 30px;">Error: Failed to load registry sites from server.</td></tr>`;
+                }
+            } catch (err) {
+                console.error('Failed to load sites list:', err);
+                tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #d9534f; padding: 30px;">Connection Error: Could not reach the server.</td></tr>`;
+            }
+        }
+
+        function renderSitesTable() {
+            const tableBody = document.getElementById('sites-table-body');
+            tableBody.innerHTML = '';
+
+            if (filteredSites.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #888; padding: 30px;">No matching site registry records found.</td></tr>`;
+                document.getElementById('pagination-info').textContent = 'Showing 0 to 0 of 0 sites';
+                document.getElementById('prevBtn').disabled = true;
+                document.getElementById('nextBtn').disabled = true;
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * recordsPerPage;
+            const endIndex = Math.min(startIndex + recordsPerPage, filteredSites.length);
+            const paginatedData = filteredSites.slice(startIndex, endIndex);
+
+            paginatedData.forEach(site => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600; color: #002D58;">${site.site_id || 'N/A'}</td>
+                    <td>${site.pmp_id || 'N/A'}</td>
+                    <td><span class="status-pill status-allotted" style="font-size: 12px; font-weight: normal;">${site.dc_no || 'N/A'}</span></td>
+                    <td>${site.wo || 'N/A'}</td>
+                    <td>${site.wh || 'N/A'}</td>
+                    <td>
+                        <span class="status-pill ${site.activity_type === 'A6' ? 'status-live' : 'status-progress'}">
+                            ${site.activity_type || 'N/A'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-view-details" onclick="viewSiteDetail('${site.unique_key}')">View Details</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Update pagination details
+            document.getElementById('pagination-info').textContent = `Showing ${startIndex + 1} to ${endIndex} of ${filteredSites.length} sites`;
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = endIndex >= filteredSites.length;
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            renderSitesTable();
+        }
+
+        function handleFilterChange() {
+            const searchVal = document.getElementById('searchBar').value.trim().toUpperCase();
+            const activityFilter = document.getElementById('filterActivity').value;
+
+            filteredSites = allSites.filter(site => {
+                // Activity filter
+                if (activityFilter !== 'ALL' && site.activity_type !== activityFilter) {
+                    return false;
+                }
+
+                // Search query matching multiple attributes
+                if (searchVal) {
+                    const siteId = (site.site_id || '').toUpperCase();
+                    const pmpId = (site.pmp_id || '').toUpperCase();
+                    const dcNo = (site.dc_no || '').toUpperCase();
+                    const wo = (site.wo || '').toUpperCase();
+                    const wbsId = (site.wbs_id || '').toUpperCase();
+                    const wh = (site.wh || '').toUpperCase();
+
+                    return siteId.includes(searchVal) || 
+                           pmpId.includes(searchVal) || 
+                           dcNo.includes(searchVal) || 
+                           wo.includes(searchVal) || 
+                           wbsId.includes(searchVal) ||
+                           wh.includes(searchVal);
+                }
+
+                return true;
+            });
+
+            currentPage = 1;
+            renderSitesTable();
+        }
+
+        // Database Incremental Sync handler
+        async function handleDatabaseSync() {
+            const masterInput = document.getElementById('masterFileOop');
+            const mindumpInput = document.getElementById('mindumpFileOop');
+            const syncBtn = document.getElementById('btn-sync-db');
+            const loader = document.getElementById('loader-oop-sync');
+            const statusMsg = document.getElementById('status-oop-sync');
+            const logsDiv = document.getElementById('logs-oop-sync');
+            const logContent = document.getElementById('log-content-oop-sync');
+
+            if (!masterInput.files[0]) {
+                return alert('Please select a Master DPR Excel tracker first.');
+            }
+
+            const formData = new FormData();
+            formData.append('masterFile', masterInput.files[0]);
+            if (mindumpInput.files[0]) {
+                formData.append('mindumpFile', mindumpInput.files[0]);
+            }
+
+            // Reset UI
+            syncBtn.disabled = true;
+            loader.style.display = 'inline-block';
+            statusMsg.style.display = 'none';
+            logsDiv.style.display = 'none';
+            logContent.innerHTML = '';
+
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/billing/oop-sync-db`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    statusMsg.className = 'status-msg status-success';
+                    statusMsg.textContent = 'Database registry synchronized successfully!';
+                    statusMsg.style.display = 'block';
+
+                    // Update summaries and lists
+                    await loadDbSummary();
+                    await loadSitesList();
+                } else {
+                    statusMsg.className = 'status-msg status-danger';
+                    statusMsg.textContent = `Sync failed: ${data.error || 'Unknown error'}`;
+                    statusMsg.style.display = 'block';
+                }
+
+                // Append logs if they exist
+                if (data.logs && data.logs.length > 0) {
+                    logContent.innerHTML = data.logs.map(l => `<div>${l}</div>`).join('');
+                    logsDiv.style.display = 'block';
+                }
+
+            } catch (err) {
+                console.error(err);
+                statusMsg.className = 'status-msg status-danger';
+                statusMsg.textContent = 'Connection Error: Failed to synchronize database.';
+                statusMsg.style.display = 'block';
+            } finally {
+                syncBtn.disabled = false;
+                loader.style.display = 'none';
+            }
+        }
+
+        // View Detail Modal logic
+        async function viewSiteDetail(uniqueKey) {
+            const token = localStorage.getItem('token');
+            const modal = document.getElementById('details-modal');
+            
+            try {
+                const response = await fetch(`${API_URL}/billing/oop-sites/${encodeURIComponent(uniqueKey)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const site = data.site;
+                    
+                    // Populate general details
+                    document.getElementById('modal-site-id').textContent = `Site Detail: ${site.site_id || 'Unknown Site'}`;
+                    document.getElementById('detail-pmp').textContent = site.pmp_id || 'N/A';
+                    document.getElementById('detail-wbs').textContent = site.wbs_id || 'N/A';
+                    document.getElementById('detail-sector').textContent = site.sector_id || 'N/A';
+                    document.getElementById('detail-hop').textContent = site.hop_id || 'N/A';
+                    document.getElementById('detail-tower').textContent = site.tower_type || 'N/A';
+                    document.getElementById('detail-jc').textContent = site.jc || 'N/A';
+                    document.getElementById('detail-wh').textContent = site.wh || 'N/A';
+                    document.getElementById('detail-vehicle').textContent = site.vehicle_no || 'N/A';
+                    document.getElementById('detail-coords').textContent = (site.latitude && site.longitude) ? `${site.latitude}, ${site.longitude}` : 'N/A';
+                    document.getElementById('detail-wo').textContent = site.wo || 'N/A';
+                    document.getElementById('detail-dc').textContent = site.dc_no || 'N/A';
+                    
+                    const minDateStr = site.min_date ? new Date(site.min_date).toLocaleDateString('en-IN') : '';
+                    const compDateStr = site.completion_date ? new Date(site.completion_date).toLocaleDateString('en-IN') : 'Pending';
+                    document.getElementById('detail-date').textContent = minDateStr ? `${minDateStr} / ${compDateStr}` : compDateStr;
+
+                    // Items Dictionary
+                    const itemsBody = document.getElementById('modal-items-body');
+                    itemsBody.innerHTML = '';
+                    
+                    const dprItems = site.items || {};
+                    const sapCodes = Object.keys(dprItems);
+                    
+                    // Simple hardcoded SAP descriptions mappings for standard lookups
+                    const sapDescriptions = {
+                        "3367489": "CHRG BASE RADIO INST&COMS AZIMUTH",
+                        "3367548": "CHRG LAYING-MULTIMODE FIBER CABLE",
+                        "3137158": "LAYING-2CX2.5SQMM POWER CABLE",
+                        "3397253": "CHRG EXTRA TRANSPORT. > 50 KM (PICKUP)",
+                        "3397271": "CHRG TRANSPORT-UPTO 50KM-SCV-2-3SITE",
+                        "3367713": "CHRG ATP-11C - WIFI A6 DEPLOYMENT",
+                        "3367739": "CHRG ATP-11A - WIFI A6 DEPLOYMENT",
+                        "3317347": "SITC 1CX6 SQMM CU CBL YY FRLSH",
+                        "3383067": "CHRG APPLY PUFF SEALENT AT CABLE ENTRY",
+                        "3269867": "TERMINATION OF CABLE 1CX6 SQMM Y",
+                        "3397248": "EXTRA VISIT",
+                        "3268025": "INSTALLATION OF POLE MOUNT ON TOWER",
+                        "3398758": "ITC A6 & B6 - ONE-SECTOR SITE",
+                        "3398834": "ITC A6 & B6 - TWO-SECTOR SITE",
+                        "3398764": "ITC A6 & B6 - THREE-SECTOR SITE",
+                        "3339581": "CHRG TRANSPORTATION-BEYOND 100 KM-SCV"
+                    };
+
+                    if (sapCodes.length === 0) {
+                        itemsBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #888; padding: 20px;">No programmatic quantities assigned for this layout.</td></tr>`;
+                    } else {
+                        sapCodes.forEach(sap => {
+                            const qty = dprItems[sap];
+                            if (qty > 0) {
+                                const desc = sapDescriptions[sap] || "Extra / Accessory Material";
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td style="font-weight: 500;">${sap}</td>
+                                    <td style="color: #666;">${desc}</td>
+                                    <td style="text-align: center; font-weight: 600;">${qty}</td>
+                                `;
+                                itemsBody.appendChild(row);
+                            }
+                        });
+                    }
+
+                    // Dispatches List
+                    const dispatchesBody = document.getElementById('modal-dispatches-body');
+                    dispatchesBody.innerHTML = '';
+                    const dispatches = site.dispatches || [];
+                    document.getElementById('dispatch-count').textContent = dispatches.length;
+
+                    if (dispatches.length === 0) {
+                        dispatchesBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #888; padding: 20px;">No MIN Dump material dispatches registered.</td></tr>`;
+                    } else {
+                        dispatches.forEach(disp => {
+                            const dispDate = disp.date ? new Date(disp.date).toLocaleDateString('en-IN') : 'N/A';
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${dispDate}</td>
+                                <td style="font-weight: 500; color: #002D58;">${disp.min_number || 'N/A'}</td>
+                                <td style="font-weight: 500;">${disp.sap_code || 'N/A'}</td>
+                                <td style="color: #555; font-size: 13px;">${disp.description || 'N/A'}</td>
+                                <td style="text-align: center; font-weight: 600; color: #28a745;">${disp.quantity}</td>
+                                <td style="color: #666; font-size: 13px;">${disp.remarks || ''}</td>
+                            `;
+                            dispatchesBody.appendChild(row);
+                        });
+                    }
+
+                    // Reset to first tab link
+                    switchModalTab('items');
+                    
+                    // Show Modal
+                    modal.style.display = 'block';
+                } else {
+                    alert('Error: Failed to fetch site detail parameters.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Connection Error: Could not fetch site detail parameters.');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('details-modal').style.display = 'none';
+        }
+
+        // Close modal on background click
+        window.onclick = function(event) {
+            const modal = document.getElementById('details-modal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function switchModalTab(tabName) {
+            const tabLinks = document.querySelectorAll('.tab-link');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            tabLinks.forEach(link => link.classList.remove('active'));
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+
+            if (tabName === 'items') {
+                tabLinks[0].classList.add('active');
+                document.getElementById('tab-items').classList.add('active');
+            } else {
+                tabLinks[1].classList.add('active');
+                document.getElementById('tab-dispatches').classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

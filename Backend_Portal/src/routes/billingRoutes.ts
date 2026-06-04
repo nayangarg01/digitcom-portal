@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { generateFullBilling, downloadBillingFile } from '../controllers/billingController';
 import { generatePerformaInvoice } from '../controllers/performaInvoiceController';
-import { syncOOPDb, generateOOPBilling, generateOOPPerforma } from '../controllers/oopBillingController';
+import { syncOOPDb, generateOOPBilling, generateOOPPerforma, getOOPDbSummary, listOOPSites, getOOPSiteDetail } from '../controllers/oopBillingController';
 import { authenticateJWT, isAdmin } from '../middleware/auth';
 
 const router = Router();
@@ -31,6 +31,11 @@ router.post('/oop-generate', authenticateJWT, isAdmin, upload.none(), generateOO
 
 // OOP Performa Invoice Route
 router.post('/oop-generate-performa', authenticateJWT, isAdmin, upload.none(), generateOOPPerforma);
+
+// OOP Database Queries Routes
+router.get('/oop-db-summary', authenticateJWT, isAdmin, getOOPDbSummary);
+router.get('/oop-sites', authenticateJWT, isAdmin, listOOPSites);
+router.get('/oop-sites/:uniqueKey', authenticateJWT, isAdmin, getOOPSiteDetail);
 
 // Download Route
 router.get('/download/:fileName', downloadBillingFile);

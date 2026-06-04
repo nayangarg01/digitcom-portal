@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { generateRoutes, exportRoutePlan, downloadOptimized, calculateManualDistances } from '../controllers/routePlanningController';
+import { generateOOPRoutes } from '../controllers/oopBillingController';
 import { authenticateJWT, isAdmin } from '../middleware/auth';
 import { upload } from '../middleware/uploadMiddleware';
 
@@ -10,5 +11,8 @@ router.post('/generate', authenticateJWT, isAdmin, upload.single('file'), genera
 router.post('/calculate-manual-distances', authenticateJWT, isAdmin, upload.single('file'), calculateManualDistances);
 router.post('/export', authenticateJWT, isAdmin, exportRoutePlan);
 router.get('/download-optimized', authenticateJWT, isAdmin, downloadOptimized);
+
+// OOP Routing Route
+router.post('/oop-generate', authenticateJWT, isAdmin, upload.none(), generateOOPRoutes);
 
 export default router;

@@ -376,6 +376,8 @@ class DataFactory:
                     for site_obj in matched_sites:
                         p_val = site_obj.pmp_id if sub_activity == 'A6' else pmp_id_val
                         site_obj.add_dispatch(sap_code, desc, qty, min_no, min_date, remarks, pmp_id=p_val, activity=sub_activity)
+                        if sub_activity == 'A6' and wbs_id and wbs_id.upper() != 'NAN':
+                            site_obj.wbs_id = wbs_id
                         total_dispatches += 1
                         
             self.save_database()

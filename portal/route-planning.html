@@ -106,21 +106,50 @@
 
             <div class="planning-grid">
                 <div class="control-panel">
-
-                    <div class="dropzone" id="dropzone">
-                        <input type="file" id="fileInput" hidden accept=".csv, .xlsx, .xls">
-                        <div id="dropzone-text">
-                            <strong>Click to Upload Site List</strong>
-                            <p>.csv or .xlsx with Site ID, Lat, Lon</p>
-                        </div>
-                        <div id="file-info" style="display:none;">
-                            <span id="filename"></span>
-                        </div>
+                    <div class="tab-container" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                        <button class="tab-btn active" onclick="switchRoutingTab('upload')" id="tab-upload" style="background: none; border: none; color: #333; border-bottom: 2px solid #28a745; padding: 5px 10px; cursor: pointer; font-weight: 600; font-size: 13px;">Upload Spreadsheet</button>
+                        <button class="tab-btn" onclick="switchRoutingTab('oop')" id="tab-oop-route" style="background: none; border: none; color: #888; padding: 5px 10px; cursor: pointer; font-weight: 600; font-size: 13px;">Database Routing (New)</button>
                     </div>
 
+                    <div id="upload-section">
+                        <div class="dropzone" id="dropzone">
+                            <input type="file" id="fileInput" hidden accept=".csv, .xlsx, .xls">
+                            <div id="dropzone-text">
+                                <strong>Click to Upload Site List</strong>
+                                <p>.csv or .xlsx with Site ID, Lat, Lon</p>
+                            </div>
+                            <div id="file-info" style="display:none;">
+                                <span id="filename"></span>
+                            </div>
+                        </div>
 
-                    <button class="btn" id="generate-btn" style="width: 100%; padding: 12px; font-weight: 600; margin-bottom: 10px;">Generate Dispatch Plan (Auto)</button>
-                    <button class="btn" id="manual-btn" style="width: 100%; padding: 12px; font-weight: 600; background: #6366f1;">Calculate Manual Distances (Level 1)</button>
+                        <button class="btn" id="generate-btn" style="width: 100%; padding: 12px; font-weight: 600; margin-bottom: 10px;">Generate Dispatch Plan (Auto)</button>
+                        <button class="btn" id="manual-btn" style="width: 100%; padding: 12px; font-weight: 600; background: #6366f1;">Calculate Manual Distances (Level 1)</button>
+                    </div>
+
+                    <div id="oop-section" style="display: none;">
+                        <p style="color: #666; font-size: 13px; margin-top: 0; margin-bottom: 15px;">Generate optimized route planning and driving distances directly from the database registry.</p>
+                        
+                        <div class="form-group">
+                            <label for="filterType">Filter Registry By</label>
+                            <select id="filterType" onchange="toggleFilterInputs()" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 10px;">
+                                <option value="DC">DC Numbers (comma-separated)</option>
+                                <option value="DATE">MIN/Completion Dates (comma-separated)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="dcFilterGroup">
+                            <label for="dcNumbersInput">DC Numbers</label>
+                            <input type="text" id="dcNumbersInput" placeholder="e.g. DC0122, DC0123" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;">
+                        </div>
+
+                        <div class="form-group" id="dateFilterGroup" style="display: none;">
+                            <label for="datesInput">MIN/Completion Dates</label>
+                            <input type="text" id="datesInput" placeholder="e.g. 29-Jan-26" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;">
+                        </div>
+
+                        <button class="btn" id="oop-generate-btn" style="width: 100%; padding: 12px; font-weight: 600; background: #28a745; margin-top: 15px;">Optimize DB Dispatch Plan</button>
+                    </div>
 
                     <div class="route-results" id="route-results">
                         <!-- Route summaries will appear here -->
@@ -140,6 +169,43 @@
     <script src="js/auth.js"></script>
     <script>
         checkAuth();
+
+        function switchRoutingTab(tab) {
+            const uploadSec = document.getElementById('upload-section');
+            const oopSec = document.getElementById('oop-section');
+            const tabUpload = document.getElementById('tab-upload');
+            const tabOop = document.getElementById('tab-oop-route');
+
+            if (tab === 'upload') {
+                uploadSec.style.display = 'block';
+                oopSec.style.display = 'none';
+                tabUpload.style.borderBottom = '2px solid #28a745';
+                tabUpload.style.color = '#333';
+                tabOop.style.borderBottom = 'none';
+                tabOop.style.color = '#888';
+            } else {
+                uploadSec.style.display = 'none';
+                oopSec.style.display = 'block';
+                tabUpload.style.borderBottom = 'none';
+                tabUpload.style.color = '#888';
+                tabOop.style.borderBottom = '2px solid #28a745';
+                tabOop.style.color = '#333';
+            }
+        }
+
+        function toggleFilterInputs() {
+            const filterType = document.getElementById('filterType').value;
+            const dcGroup = document.getElementById('dcFilterGroup');
+            const dateGroup = document.getElementById('dateFilterGroup');
+
+            if (filterType === 'DC') {
+                dcGroup.style.display = 'block';
+                dateGroup.style.display = 'none';
+            } else {
+                dcGroup.style.display = 'none';
+                dateGroup.style.display = 'block';
+            }
+        }
 
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');
@@ -166,6 +232,53 @@
                 document.getElementById('dropzone-text').style.display = 'none';
                 document.getElementById('file-info').style.display = 'block';
                 document.getElementById('filename').textContent = selectedFile.name;
+            }
+        });
+
+        const oopGenerateBtn = document.getElementById('oop-generate-btn');
+        oopGenerateBtn.addEventListener('click', async () => {
+            const filterType = document.getElementById('filterType').value;
+            const dcNumbersInput = document.getElementById('dcNumbersInput').value.trim();
+            const datesInput = document.getElementById('datesInput').value.trim();
+
+            const bodyParams = {};
+            if (filterType === 'DC') {
+                if (!dcNumbersInput) return alert('Please enter at least one DC Number');
+                bodyParams.dcNumbers = dcNumbersInput;
+            } else {
+                if (!datesInput) return alert('Please enter at least one MIN/Completion date');
+                bodyParams.minDates = datesInput;
+            }
+
+            document.querySelector('#loader p').textContent = 'Optimizing Routes from Database...';
+            loader.style.display = 'flex';
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/route-planning/oop-generate`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify(bodyParams)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    generatedRoutes = result.routes;
+                    lastFilename = result.filename;
+                    displayRoutes(result);
+                    exportBtn.style.display = 'block';
+                    exportBtn.textContent = 'Download Dispatch Plan (Excel)';
+                } else {
+                    console.error('Server error:', result);
+                    alert(`Error: ${result.error || 'Failed to generate routes'}`);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('Connection error: Could not connect to the route planning server.');
+            } finally {
+                loader.style.display = 'none';
+                document.querySelector('#loader p').textContent = 'Generating Optimized Routes...';
             }
         });
 

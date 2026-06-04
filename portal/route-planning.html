@@ -149,6 +149,11 @@
                         </div>
 
                         <button class="btn" id="oop-generate-btn" style="width: 100%; padding: 12px; font-weight: 600; background: #28a745; margin-top: 15px;">Optimize DB Dispatch Plan</button>
+                        
+                        <div id="logs-oop-route" style="display:none; margin-top:15px; padding:10px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px; font-family:monospace; font-size:12px; color:#555; max-height:150px; overflow-y:auto;">
+                            <div style="font-weight:bold; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:3px; color:#333;">Execution Logs:</div>
+                            <div id="log-content-oop-route" style="white-space: pre-wrap;"></div>
+                        </div>
                     </div>
 
                     <div class="route-results" id="route-results">
@@ -250,6 +255,12 @@
                 bodyParams.minDates = datesInput;
             }
 
+            // Clear and hide logs
+            const logsDiv = document.getElementById('logs-oop-route');
+            const logContent = document.getElementById('log-content-oop-route');
+            if (logsDiv) logsDiv.style.display = 'none';
+            if (logContent) logContent.innerHTML = '';
+
             document.querySelector('#loader p').textContent = 'Optimizing Routes from Database...';
             loader.style.display = 'flex';
             const token = localStorage.getItem('token');
@@ -263,6 +274,15 @@
                     body: JSON.stringify(bodyParams)
                 });
                 const result = await response.json();
+                
+                // Display logs if available in response
+                if (result.logs && result.logs.length > 0) {
+                    if (logContent && logsDiv) {
+                        logContent.innerHTML = result.logs.map(l => `<div>${l}</div>`).join('');
+                        logsDiv.style.display = 'block';
+                    }
+                }
+
                 if (result.success) {
                     generatedRoutes = result.routes;
                     lastFilename = result.filename;

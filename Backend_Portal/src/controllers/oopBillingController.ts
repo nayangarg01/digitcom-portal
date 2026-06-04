@@ -298,25 +298,45 @@ export const generateOOPRoutes = async (req: Request, res: Response) => {
             }
 
             try {
-                const result = JSON.parse(pythonOutput.trim());
+                // Find the line that is a valid JSON object
+                const lines = pythonOutput.split('\n');
+                let jsonLine = '';
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+                        jsonLine = trimmed;
+                        break;
+                    }
+                }
+
+                if (!jsonLine) {
+                    throw new Error("No valid JSON output returned from routing engine.");
+                }
+
+                const result = JSON.parse(jsonLine);
                 if (result.error) {
-                    return res.status(400).json({ success: false, error: result.error, logs: [result.error] });
+                    return res.status(400).json({
+                        success: false,
+                        error: result.error,
+                        logs: (pythonOutput + "\n" + pythonError).split('\n')
+                    });
                 }
 
                 res.json({
                     success: true,
-                    num_routes: result.num_routes,
-                    routes: result.routes,
+                    num_routes: Math.max(result.num_routes || 0, (result.routes || []).length),
+                    routes: result.routes || [],
                     downloadUrl: '/api/route-planning/download-optimized', // Use existing download route
-                    filename: outputFileName
+                    filename: outputFileName,
+                    logs: (pythonOutput + "\n" + pythonError).split('\n')
                 });
-            } catch (e) {
+            } catch (e: any) {
                 console.error('OOP Controller Routing JSON Parse Error:', pythonOutput);
                 res.status(500).json({
                     success: false,
-                    error: 'Failed to parse routing results',
+                    error: 'Failed to parse routing results: ' + e.message,
                     details: pythonOutput,
-                    logs: pythonOutput.split('\n')
+                    logs: (pythonOutput + "\n" + pythonError).split('\n')
                 });
             }
         });

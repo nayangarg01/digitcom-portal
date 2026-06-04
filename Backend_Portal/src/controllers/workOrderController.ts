@@ -44,7 +44,7 @@ export const extractWorkOrder = async (req: Request, res: Response) => {
 
         // Start background process
         const pythonArgs = [scriptPath, absolutePdfPath, '--output', outputPath];
-        const pythonProcess = spawn('python3', pythonArgs);
+        const pythonProcess = spawn('python3.11', pythonArgs);
 
         let pythonError = '';
 

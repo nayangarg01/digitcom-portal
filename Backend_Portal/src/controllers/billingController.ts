@@ -57,7 +57,7 @@ export const generateFullBilling = async (req: Request, res: Response) => {
         console.log(`Billing: Starting Unified Generation for ${billingTarget}`);
 
         // Spawn Python process
-        const pythonProcess = spawn('python3', pythonArgs);
+        const pythonProcess = spawn('python3.11', pythonArgs);
 
         let pythonOutput = '';
         let pythonError = '';
